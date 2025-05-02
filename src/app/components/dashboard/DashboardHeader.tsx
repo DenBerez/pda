@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 
 interface DashboardHeaderProps {
-    // We can remove the onOpenSettings prop since we'll use a FAB instead
+    // Add any props if needed
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = () => {

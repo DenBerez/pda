@@ -147,7 +147,7 @@ const DashboardGrid: React.FC = () => {
         });
 
         // Also update layouts to remove the widget from all breakpoints
-        setLayouts(prevLayouts => {
+        setLayouts((prevLayouts: { [key: string]: LayoutItem[] }) => {
             const newLayouts = { ...prevLayouts };
 
             // Remove the widget from all breakpoint layouts
