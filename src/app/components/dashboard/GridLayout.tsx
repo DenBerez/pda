@@ -51,7 +51,6 @@ const GridLayout: React.FC<GridLayoutProps> = ({
                 compactType="vertical"
                 margin={[16, 16]}
                 containerPadding={[16, 16]}
-                useDragHandle={true}
                 draggableHandle=".widget-drag-handle"
             >
                 {children}
