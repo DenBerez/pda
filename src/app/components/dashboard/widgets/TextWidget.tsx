@@ -157,8 +157,11 @@ const TextWidget = ({
 
     // Open color picker
     const handleOpenColorPicker = (event: React.MouseEvent<HTMLElement>, type: 'text' | 'background') => {
-        // Prevent the editor from losing focus
+        // Prevent the default behavior and stop propagation
         event.preventDefault();
+        event.stopPropagation();
+
+        // Set the anchor and type in a single update
         setColorPickerAnchor(event.currentTarget);
         setColorPickerType(type);
     };
@@ -171,41 +174,29 @@ const TextWidget = ({
 
     // Apply text color
     const applyTextColor = useCallback((color: string) => {
-        // First close the color picker
-        setColorPickerAnchor(null);
-        setColorPickerType(null);
-
-        // Update the color state
-        setTextColor(color);
-
-        // Create the style name
+        // Batch state updates
         const colorStyleName = `COLOR-${color.replace('#', '')}`;
-
-        // Get current selection
-        const selection = editorState.getSelection();
-
-        // Get current content
-        let contentState = editorState.getCurrentContent();
-
-        // First remove any existing color styles
-        const currentStyles = editorState.getCurrentInlineStyle();
-
-        // Create a new EditorState that forces the color
         let nextEditorState = editorState;
 
-        // Remove all existing color styles
+        // Remove existing color styles
+        const currentStyles = editorState.getCurrentInlineStyle();
         Object.keys(styleMap).forEach(style => {
             if (style.startsWith('COLOR-') && currentStyles.has(style)) {
                 nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, style);
             }
         });
 
-        // Apply the new color style
+        // Apply new color style
         nextEditorState = RichUtils.toggleInlineStyle(nextEditorState, colorStyleName);
 
-        // Update the editor state through our handler
+        // Update editor state
         handleEditorChange(nextEditorState);
-    }, [editorState, handleEditorChange]);
+
+        // Update color state and close picker after editor update
+        setTextColor(color);
+        setColorPickerAnchor(null);
+        setColorPickerType(null);
+    }, [editorState, handleEditorChange, styleMap]);
 
     // Apply background color - completely refactored
     const applyBgColor = useCallback((color: string) => {
@@ -378,7 +369,15 @@ const TextWidget = ({
                     horizontal: 'center',
                 }}
                 onClick={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.preventDefault()}
+                // Use mousedown instead of click to prevent focus issues
+                onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
+                // Add this to prevent closing when clicking inside
+                disableRestoreFocus
+                // Add this to prevent editor focus loss
+                disableEnforceFocus
             >
                 <Grid container spacing={1} sx={{ p: 1, width: 200 }}>
                     {colors.map((color) => (
@@ -393,7 +392,10 @@ const TextWidget = ({
                                         applyBgColor(color);
                                     }
                                 }}
-                                onMouseDown={(e) => e.preventDefault()}
+                                onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }}
                                 sx={{
                                     width: 30,
                                     height: 30,
@@ -427,7 +429,7 @@ const TextWidget = ({
     };
 
     // Render the text formatting toolbar
-    const TextFormattingToolbar = () => (
+    const TextFormattingToolbar: React.FC = () => (
         <Paper
             elevation={0}
             sx={{

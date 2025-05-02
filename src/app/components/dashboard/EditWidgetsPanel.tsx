@@ -79,7 +79,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                     {children}
                 </Box>
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
                     <Button
                         variant="contained"
                         color="primary"
@@ -88,7 +88,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                     >
                         Save Changes
                     </Button>
-                </Box>
+                </Box> */}
             </Box>
         </Drawer>
     );

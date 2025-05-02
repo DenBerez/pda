@@ -62,6 +62,17 @@ const defaultWidgets: Widget[] = [
     },
 ];
 
+// Add proper type for layout items
+interface LayoutItem {
+    i: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    minW?: number;
+    minH?: number;
+}
+
 // Dashboard grid component
 const DashboardGrid: React.FC = () => {
     const [widgets, setWidgets] = useState<Widget[]>([]);
@@ -96,7 +107,7 @@ const DashboardGrid: React.FC = () => {
 
                 // Initialize layouts based on the loaded widgets
                 const initialLayouts = {
-                    lg: widgetsToSet.map(widget => ({
+                    lg: widgetsToSet.map((widget: Widget) => ({
                         i: widget.id,
                         x: widget.x,
                         y: widget.y,
@@ -143,7 +154,7 @@ const DashboardGrid: React.FC = () => {
             Object.keys(newLayouts).forEach(breakpoint => {
                 if (newLayouts[breakpoint]) {
                     newLayouts[breakpoint] = newLayouts[breakpoint].filter(
-                        (item: any) => item.i !== idToRemove
+                        (item: LayoutItem) => item.i !== idToRemove
                     );
                 }
             });
@@ -184,8 +195,8 @@ const DashboardGrid: React.FC = () => {
         setActiveWidgetId(null);
     };
 
-    // Handle layout change
-    const handleLayoutChange = (currentLayout: any, allLayouts: any) => {
+    // Update the handleLayoutChange function with proper types
+    const handleLayoutChange = (currentLayout: LayoutItem[], allLayouts: { [key: string]: LayoutItem[] }) => {
         // Only update if we have a valid layout
         if (!currentLayout || currentLayout.length === 0) return;
 
@@ -195,7 +206,7 @@ const DashboardGrid: React.FC = () => {
         setWidgets(prevWidgets => {
             // Create a map of layout items by ID for quick lookup
             const layoutMap = new Map(
-                currentLayout.map((item: any) => [item.i, item])
+                currentLayout.map((item: LayoutItem) => [item.i, item])
             );
 
             // Update each widget with its new position from the layout
@@ -277,6 +288,22 @@ const DashboardGrid: React.FC = () => {
 
     return (
         <Box sx={{ width: '100%', p: 2, position: 'relative' }}>
+            {/* Add a style tag for the grid placeholder */}
+            <style jsx global>{`
+                .react-grid-placeholder {
+                    background-color: ${theme.palette.mode === 'dark'
+                    ? 'rgba(144, 202, 249, 0.2)'
+                    : 'rgba(25, 118, 210, 0.2)'} !important;
+                    border: 1px dashed ${theme.palette.mode === 'dark'
+                    ? '#90caf9'
+                    : '#1976d2'} !important;
+                    border-radius: 8px !important;
+                    opacity: 0.7 !important;
+                    transition: all 200ms ease;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+                }
+            `}</style>
+
             {/* <DashboardHeader /> */}
 
             {editMode && (
