@@ -33,7 +33,7 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { Popover, Grid, Slider } from "@mui/material";
 
 // Define custom style map for the editor
-const styleMap = {
+const styleMap: Record<string, React.CSSProperties> = {
     // Text colors
     'COLOR-FF0000': { color: '#FF0000' },
     'COLOR-00FF00': { color: '#00FF00' },
