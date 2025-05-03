@@ -288,7 +288,7 @@ const TextWidget = ({
                             }
                         };
                     }
-                    return null;
+                    return undefined;
                 }
             };
 
