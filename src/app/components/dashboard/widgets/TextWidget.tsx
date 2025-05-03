@@ -1,4 +1,4 @@
-import { Box, Typography, Divider, Paper, IconButton, Tooltip, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import { Box, Typography, Divider, Paper, IconButton, Tooltip, Select, MenuItem, FormControl, InputLabel, Grid } from "@mui/material";
 import { useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Widget } from "../types";
 import {
@@ -31,7 +31,7 @@ import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
 import FormatAlignRightIcon from '@mui/icons-material/FormatAlignRight';
 import FormatAlignJustifyIcon from '@mui/icons-material/FormatAlignJustify';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { Popover, Grid, Slider } from "@mui/material";
+import { Popover } from "@mui/material";
 
 // Define custom style map for the editor
 const styleMap: Record<string, React.CSSProperties> = {
@@ -382,7 +382,7 @@ const TextWidget = ({
             >
                 <Grid container spacing={1} sx={{ p: 1, width: 200 }}>
                     {colors.map((color) => (
-                        <Grid item key={color} xs={3}>
+                        <Grid container key={color}>
                             <Box
                                 onClick={(e) => {
                                     e.preventDefault();
