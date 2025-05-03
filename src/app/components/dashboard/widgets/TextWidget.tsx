@@ -7,7 +7,8 @@ import {
     RichUtils,
     convertToRaw,
     convertFromRaw,
-    ContentState
+    ContentState,
+    ContentBlock
 } from 'draft-js';
 import 'draft-js/dist/Draft.css';
 import EditIcon from '@mui/icons-material/Edit';
@@ -278,7 +279,7 @@ const TextWidget = ({
                             [key]: { style: { backgroundColor: styleMap[key].backgroundColor } }
                         }), {})
                 },
-                blockStyleFn: (block) => {
+                blockStyleFn: (block: ContentBlock) => {
                     const type = block.getType();
                     if (type.startsWith('align-')) {
                         return {
