@@ -77,6 +77,35 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
 
                 <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
                     {children}
+
+                    {widget?.type === 'weather' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Weather Location
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                label="City"
+                                variant="outlined"
+                                defaultValue={widget.config?.city || 'London'}
+                                onChange={(e) => {
+                                    if (widget && onSave) {
+                                        const updatedWidget = {
+                                            ...widget,
+                                            config: {
+                                                ...widget.config,
+                                                city: e.target.value
+                                            }
+                                        };
+                                        onSave(updatedWidget);
+                                    }
+                                }}
+                                helperText="Enter a city name for weather information"
+                                size="small"
+                                margin="normal"
+                            />
+                        </Box>
+                    )}
                 </Box>
 
                 {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>

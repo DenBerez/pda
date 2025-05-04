@@ -11,6 +11,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { Widget } from './types';
 import TextWidget from './widgets/TextWidget';
+import WeatherWidget from './widgets/WeatherWidget';
 
 interface WidgetContentProps {
     widget: Widget;
@@ -45,6 +46,13 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                         // Pass the edit panel state
                         showEditPanel={showTextEditPanel}
                         setShowEditPanel={setShowTextEditPanel}
+                    />
+                );
+            case 'weather':
+                return (
+                    <WeatherWidget
+                        widget={widget}
+                        editMode={editMode}
                     />
                 );
             // ... other widget types

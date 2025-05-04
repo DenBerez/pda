@@ -38,6 +38,9 @@ const defaultWidgets: Widget[] = [
         h: 2,
         minW: 2,
         minH: 2,
+        config: {
+            city: 'London'
+        }
     },
     {
         id: 'email-1',

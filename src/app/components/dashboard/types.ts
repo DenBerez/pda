@@ -10,6 +10,9 @@ export interface Widget {
     minH?: number;
     maxW?: number;
     maxH?: number;
-    config?: any;
+    config?: {
+        city?: string;
+        [key: string]: any;
+    };
     content?: string;
 } 
