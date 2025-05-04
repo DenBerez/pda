@@ -7,7 +7,8 @@ import {
     useMediaQuery,
     Fab,
     Tooltip,
-    Typography
+    Typography,
+    Button
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import 'react-grid-layout/css/styles.css';
@@ -305,6 +306,13 @@ const DashboardGrid: React.FC = () => {
             `}</style>
 
             {/* <DashboardHeader /> */}
+
+            <Button variant="contained" color="primary" onClick={() => {
+                fetch('/api/weather?city=London')
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch(error => console.error('Error:', error));
+            }}>Get Weather</Button>
 
             {editMode && (
                 <AddWidgetsPanel addWidget={addWidget} />
