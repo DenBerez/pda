@@ -13,6 +13,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import { DarkMode, LightMode } from '@mui/icons-material';
 import EditIcon from '@mui/icons-material/Edit';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 
 interface SettingsDrawerProps {
     open: boolean;
@@ -23,6 +25,8 @@ interface SettingsDrawerProps {
     toggleEditMode: () => void;
     onResetToDefault: () => void;
     onClearWidgets: () => void;
+    fullscreen: boolean;
+    toggleFullscreen: () => void;
 }
 
 const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
@@ -33,7 +37,9 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     editMode,
     toggleEditMode,
     onResetToDefault,
-    onClearWidgets
+    onClearWidgets,
+    fullscreen,
+    toggleFullscreen
 }) => {
     return (
         <Drawer
@@ -108,6 +114,35 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                 <>
                                     <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
                                     View Mode
+                                </>
+                            )}
+                        </Box>
+                    }
+                    sx={{ mb: 2 }}
+                />
+
+                <Divider sx={{ my: 3 }} />
+
+                <Typography variant="subtitle1" gutterBottom>Display Options</Typography>
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={fullscreen}
+                            onChange={toggleFullscreen}
+                            color="primary"
+                        />
+                    }
+                    label={
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {fullscreen ? (
+                                <>
+                                    <FullscreenExitIcon fontSize="small" sx={{ mr: 1 }} />
+                                    Exit Fullscreen
+                                </>
+                            ) : (
+                                <>
+                                    <FullscreenIcon fontSize="small" sx={{ mr: 1 }} />
+                                    Fullscreen Mode
                                 </>
                             )}
                         </Box>

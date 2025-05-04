@@ -92,6 +92,7 @@ const DashboardGrid: React.FC = () => {
     const { toggleColorMode, mode } = useThemeContext();
     const [editPanelOpen, setEditPanelOpen] = useState(false);
     const [activeWidget, setActiveWidget] = useState<Widget | null>(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     // Load saved layout from localStorage on component mount
     useEffect(() => {
@@ -290,6 +291,35 @@ const DashboardGrid: React.FC = () => {
         setActiveWidget(null);
     };
 
+    // Add this function to toggle fullscreen
+    const toggleFullscreen = useCallback(() => {
+        if (!document.fullscreenElement) {
+            // Enter fullscreen
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable fullscreen: ${err.message}`);
+            });
+            setIsFullscreen(true);
+        } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        }
+    }, []);
+
+    // Add an effect to handle fullscreen change events
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        };
+    }, []);
+
     return (
         <Box sx={{ width: '100%', p: 2, position: 'relative' }}>
             {/* Replace the style jsx global tag with regular style element */}
@@ -395,6 +425,8 @@ const DashboardGrid: React.FC = () => {
                         setSettingsOpen(false);
                     }
                 }}
+                fullscreen={isFullscreen}
+                toggleFullscreen={toggleFullscreen}
             />
 
             {/* Widget Edit Panel */}
