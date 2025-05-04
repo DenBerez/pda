@@ -12,6 +12,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import { Widget } from './types';
 import TextWidget from './widgets/TextWidget';
 import WeatherWidget from './widgets/WeatherWidget';
+import CalendarWidget from './widgets/CalendarWidget';
+import EmailWidget from './widgets/EmailWidget';
 
 interface WidgetContentProps {
     widget: Widget;
@@ -51,6 +53,20 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
             case 'weather':
                 return (
                     <WeatherWidget
+                        widget={widget}
+                        editMode={editMode}
+                    />
+                );
+            case 'email':
+                return (
+                    <EmailWidget
+                        widget={widget}
+                        editMode={editMode}
+                    />
+                );
+            case 'calendar':
+                return (
+                    <CalendarWidget
                         widget={widget}
                         editMode={editMode}
                     />

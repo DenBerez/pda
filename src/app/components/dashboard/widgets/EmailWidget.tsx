@@ -1,0 +1,355 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Box,
+    Typography,
+    CircularProgress,
+    List,
+    ListItem,
+    ListItemText,
+    Divider,
+    IconButton,
+    Badge,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    TextField,
+    Button
+} from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import MarkEmailUnreadIcon from '@mui/icons-material/MarkEmailUnread';
+import { Widget } from '../types';
+import Settings from '@mui/icons-material/Settings';
+
+interface Email {
+    id: string;
+    subject: string;
+    from: string;
+    date: string;
+    snippet: string;
+    unread: boolean;
+}
+
+interface EmailWidgetProps {
+    widget: Widget;
+    editMode: boolean;
+}
+
+const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode }) => {
+    const [emails, setEmails] = useState<Email[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [provider, setProvider] = useState(widget.config?.provider || 'gmail');
+    const [emailAddress, setEmailAddress] = useState(widget.config?.email || '');
+    const [refreshToken, setRefreshToken] = useState(widget.config?.refreshToken || '');
+    const [password, setPassword] = useState(widget.config?.password || '');
+    const [configuring, setConfiguring] = useState(false);
+
+    // Function to fetch emails
+    const fetchEmails = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            // Build the query parameters
+            const params = new URLSearchParams({
+                provider,
+                maxResults: '5'
+            });
+
+            // Add provider-specific parameters
+            if (provider === 'gmail' && refreshToken) {
+                params.append('refreshToken', refreshToken);
+            } else if (provider === 'aol' && emailAddress && password) {
+                params.append('email', emailAddress);
+                params.append('password', password);
+            }
+
+            const response = await fetch(`/api/email?${params.toString()}`);
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch emails: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            setEmails(data.emails || []);
+        } catch (err) {
+            console.error('Error fetching emails:', err);
+            setError('Failed to load emails. Please check your configuration.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch emails on component mount and when configuration changes
+    useEffect(() => {
+        if (!editMode) {
+            fetchEmails();
+        }
+    }, [editMode, provider, refreshToken, emailAddress, password]);
+
+    // Format date to a more readable format
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString(undefined, {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    };
+
+    // Extract sender name from email address
+    const extractSenderName = (from: string) => {
+        // If format is "Name <email@example.com>"
+        const match = from.match(/^([^<]+)/);
+        if (match && match[1].trim()) {
+            return match[1].trim();
+        }
+        // If just an email address
+        return from.split('@')[0];
+    };
+
+    // Toggle configuration mode
+    const toggleConfiguration = () => {
+        setConfiguring(!configuring);
+    };
+
+    // Save configuration
+    const saveConfiguration = () => {
+        // In a real implementation, you would update the widget configuration
+        // through a callback passed as props
+        setConfiguring(false);
+        fetchEmails();
+    };
+
+    // Render configuration form
+    const renderConfigurationForm = () => (
+        <Box sx={{ p: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+                Email Configuration
+            </Typography>
+
+            <FormControl fullWidth margin="normal" size="small">
+                <InputLabel id="email-provider-label">Provider</InputLabel>
+                <Select
+                    labelId="email-provider-label"
+                    value={provider}
+                    label="Provider"
+                    onChange={(e) => setProvider(e.target.value)}
+                >
+                    <MenuItem value="gmail">Gmail</MenuItem>
+                    <MenuItem value="aol">AOL</MenuItem>
+                </Select>
+            </FormControl>
+
+            {provider === 'gmail' ? (
+                <TextField
+                    fullWidth
+                    margin="normal"
+                    label="OAuth Refresh Token"
+                    type="password"
+                    size="small"
+                    value={refreshToken}
+                    onChange={(e) => setRefreshToken(e.target.value)}
+                    helperText="For demo purposes, leave empty to use mock data"
+                />
+            ) : (
+                <>
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Email Address"
+                        size="small"
+                        value={emailAddress}
+                        onChange={(e) => setEmailAddress(e.target.value)}
+                    />
+                    <TextField
+                        fullWidth
+                        margin="normal"
+                        label="Password"
+                        type="password"
+                        size="small"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        helperText="For demo purposes, leave empty to use mock data"
+                    />
+                </>
+            )}
+
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                    variant="outlined"
+                    onClick={toggleConfiguration}
+                    sx={{ mr: 1 }}
+                >
+                    Cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    onClick={saveConfiguration}
+                >
+                    Save
+                </Button>
+            </Box>
+        </Box>
+    );
+
+    // Render email list
+    const renderEmailList = () => (
+        <>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                p: 2,
+                borderBottom: '1px solid',
+                borderColor: 'divider'
+            }}>
+                <Typography variant="subtitle1" fontWeight="medium">
+                    Inbox
+                </Typography>
+                <IconButton
+                    size="small"
+                    onClick={fetchEmails}
+                    disabled={loading}
+                >
+                    <RefreshIcon fontSize="small" />
+                </IconButton>
+            </Box>
+
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                    <CircularProgress size={24} />
+                </Box>
+            ) : error ? (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography color="error" variant="body2">
+                        {error}
+                    </Typography>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={toggleConfiguration}
+                        sx={{ mt: 1 }}
+                    >
+                        Configure
+                    </Button>
+                </Box>
+            ) : emails.length === 0 ? (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="body2">
+                        No emails found
+                    </Typography>
+                </Box>
+            ) : (
+                <List sx={{ p: 0 }}>
+                    {emails.map((email, index) => (
+                        <React.Fragment key={email.id}>
+                            <ListItem
+                                alignItems="flex-start"
+                                sx={{
+                                    px: 2,
+                                    py: 1.5,
+                                    bgcolor: email.unread ? 'action.hover' : 'transparent',
+                                    '&:hover': {
+                                        bgcolor: 'action.selected'
+                                    }
+                                }}
+                            >
+                                <ListItemText
+                                    primary={
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography
+                                                variant="body2"
+                                                fontWeight={email.unread ? 'bold' : 'regular'}
+                                                sx={{
+                                                    maxWidth: '70%',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                {email.subject}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {formatDate(email.date)}
+                                            </Typography>
+                                        </Box>
+                                    }
+                                    secondary={
+                                        <>
+                                            <Typography
+                                                component="span"
+                                                variant="body2"
+                                                color="text.primary"
+                                                sx={{ display: 'block', fontWeight: email.unread ? 'medium' : 'regular' }}
+                                            >
+                                                {extractSenderName(email.from)}
+                                            </Typography>
+                                            <Typography
+                                                component="span"
+                                                variant="caption"
+                                                color="text.secondary"
+                                                sx={{
+                                                    display: 'block',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                {email.snippet}
+                                            </Typography>
+                                        </>
+                                    }
+                                />
+                                {email.unread && (
+                                    <Box sx={{ ml: 1, display: 'flex', alignItems: 'center' }}>
+                                        <Badge color="primary" variant="dot" />
+                                    </Box>
+                                )}
+                            </ListItem>
+                            {index < emails.length - 1 && <Divider component="li" />}
+                        </React.Fragment>
+                    ))}
+                </List>
+            )}
+
+            <Box sx={{
+                p: 1.5,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'center'
+            }}>
+                <Button
+                    size="small"
+                    onClick={toggleConfiguration}
+                    startIcon={<Settings />}
+                >
+                    Configure Email
+                </Button>
+            </Box>
+        </>
+    );
+
+    return (
+        <Box sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+            borderRadius: 1
+        }}>
+            {configuring ? renderConfigurationForm() : renderEmailList()}
+        </Box>
+    );
+};
+
+export default EmailWidget; 

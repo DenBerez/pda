@@ -7,9 +7,10 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 interface AddWidgetsPanelProps {
-    addWidget: (type: 'weather' | 'email' | 'social' | 'custom' | 'text') => void;
+    addWidget: (type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar') => void;
 }
 
 const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
@@ -54,6 +55,14 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
                     color="primary"
                 >
                     Text
+                </Button>
+                <Button
+                    variant="contained"
+                    startIcon={<CalendarMonthIcon />}
+                    onClick={() => addWidget('calendar')}
+                    color="primary"
+                >
+                    Calendar
                 </Button>
                 <Button
                     variant="contained"

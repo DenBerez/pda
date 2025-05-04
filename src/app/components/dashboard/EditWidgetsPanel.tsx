@@ -6,7 +6,11 @@ import {
     Drawer,
     IconButton,
     Divider,
-    Button
+    Button,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
@@ -57,6 +61,18 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                 config: {
                     ...tempWidget.config,
                     city
+                }
+            });
+        }
+    };
+
+    const handleEmailConfigChange = (config: any) => {
+        if (tempWidget) {
+            setTempWidget({
+                ...tempWidget,
+                config: {
+                    ...tempWidget.config,
+                    ...config
                 }
             });
         }
@@ -122,6 +138,60 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 size="small"
                                 margin="normal"
                             />
+                        </Box>
+                    )}
+
+                    {widget?.type === 'email' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Email Configuration
+                            </Typography>
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="email-provider-label">Provider</InputLabel>
+                                <Select
+                                    labelId="email-provider-label"
+                                    value={tempWidget?.config?.provider || 'gmail'}
+                                    label="Provider"
+                                    onChange={(e) => handleEmailConfigChange({ provider: e.target.value })}
+                                >
+                                    <MenuItem value="gmail">Gmail</MenuItem>
+                                    <MenuItem value="aol">AOL</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            {tempWidget?.config?.provider === 'gmail' ? (
+                                <TextField
+                                    fullWidth
+                                    margin="normal"
+                                    label="OAuth Refresh Token"
+                                    type="password"
+                                    size="small"
+                                    defaultValue={tempWidget?.config?.refreshToken || ''}
+                                    onChange={(e) => handleEmailConfigChange({ refreshToken: e.target.value })}
+                                    helperText="For demo purposes, leave empty to use mock data"
+                                />
+                            ) : (
+                                <>
+                                    <TextField
+                                        fullWidth
+                                        margin="normal"
+                                        label="Email Address"
+                                        size="small"
+                                        defaultValue={tempWidget?.config?.email || ''}
+                                        onChange={(e) => handleEmailConfigChange({ email: e.target.value })}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        margin="normal"
+                                        label="Password"
+                                        type="password"
+                                        size="small"
+                                        defaultValue={tempWidget?.config?.password || ''}
+                                        onChange={(e) => handleEmailConfigChange({ password: e.target.value })}
+                                        helperText="For demo purposes, leave empty to use mock data"
+                                    />
+                                </>
+                            )}
                         </Box>
                     )}
                 </Box>

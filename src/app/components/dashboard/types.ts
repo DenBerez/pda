@@ -1,6 +1,6 @@
 export interface Widget {
     id: string;
-    type: 'weather' | 'email' | 'social' | 'custom' | 'text';
+    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar';
     title: string;
     x: number;
     y: number;

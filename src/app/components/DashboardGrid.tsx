@@ -232,22 +232,33 @@ const DashboardGrid: React.FC = () => {
     };
 
     // Add a new widget
-    const addWidget = useCallback((type: Widget['type']) => {
-        const newId = `${type}-${Date.now()}`;
+    const addWidget = (type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar') => {
+        // Generate a unique ID for the new widget
+        const id = `${type}-${Date.now()}`;
+
+        // Create a new widget with default properties
         const newWidget: Widget = {
-            id: newId,
+            id,
             type,
             title: type.charAt(0).toUpperCase() + type.slice(1),
             x: 0,
             y: Infinity, // Place at the bottom
-            w: 2,
-            h: 2,
+            w: 3,
+            h: 3,
             minW: 2,
             minH: 2,
         };
 
+        // Add specific configurations based on widget type
+        if (type === 'weather') {
+            newWidget.config = { city: 'London' };
+        } else if (type === 'calendar') {
+            newWidget.config = { showWeekends: true };
+        }
+
+        // Add the new widget to the state
         setWidgets(prevWidgets => [...prevWidgets, newWidget]);
-    }, []);
+    };
 
     const toggleSettings = () => {
         setSettingsOpen(!settingsOpen);
