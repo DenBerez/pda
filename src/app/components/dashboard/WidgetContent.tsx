@@ -165,21 +165,6 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                 flexGrow: 1,
                 overflow: 'auto'
             }}>
-                {widget.type === 'weather' && (
-                    <Typography variant="body2">Weather widget placeholder</Typography>
-                )}
-
-                {widget.type === 'email' && (
-                    <Typography variant="body2">Email widget placeholder</Typography>
-                )}
-
-                {widget.type === 'social' && (
-                    <Typography variant="body2">Social media widget placeholder</Typography>
-                )}
-
-                {widget.type === 'custom' && (
-                    <Typography variant="body2">Custom widget placeholder</Typography>
-                )}
 
                 {renderWidget()}
             </Box>
