@@ -108,6 +108,7 @@ interface WeatherData {
         pressure_mb: number;
         vis_km: number;
         precip_mm: number;
+        cloud: number;
     };
 }
 
