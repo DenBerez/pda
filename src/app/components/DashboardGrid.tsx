@@ -289,8 +289,8 @@ const DashboardGrid: React.FC = () => {
 
     return (
         <Box sx={{ width: '100%', p: 2, position: 'relative' }}>
-            {/* Add a style tag for the grid placeholder */}
-            <style jsx global>{`
+            {/* Replace the style jsx global tag with regular style element */}
+            <style>{`
                 .react-grid-placeholder {
                     background-color: ${theme.palette.mode === 'dark'
                     ? 'rgba(144, 202, 249, 0.2)'
