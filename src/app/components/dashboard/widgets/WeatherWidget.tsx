@@ -11,10 +11,80 @@ import AirIcon from '@mui/icons-material/Air';
 import ThermostatIcon from '@mui/icons-material/Thermostat';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import OpacityIcon from '@mui/icons-material/Opacity';
+import SpeedIcon from '@mui/icons-material/Speed';
+
+const sampleWeatherData =
+{
+    "location": {
+        "name": "London",
+        "region": "City of London, Greater London",
+        "country": "United Kingdom",
+        "lat": 51.5171,
+        "lon": -0.1062,
+        "tz_id": "Europe/London",
+        "localtime_epoch": 1746370968,
+        "localtime": "2025-05-04 16:02"
+    },
+    "current": {
+        "last_updated_epoch": 1746370800,
+        "last_updated": "2025-05-04 16:00",
+        "temp_c": 13.4,
+        "temp_f": 56.1,
+        "is_day": 1,
+        "condition": {
+            "text": "Partly cloudy",
+            "icon": "//cdn.weatherapi.com/weather/64x64/day/116.png",
+            "code": 1003
+        },
+        "wind_mph": 12.5,
+        "wind_kph": 20.2,
+        "wind_degree": 19,
+        "wind_dir": "NNE",
+        "pressure_mb": 1018,
+        "pressure_in": 30.06,
+        "precip_mm": 0,
+        "precip_in": 0,
+        "humidity": 47,
+        "cloud": 75,
+        "feelslike_c": 11.7,
+        "feelslike_f": 53,
+        "windchill_c": 8.1,
+        "windchill_f": 46.6,
+        "heatindex_c": 10.6,
+        "heatindex_f": 51,
+        "dewpoint_c": 1.7,
+        "dewpoint_f": 35.1,
+        "vis_km": 10,
+        "vis_miles": 6,
+        "uv": 1,
+        "gust_mph": 15.3,
+        "gust_kph": 24.6
+    }
+}
+
+
 
 interface WeatherWidgetProps {
     widget: Widget;
     editMode: boolean;
+    colorScheme?: {
+        background?: string;
+        text?: string;
+        card?: string;
+        icons?: {
+            sun?: string;
+            cloud?: string;
+            rain?: string;
+            snow?: string;
+            thunder?: string;
+            temperature?: string;
+            wind?: string;
+            humidity?: string;
+            precipitation?: string;
+            visibility?: string;
+            pressure?: string;
+        }
+    };
 }
 
 interface WeatherData {
@@ -41,11 +111,41 @@ interface WeatherData {
     };
 }
 
-const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
-    const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorScheme }) => {
+    const [weatherData, setWeatherData] = useState<WeatherData | null>(sampleWeatherData);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [city, setCity] = useState('London'); // Default city
+
+    // Default color scheme that's minimalistic/grayscale
+    const defaultColorScheme = {
+        background: 'background.paper',
+        text: 'text.primary',
+        card: 'background.default',
+        icons: {
+            sun: 'text.primary',
+            cloud: 'text.secondary',
+            rain: 'text.primary',
+            snow: 'text.primary',
+            thunder: 'text.primary',
+            temperature: 'text.primary',
+            wind: 'text.primary',
+            humidity: 'text.primary',
+            precipitation: 'text.primary',
+            visibility: 'text.primary',
+            pressure: 'text.primary'
+        }
+    };
+
+    // Merge default with provided color scheme
+    const theme = {
+        ...defaultColorScheme,
+        ...colorScheme,
+        icons: {
+            ...defaultColorScheme.icons,
+            ...colorScheme?.icons
+        }
+    };
 
     useEffect(() => {
         // If widget has config with city, use that
@@ -89,17 +189,17 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
         const conditionLower = condition.toLowerCase();
 
         if (conditionLower.includes('sun') || conditionLower.includes('clear')) {
-            return <WbSunnyIcon fontSize="large" sx={{ color: '#FFD700' }} />;
+            return <WbSunnyIcon fontSize="large" sx={{ color: theme.icons.sun }} />;
         } else if (conditionLower.includes('cloud')) {
-            return <CloudIcon fontSize="large" sx={{ color: '#A9A9A9' }} />;
+            return <CloudIcon fontSize="large" sx={{ color: theme.icons.cloud }} />;
         } else if (conditionLower.includes('rain') || conditionLower.includes('drizzle')) {
-            return <GrainIcon fontSize="large" sx={{ color: '#4682B4' }} />;
+            return <GrainIcon fontSize="large" sx={{ color: theme.icons.rain }} />;
         } else if (conditionLower.includes('snow') || conditionLower.includes('ice')) {
-            return <AcUnitIcon fontSize="large" sx={{ color: '#E0FFFF' }} />;
+            return <AcUnitIcon fontSize="large" sx={{ color: theme.icons.snow }} />;
         } else if (conditionLower.includes('thunder') || conditionLower.includes('storm')) {
-            return <ThunderstormIcon fontSize="large" sx={{ color: '#4B0082' }} />;
+            return <ThunderstormIcon fontSize="large" sx={{ color: theme.icons.thunder }} />;
         } else {
-            return <CloudIcon fontSize="large" />;
+            return <CloudIcon fontSize="large" sx={{ color: theme.icons.cloud }} />;
         }
     };
 
@@ -130,91 +230,119 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
         );
     }
 
+    // Weather detail item component for consistency
+    const WeatherDetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
+        <Grid container key={label}>
+            <Paper elevation={0} sx={{
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: theme.card,
+                borderRadius: 2,
+                color: theme.text,
+                height: '100%'
+            }}>
+                {icon}
+                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                    {label}: {value}
+                </Typography>
+            </Paper>
+        </Grid>
+    );
+
     return (
-        <Box sx={{ height: '100%', overflow: 'auto' }}>
-            <Box sx={{ p: 1 }}>
-                {/* Location and Date */}
-                <Box sx={{ mb: 2, textAlign: 'center' }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+        <Box sx={{ p: 2 }}>
+            {/* Integrated top section with location, weather, and feels like */}
+            <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: 3,
+                backgroundColor: theme.card,
+                borderRadius: 2,
+                p: 2,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+            }}>
+                {/* Location info */}
+                <Box sx={{ textAlign: 'left', flex: '1' }}>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.text }}>
                         {weatherData.location.name}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{ color: theme.text }}>
                         {weatherData.location.country}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        {weatherData.location.localtime}
+                    <Typography variant="caption" sx={{ color: theme.text, display: 'block' }}>
+                        {
+                            new Date(weatherData.location.localtime).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })
+                        }
                     </Typography>
                 </Box>
 
-                {/* Current Weather */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                    <Box sx={{ mr: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {/* Current weather */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '1' }}>
+                    <Box sx={{ mr: 2 }}>
                         {getWeatherIcon(weatherData.current.condition.text)}
                     </Box>
                     <Box>
-                        <Typography variant="h4" sx={{ fontWeight: 'medium' }}>
+                        <Typography variant="h3" sx={{ fontWeight: 'medium', color: theme.text }}>
                             {weatherData.current.temp_c}°C
                         </Typography>
-                        <Typography variant="body2">
+                        <Typography variant="body1" sx={{ color: theme.text }}>
                             {weatherData.current.condition.text}
                         </Typography>
                     </Box>
                 </Box>
 
-                <Divider sx={{ my: 2 }} />
-
-                {/* Weather Details */}
-                <Grid container spacing={1}>
-                    <Grid container key="feelslike">
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <ThermostatIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
-                            <Typography variant="body2">
-                                Feels like: {weatherData.current.feelslike_c}°C
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid container key="wind">
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <AirIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
-                            <Typography variant="body2">
-                                Wind: {weatherData.current.wind_kph} km/h {weatherData.current.wind_dir}
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid container key="humidity">
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <OpacityIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
-                            <Typography variant="body2">
-                                Humidity: {weatherData.current.humidity}%
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid container key="precip">
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <WaterIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
-                            <Typography variant="body2">
-                                Precip: {weatherData.current.precip_mm} mm
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid container key="visibility">
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <VisibilityIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
-                            <Typography variant="body2">
-                                Visibility: {weatherData.current.vis_km} km
-                            </Typography>
-                        </Box>
-                    </Grid>
-                    <Grid container key="pressure">
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Box component="span" sx={{ mr: 1, fontSize: '1.2rem' }}>🔍</Box>
-                            <Typography variant="body2">
-                                Pressure: {weatherData.current.pressure_mb} mb
-                            </Typography>
-                        </Box>
-                    </Grid>
-                </Grid>
+                {/* Feels like */}
+                <Box sx={{ textAlign: 'right', flex: '1' }}>
+                    <Typography variant="body2" sx={{ color: theme.text, fontWeight: 'medium' }}>
+                        Feels like
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                        <ThermostatIcon fontSize="small" sx={{ mr: 1, color: theme.icons.temperature }} />
+                        <Typography variant="h5" sx={{ color: theme.text }}>
+                            {weatherData.current.feelslike_c}°C
+                        </Typography>
+                    </Box>
+                </Box>
             </Box>
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Weather Details - Grid Layout (excluding feels like) */}
+            <Grid container spacing={2}>
+                <WeatherDetailItem
+                    icon={<AirIcon fontSize="small" sx={{ mr: 1, color: theme.icons.wind }} />}
+                    label="Wind"
+                    value={`${weatherData.current.wind_kph} km/h ${weatherData.current.wind_dir}`}
+                />
+                <WeatherDetailItem
+                    icon={<OpacityIcon fontSize="small" sx={{ mr: 1, color: theme.icons.humidity }} />}
+                    label="Humidity"
+                    value={`${weatherData.current.humidity}%`}
+                />
+                <WeatherDetailItem
+                    icon={<WaterIcon fontSize="small" sx={{ mr: 1, color: theme.icons.precipitation }} />}
+                    label="Precip"
+                    value={`${weatherData.current.precip_mm} mm`}
+                />
+                <WeatherDetailItem
+                    icon={<VisibilityIcon fontSize="small" sx={{ mr: 1, color: theme.icons.visibility }} />}
+                    label="Visibility"
+                    value={`${weatherData.current.vis_km} km`}
+                />
+                <WeatherDetailItem
+                    icon={<SpeedIcon fontSize="small" sx={{ mr: 1, color: theme.icons.pressure }} />}
+                    label="Pressure"
+                    value={`${weatherData.current.pressure_mb} mb`}
+                />
+            </Grid>
         </Box>
     );
 };

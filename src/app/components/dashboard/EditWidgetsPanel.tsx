@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -28,22 +28,38 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
     children
 }) => {
     const [title, setTitle] = useState(widget?.title || '');
+    const [tempWidget, setTempWidget] = useState<Widget | null>(null);
 
     // Reset form when widget changes
-    React.useEffect(() => {
+    useEffect(() => {
         if (widget) {
             setTitle(widget.title);
+            setTempWidget({ ...widget });
         }
     }, [widget]);
 
     const handleSave = () => {
-        if (widget) {
-            onSave({
-                ...widget,
+        if (tempWidget) {
+            // Update the title from the state
+            const updatedWidget = {
+                ...tempWidget,
                 title
-            });
+            };
+            onSave(updatedWidget);
         }
         onClose();
+    };
+
+    const handleCityChange = (city: string) => {
+        if (tempWidget) {
+            setTempWidget({
+                ...tempWidget,
+                config: {
+                    ...tempWidget.config,
+                    city
+                }
+            });
+        }
     };
 
     if (!widget) return null;
@@ -74,6 +90,19 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
 
                 <Divider sx={{ mb: 3 }} />
 
+                <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                        Widget Title
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        label="Title"
+                        variant="outlined"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        size="small"
+                    />
+                </Box>
 
                 <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
                     {children}
@@ -87,19 +116,8 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 fullWidth
                                 label="City"
                                 variant="outlined"
-                                defaultValue={widget.config?.city || 'London'}
-                                onChange={(e) => {
-                                    if (widget && onSave) {
-                                        const updatedWidget = {
-                                            ...widget,
-                                            config: {
-                                                ...widget.config,
-                                                city: e.target.value
-                                            }
-                                        };
-                                        onSave(updatedWidget);
-                                    }
-                                }}
+                                defaultValue={tempWidget?.config?.city || 'London'}
+                                onChange={(e) => handleCityChange(e.target.value)}
                                 helperText="Enter a city name for weather information"
                                 size="small"
                                 margin="normal"
@@ -108,7 +126,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                     )}
                 </Box>
 
-                {/* <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
                     <Button
                         variant="contained"
                         color="primary"
@@ -117,7 +135,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                     >
                         Save Changes
                     </Button>
-                </Box> */}
+                </Box>
             </Box>
         </Drawer>
     );

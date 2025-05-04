@@ -310,12 +310,7 @@ const DashboardGrid: React.FC = () => {
 
             {/* <DashboardHeader /> */}
 
-            <Button variant="contained" color="primary" onClick={() => {
-                fetch('/api/weather?city=London')
-                    .then(response => response.json())
-                    .then(data => console.log(data))
-                    .catch(error => console.error('Error:', error));
-            }}>Get Weather</Button>
+
 
             {editMode && (
                 <AddWidgetsPanel addWidget={addWidget} />
