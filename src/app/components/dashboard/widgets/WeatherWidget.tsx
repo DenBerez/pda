@@ -165,7 +165,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
 
                 {/* Weather Details */}
                 <Grid container spacing={1}>
-                    <Grid item xs={6}>
+                    <Grid container key="feelslike">
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <ThermostatIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
                             <Typography variant="body2">
@@ -173,7 +173,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
                             </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid container key="wind">
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <AirIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
                             <Typography variant="body2">
@@ -181,7 +181,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
                             </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid container key="humidity">
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <OpacityIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
                             <Typography variant="body2">
@@ -189,7 +189,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
                             </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid container key="precip">
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <WaterIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
                             <Typography variant="body2">
@@ -197,7 +197,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
                             </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid container key="visibility">
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <VisibilityIcon fontSize="small" sx={{ mr: 1, color: 'primary.main' }} />
                             <Typography variant="body2">
@@ -205,7 +205,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode }) => {
                             </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={6}>
+                    <Grid container key="pressure">
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <Box component="span" sx={{ mr: 1, fontSize: '1.2rem' }}>🔍</Box>
                             <Typography variant="body2">
