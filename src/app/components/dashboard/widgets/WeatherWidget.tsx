@@ -147,6 +147,25 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
         }
     };
 
+    // Add a state to track widget width
+    const [containerRef, setContainerRef] = useState<HTMLDivElement | null>(null);
+    const [isCompact, setIsCompact] = useState(false);
+
+    // Use ResizeObserver to detect widget width changes
+    useEffect(() => {
+        if (!containerRef) return;
+
+        const resizeObserver = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                // Set compact mode if width is less than 500px
+                setIsCompact(entry.contentRect.width < 500);
+            }
+        });
+
+        resizeObserver.observe(containerRef);
+        return () => resizeObserver.disconnect();
+    }, [containerRef]);
+
     useEffect(() => {
         // If widget has config with city, use that
         if (widget.config?.city) {
@@ -230,32 +249,13 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
         );
     }
 
-    // Weather detail item component for consistency
-    const WeatherDetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => (
-        <Grid container key={label}>
-            <Paper elevation={0} sx={{
-                p: 1.5,
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: theme.card,
-                borderRadius: 2,
-                color: theme.text,
-                height: '100%'
-            }}>
-                {icon}
-                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                    {label}: {value}
-                </Typography>
-            </Paper>
-        </Grid>
-    );
-
     return (
-        <Box sx={{ p: 2 }}>
-            {/* Integrated top section with location, weather, and feels like */}
+        <Box sx={{ p: 2 }} ref={setContainerRef}>
+            {/* Responsive top section with location, weather, and feels like */}
             <Box sx={{
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: isCompact ? 'column' : 'row',
+                alignItems: isCompact ? 'center' : 'flex-start',
                 justifyContent: 'space-between',
                 mb: 3,
                 backgroundColor: theme.card,
@@ -264,7 +264,11 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                 boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
             }}>
                 {/* Location info */}
-                <Box sx={{ textAlign: 'left', flex: '1' }}>
+                <Box sx={{
+                    textAlign: isCompact ? 'center' : 'left',
+                    flex: '1',
+                    mb: isCompact ? 2 : 0
+                }}>
                     <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.text }}>
                         {weatherData.location.name}
                     </Typography>
@@ -285,7 +289,13 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                 </Box>
 
                 {/* Current weather */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '1' }}>
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flex: '1',
+                    mb: isCompact ? 2 : 0
+                }}>
                     <Box sx={{ mr: 2 }}>
                         {getWeatherIcon(weatherData.current.condition.text)}
                     </Box>
@@ -300,11 +310,18 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                 </Box>
 
                 {/* Feels like */}
-                <Box sx={{ textAlign: 'right', flex: '1' }}>
+                <Box sx={{
+                    textAlign: isCompact ? 'center' : 'right',
+                    flex: '1'
+                }}>
                     <Typography variant="body2" sx={{ color: theme.text, fontWeight: 'medium' }}>
                         Feels like
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: isCompact ? 'center' : 'flex-end'
+                    }}>
                         <ThermostatIcon fontSize="small" sx={{ mr: 1, color: theme.icons.temperature }} />
                         <Typography variant="h5" sx={{ color: theme.text }}>
                             {weatherData.current.feelslike_c}°C
@@ -315,34 +332,73 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
 
             <Divider sx={{ my: 2 }} />
 
-            {/* Weather Details - Grid Layout (excluding feels like) */}
-            <Grid container spacing={2}>
-                <WeatherDetailItem
-                    icon={<AirIcon fontSize="small" sx={{ mr: 1, color: theme.icons.wind }} />}
-                    label="Wind"
-                    value={`${weatherData.current.wind_kph} km/h ${weatherData.current.wind_dir}`}
-                />
-                <WeatherDetailItem
-                    icon={<OpacityIcon fontSize="small" sx={{ mr: 1, color: theme.icons.humidity }} />}
-                    label="Humidity"
-                    value={`${weatherData.current.humidity}%`}
-                />
-                <WeatherDetailItem
-                    icon={<WaterIcon fontSize="small" sx={{ mr: 1, color: theme.icons.precipitation }} />}
-                    label="Precip"
-                    value={`${weatherData.current.precip_mm} mm`}
-                />
-                <WeatherDetailItem
-                    icon={<VisibilityIcon fontSize="small" sx={{ mr: 1, color: theme.icons.visibility }} />}
-                    label="Visibility"
-                    value={`${weatherData.current.vis_km} km`}
-                />
-                <WeatherDetailItem
-                    icon={<SpeedIcon fontSize="small" sx={{ mr: 1, color: theme.icons.pressure }} />}
-                    label="Pressure"
-                    value={`${weatherData.current.pressure_mb} mb`}
-                />
-            </Grid>
+            {/* Weather Details - Improved Layout with responsive grid */}
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(auto-fill, minmax(${isCompact ? '120px' : '200px'}, 1fr))`,
+                    gap: 2,
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
+            >
+                {[
+                    {
+                        icon: <AirIcon fontSize="small" sx={{ color: theme.icons.wind }} />,
+                        label: "Wind",
+                        value: `${weatherData.current.wind_kph} km/h ${weatherData.current.wind_dir}`
+                    },
+                    {
+                        icon: <OpacityIcon fontSize="small" sx={{ color: theme.icons.humidity }} />,
+                        label: "Humidity",
+                        value: `${weatherData.current.humidity}%`
+                    },
+                    {
+                        icon: <WaterIcon fontSize="small" sx={{ color: theme.icons.precipitation }} />,
+                        label: "Precipitation",
+                        value: `${weatherData.current.precip_mm} mm`
+                    },
+                    {
+                        icon: <VisibilityIcon fontSize="small" sx={{ color: theme.icons.visibility }} />,
+                        label: "Visibility",
+                        value: `${weatherData.current.vis_km} km`
+                    },
+                    {
+                        icon: <SpeedIcon fontSize="small" sx={{ color: theme.icons.pressure }} />,
+                        label: "Pressure",
+                        value: `${weatherData.current.pressure_mb} mb`
+                    },
+                    {
+                        // Cloud coverage percentage
+                        icon: <CloudIcon fontSize="small" sx={{ color: theme.icons.cloud }} />,
+                        label: "Cloud Coverage",
+                        value: `${weatherData.current.cloud}%`
+                    }
+                ].map((detail, index) => (
+                    <Paper
+                        key={index}
+                        elevation={0}
+                        sx={{
+                            p: 1.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            backgroundColor: theme.card,
+                            borderRadius: 2,
+                            color: theme.text
+                        }}
+                    >
+                        {detail.icon}
+                        <Box sx={{ ml: 1.5 }}>
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary' }}>
+                                {detail.label}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                {detail.value}
+                            </Typography>
+                        </Box>
+                    </Paper>
+                ))}
+            </Box>
         </Box>
     );
 };
