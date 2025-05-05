@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Box,
     useTheme,
@@ -19,14 +19,14 @@ import SettingsDrawer from './dashboard/SettingsDrawer';
 import AddWidgetsPanel from './dashboard/AddWidgetsPanel';
 import EmptyDashboard from './dashboard/EmptyDashboard';
 import DeleteConfirmationDialog from './dashboard/DeleteConfirmationDialog';
-import WidgetOptionsMenu from './dashboard/WidgetOptionsMenu';
 import DashboardHeader from './dashboard/DashboardHeader';
 import GridLayout from './dashboard/GridLayout';
-import { Widget } from './dashboard/types';
+import { Widget, WidgetType } from './dashboard/types';
 import WidgetEditPanel from './dashboard/EditWidgetsPanel';
 import EditIcon from '@mui/icons-material/Edit';
 import Tour from './dashboard/Tour';
 import { useLocalStorage } from '../hooks/useLocalStorage';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 // Default widgets for initial setup
 const defaultWidgets: Widget[] = [
@@ -95,16 +95,15 @@ interface Layouts {
 
 // Dashboard grid component
 const DashboardGrid: React.FC = () => {
-    const [widgets, setWidgets] = useState<Widget[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [widgets, setWidgets] = useLocalStorage<Widget[]>('dashboardWidgets', defaultWidgets);
     const [layouts, setLayouts] = useState<Layouts>({});
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [widgetToDelete, setWidgetToDelete] = useState<string | null>(null);
-    const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-    const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
-    const [editMode, setEditMode] = useState(true);
+    const [editMode, setEditMode] = useLocalStorage<boolean>('dashboardEditMode', true);
     const { toggleColorMode, mode } = useThemeContext();
     const [editPanelOpen, setEditPanelOpen] = useState(false);
     const [activeWidget, setActiveWidget] = useState<Widget | null>(null);
@@ -114,113 +113,59 @@ const DashboardGrid: React.FC = () => {
     const [gridSnap, setGridSnap] = useState(10);
     const [onApplyTemplate, setOnApplyTemplate] = useState<(template: string) => void>(() => (template: string) => { });
     const [isTourActive, setIsTourActive] = useState(false);
+    const [showSettingsButton, setShowSettingsButton] = useState(false);
+    const [primaryColor, setPrimaryColor] = useLocalStorage<string>('dashboardPrimaryColor', '#1976d2');
+    const settingsButtonRef = useRef<HTMLDivElement>(null);
+    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
-    // Add this function to save dashboard state
-    const saveDashboardState = useCallback(() => {
-        if (typeof window !== 'undefined') {
-            // Save widgets
-            localStorage.setItem('dashboardWidgets', JSON.stringify(widgets));
+    // Use a separate loading check
+    const isLocalStorageLoading = false; // Remove or handle loading differently
 
-            // Save other dashboard settings
-            localStorage.setItem('dashboardSettings', JSON.stringify({
-                editMode,
-                // Add other settings you want to persist
-            }));
-        }
-    }, [widgets, editMode]);
-
-    // Update the useEffect for loading saved layout
+    // Initialize layouts based on widgets
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                // Load widgets
-                const savedWidgets = localStorage.getItem('dashboardWidgets');
-                let widgetsToSet;
+        if (!isLocalStorageLoading && widgets) {
+            const initialLayouts = {
+                lg: widgets.map((widget: Widget) => ({
+                    i: widget.id,
+                    x: widget.x,
+                    y: widget.y,
+                    w: widget.w,
+                    h: widget.h,
+                    minW: widget.minW || 2,
+                    minH: widget.minH || 2,
+                })),
+            };
+            setLayouts(initialLayouts);
 
-                if (savedWidgets) {
-                    widgetsToSet = JSON.parse(savedWidgets);
-                } else {
-                    widgetsToSet = defaultWidgets;
-                }
-
-                setWidgets(widgetsToSet);
-
-                // Load dashboard settings
-                const savedSettings = localStorage.getItem('dashboardSettings');
-                if (savedSettings) {
-                    const settings = JSON.parse(savedSettings);
-                    setEditMode(settings.editMode ?? true);
-                    // Load other settings
-                }
-
-                // Load tour status
+            // Check for tour status
+            if (typeof window !== 'undefined') {
                 const hasSeenTour = localStorage.getItem('dashboard-tour-completed');
                 if (!hasSeenTour && !tourShownThisSession && !isTourActive) {
                     setShowTour(true);
                     setIsTourActive(true);
                     setTourShownThisSession(true);
                 }
-
-                // Initialize layouts
-                const initialLayouts = {
-                    lg: widgetsToSet.map((widget: Widget) => ({
-                        i: widget.id,
-                        x: widget.x,
-                        y: widget.y,
-                        w: widget.w,
-                        h: widget.h,
-                        minW: widget.minW || 2,
-                        minH: widget.minH || 2,
-                    })),
-                };
-
-                setLayouts(initialLayouts);
-            } catch (e) {
-                console.error('Failed to load dashboard state:', e);
-                setWidgets(defaultWidgets);
             }
+
+            // Set loading to false after a short delay for smooth transition
+            setTimeout(() => {
+                setIsLoading(false);
+                setInitialLoadComplete(true);
+            }, 300);
         }
-    }, [tourShownThisSession, isTourActive]);
+    }, [widgets, tourShownThisSession, isTourActive, isLocalStorageLoading]);
 
     // Remove a widget
     const removeWidget = useCallback((idToRemove: string) => {
-        setWidgets(prevWidgets => {
-            const newWidgets = prevWidgets.filter(widget => widget.id !== idToRemove);
+        (setWidgets as (val: Widget[] | ((prev: Widget[]) => Widget[])) => void)(
+            (prevWidgets: Widget[]) => prevWidgets.filter(widget => widget.id !== idToRemove)
+        );
+    }, [setWidgets]);
 
-            // If we're in a browser environment, update localStorage immediately
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
-            }
-
-            return newWidgets;
-        });
-
-        // Also update layouts to remove the widget from all breakpoints
-        setLayouts((prevLayouts: { [key: string]: LayoutItem[] }) => {
-            const newLayouts = { ...prevLayouts };
-
-            // Remove the widget from all breakpoint layouts
-            Object.keys(newLayouts).forEach(breakpoint => {
-                if (newLayouts[breakpoint]) {
-                    newLayouts[breakpoint] = newLayouts[breakpoint].filter(
-                        (item: LayoutItem) => item.i !== idToRemove
-                    );
-                }
-            });
-
-            return newLayouts;
-        });
-
-        // Close the dialog after deletion
-        setDeleteDialogOpen(false);
-        setWidgetToDelete(null);
-    }, []);
-
-    // Add these handler functions
+    // Simplified handler functions
     const handleOpenDeleteDialog = (widgetId: string) => {
         setWidgetToDelete(widgetId);
         setDeleteDialogOpen(true);
-        setMenuAnchorEl(null); // Close the menu if open
     };
 
     const handleCloseDeleteDialog = () => {
@@ -231,17 +176,9 @@ const DashboardGrid: React.FC = () => {
     const handleConfirmDelete = () => {
         if (widgetToDelete) {
             removeWidget(widgetToDelete);
+            setDeleteDialogOpen(false);
+            setWidgetToDelete(null);
         }
-    };
-
-    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, widgetId: string) => {
-        setMenuAnchorEl(event.currentTarget);
-        setActiveWidgetId(widgetId);
-    };
-
-    const handleMenuClose = () => {
-        setMenuAnchorEl(null);
-        setActiveWidgetId(null);
     };
 
     // Update the handleLayoutChange function
@@ -252,7 +189,7 @@ const DashboardGrid: React.FC = () => {
         setLayouts(allLayouts);
 
         // Update widget positions based on the new layout
-        setWidgets(prevWidgets => {
+        setWidgets((prevWidgets: Widget[]) => {
             // Create a map of layout items by ID for quick lookup
             const layoutMap = new Map(
                 currentLayout.map((item: LayoutItem) => [item.i, item])
@@ -273,21 +210,13 @@ const DashboardGrid: React.FC = () => {
                 return widget;
             });
 
-            // Save updated widgets to localStorage
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('dashboardWidgets', JSON.stringify(updatedWidgets));
-            }
-
             return updatedWidgets;
         });
     };
 
     // Add a new widget
-    const addWidget = (type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos') => {
-        // Generate a unique ID for the new widget
+    const addWidget = (type: WidgetType) => {
         const id = `${type}-${Date.now()}`;
-
-        // Create a new widget with default properties
         const newWidget: Widget = {
             id,
             type,
@@ -308,7 +237,7 @@ const DashboardGrid: React.FC = () => {
         }
 
         // Add the new widget to the state
-        setWidgets(prevWidgets => [...prevWidgets, newWidget]);
+        setWidgets((prevWidgets: Widget[]) => [...prevWidgets, newWidget]);
     };
 
     const toggleSettings = () => {
@@ -317,23 +246,12 @@ const DashboardGrid: React.FC = () => {
 
     // Update the toggleEditMode function
     const toggleEditMode = useCallback(() => {
-        const newEditMode = !editMode;
-        setEditMode(newEditMode);
-
-        // Save the new edit mode state
-        if (typeof window !== 'undefined') {
-            const savedSettings = localStorage.getItem('dashboardSettings');
-            const settings = savedSettings ? JSON.parse(savedSettings) : {};
-            localStorage.setItem('dashboardSettings', JSON.stringify({
-                ...settings,
-                editMode: newEditMode
-            }));
-        }
-    }, [editMode]);
+        setEditMode(!editMode);
+    }, [editMode, setEditMode]);
 
     // Add this function to update text content
     const updateWidgetContent = useCallback((widgetId: string, content: string) => {
-        setWidgets(prevWidgets =>
+        setWidgets((prevWidgets: Widget[]) =>
             prevWidgets.map(widget =>
                 widget.id === widgetId
                     ? { ...widget, content }
@@ -344,21 +262,15 @@ const DashboardGrid: React.FC = () => {
 
     // Add this function to update widget properties
     const updateWidget = useCallback((updatedWidget: Widget) => {
-        setWidgets(prevWidgets => {
+        setWidgets((prevWidgets: Widget[]) => {
             const newWidgets = prevWidgets.map(widget =>
                 widget.id === updatedWidget.id
                     ? updatedWidget
                     : widget
             );
-
-            // Save to localStorage immediately
-            if (typeof window !== 'undefined') {
-                localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
-            }
-
             return newWidgets;
         });
-    }, []);
+    }, [setWidgets]);
 
     // Add this function to handle opening the edit panel
     const handleOpenEditPanel = (widget: Widget) => {
@@ -440,164 +352,277 @@ const DashboardGrid: React.FC = () => {
         };
     }, []);
 
+    // Add this effect to handle mouse movement
+    useEffect(() => {
+        let timeout: NodeJS.Timeout;
+
+        const handleMouseMove = () => {
+            setShowSettingsButton(true);
+
+            // Clear any existing timeout
+            if (timeout) clearTimeout(timeout);
+
+            // Set a new timeout to hide the button after 3 seconds of inactivity
+            timeout = setTimeout(() => {
+                setShowSettingsButton(false);
+            }, 3000);
+        };
+
+        // Add event listener for mouse movement
+        window.addEventListener('mousemove', handleMouseMove);
+
+        // Clean up
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            if (timeout) clearTimeout(timeout);
+        };
+    }, []);
+
+    // Add this function to handle primary color changes
+    const handleChangePrimaryColor = useCallback((color: string) => {
+        setPrimaryColor(color);
+    }, [setPrimaryColor]);
+
+    // Create a custom theme with the primary color
+    const customTheme = React.useMemo(() =>
+        createTheme({
+            palette: {
+                mode: mode,
+                primary: {
+                    main: primaryColor,
+                },
+            },
+            // Inherit typography settings from the main theme
+            typography: theme.typography,
+        }),
+        [mode, primaryColor]);
+
     return (
-        <Box sx={{ width: '100%', p: 2, position: 'relative' }}>
-            {/* Replace the style jsx global tag with regular style element */}
-            <style>{`
-                .react-grid-placeholder {
-                    background-color: ${theme.palette.mode === 'dark'
-                    ? 'rgba(144, 202, 249, 0.2)'
-                    : 'rgba(25, 118, 210, 0.2)'} !important;
-                    border: 1px dashed ${theme.palette.mode === 'dark'
-                    ? '#90caf9'
-                    : '#1976d2'} !important;
-                    border-radius: 8px !important;
-                    opacity: 0.7 !important;
-                    transition: all 200ms ease;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
-                }
-                
-             
-            `}</style>
-
-            {/* <DashboardHeader /> */}
-
-
-
-            {editMode && (
-                <AddWidgetsPanel addWidget={addWidget} />
-            )}
-
-            {widgets.length === 0 ? (
-                <EmptyDashboard />
-            ) : (
-                <>
-                    <GridLayout
-                        widgets={widgets}
-                        editMode={editMode}
-                        isMobile={isMobile}
-                        onLayoutChange={handleLayoutChange}
-                    >
-                        {widgets.map(widget => (
-                            <div key={widget.id}>
-                                <WidgetContent
-                                    widget={widget}
-                                    editMode={editMode}
-                                    onDelete={handleOpenDeleteDialog}
-                                    onUpdateContent={updateWidgetContent}
-                                    onUpdateWidget={updateWidget}
-                                    onEdit={handleOpenEditPanel}
-                                />
-                            </div>
-                        ))}
-                    </GridLayout>
-                </>
-            )}
-
-            {/* Floating Action Button for Settings */}
-            <Tooltip title="Settings">
-                <Fab
-                    size="medium"
-                    color="primary"
-                    aria-label="settings"
-                    onClick={toggleSettings}
-                    className="settings-button"
+        <ThemeProvider theme={customTheme}>
+            {!initialLoadComplete && (
+                <Box
                     sx={{
                         position: 'fixed',
-                        bottom: 20,
-                        right: 20,
-                        zIndex: 1000,
-                        // Add transition for smoother highlighting
-                        transition: 'box-shadow 0.3s ease-in-out',
-                        '&.tour-highlight-settings': {
-                            boxShadow: `0 0 0 6px ${theme.palette.primary.main}, 
-                                       0 0 0 12px rgba(255, 255, 255, 0.4),
-                                       0 0 25px 8px rgba(255, 255, 255, 0.6) !important`
-                        }
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        bgcolor: 'background.default',
+                        zIndex: 9999,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        opacity: isLoading ? 1 : 0,
+                        transition: 'opacity 0.5s ease',
+                        pointerEvents: isLoading ? 'auto' : 'none',
                     }}
                 >
-                    <SettingsIcon />
-                </Fab>
-            </Tooltip>
-
-            {/* Widget Options Menu */}
-            <WidgetOptionsMenu
-                anchorEl={menuAnchorEl}
-                open={Boolean(menuAnchorEl)}
-                onClose={handleMenuClose}
-                activeWidgetId={activeWidgetId}
-                onDeleteWidget={handleOpenDeleteDialog}
-            />
-
-            {/* Delete Confirmation Dialog */}
-            <DeleteConfirmationDialog
-                open={deleteDialogOpen}
-                onClose={handleCloseDeleteDialog}
-                onConfirm={handleConfirmDelete}
-            />
-
-            {/* Settings Drawer */}
-            <SettingsDrawer
-                open={settingsOpen}
-                onClose={toggleSettings}
-                mode={mode}
-                toggleColorMode={toggleColorMode}
-                editMode={editMode}
-                toggleEditMode={toggleEditMode}
-                onResetToDefault={() => {
-                    if (window.confirm('Reset dashboard to default widgets?')) {
-                        setWidgets(defaultWidgets);
-                        setSettingsOpen(false);
-                    }
-                }}
-                onClearWidgets={() => {
-                    if (window.confirm('Clear all widgets? This cannot be undone.')) {
-                        setWidgets([]);
-                        setSettingsOpen(false);
-                    }
-                }}
-                fullscreen={isFullscreen}
-                toggleFullscreen={toggleFullscreen}
-                gridSnap={gridSnap}
-                setGridSnap={setGridSnap}
-                onApplyTemplate={onApplyTemplate}
-                restartTour={restartTour}
-            />
-
-            {/* Widget Edit Panel */}
-            <WidgetEditPanel
-                open={editPanelOpen}
-                widget={activeWidget}
-                onClose={handleCloseEditPanel}
-                onSave={updateWidget}
-            >
-                {activeWidget?.type === 'text' && (
-                    <Box>
-                        <Typography variant="subtitle2" gutterBottom>
-                            Text Content
+                    <Box sx={{ textAlign: 'center' }}>
+                        <Typography variant="h5" sx={{ mb: 2, fontWeight: 'medium' }}>
+                            Loading Dashboard
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            You can edit the text content directly in the widget.
-                        </Typography>
+                        <Box sx={{
+                            width: 40,
+                            height: 40,
+                            margin: '0 auto',
+                            borderRadius: '50%',
+                            border: '3px solid',
+                            borderColor: 'grey.300',
+                            borderTopColor: 'primary.main',
+                            animation: 'spin 1s linear infinite',
+                        }} />
+                        <style>{`
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        `}</style>
                     </Box>
-                )}
-                {/* Add more widget-specific edit content here */}
-            </WidgetEditPanel>
-
-            {showTour && (
-                <Tour
-                    isOpen={showTour}
-                    onRequestClose={handleTourClose}
-                    editMode={editMode}
-                    setEditMode={setEditMode}
-                    widgets={widgets}
-                    setWidgets={setWidgets}
-                    defaultWidgets={defaultWidgets}
-                    settingsOpen={settingsOpen}
-                    setSettingsOpen={setSettingsOpen}
-                />
+                </Box>
             )}
-        </Box>
+
+            <Box
+                sx={{
+                    height: '100%',
+                    width: '100%',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    bgcolor: 'background.default',
+                    color: 'text.primary',
+                    transition: 'background-color 0.3s ease, opacity 0.5s ease',
+                    opacity: initialLoadComplete ? 1 : 0
+                }}
+            >
+                <style>{`
+                    .react-grid-placeholder {
+                        background-color: ${customTheme.palette.primary.main}20 !important;
+                        border: 1px dashed ${customTheme.palette.primary.main} !important;
+                        border-radius: 8px !important;
+                        opacity: 0.7 !important;
+                        transition: all 200ms ease;
+                        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+                    }
+                    
+                `}</style>
+
+                {/* <DashboardHeader /> */}
+
+                {editMode && (
+                    <AddWidgetsPanel addWidget={addWidget} />
+                )}
+
+                {widgets.length === 0 ? (
+                    <EmptyDashboard />
+                ) : (
+                    <>
+                        <GridLayout
+                            widgets={widgets}
+                            editMode={editMode}
+                            isMobile={isMobile}
+                            onLayoutChange={handleLayoutChange}
+                        >
+                            {widgets.map(widget => (
+                                <div key={widget.id}>
+                                    <WidgetContent
+                                        widget={widget}
+                                        editMode={editMode}
+                                        onDelete={handleOpenDeleteDialog}
+                                        onUpdateContent={updateWidgetContent}
+                                        onUpdateWidget={updateWidget}
+                                        onEdit={handleOpenEditPanel}
+                                    />
+                                </div>
+                            ))}
+                        </GridLayout>
+                    </>
+                )}
+
+                {/* Floating Action Button for Settings */}
+                <Tooltip title="Settings">
+                    <Box
+                        ref={settingsButtonRef}
+                        sx={{
+                            position: 'fixed',
+                            bottom: 20,
+                            right: 20,
+                            zIndex: 1000,
+                            opacity: showSettingsButton ? 1 : 0,
+                            visibility: showSettingsButton ? 'visible' : 'hidden',
+                            transition: 'opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, transform 0.2s ease',
+                            animation: initialLoadComplete && !settingsOpen && showSettingsButton ? 'pulse 2s infinite' : 'none',
+                            '@keyframes pulse': {
+                                '0%': {
+                                    transform: 'scale(1)'
+                                },
+                                '50%': {
+                                    transform: 'scale(1.05)'
+                                },
+                                '100%': {
+                                    transform: 'scale(1)'
+                                }
+                            },
+                            // Stop animation after 10 seconds
+                            animationIterationCount: '3'
+                        }}
+                    >
+                        <Fab
+                            size="medium"
+                            color="primary"
+                            aria-label="settings"
+                            onClick={toggleSettings}
+                            className="settings-button"
+                            sx={{
+                                transition: 'box-shadow 0.3s ease-in-out, transform 0.2s ease',
+                                boxShadow: showSettingsButton ? '0 0 15px rgba(25, 118, 210, 0.6), 0 4px 10px rgba(0,0,0,0.3)' : '0 4px 10px rgba(0,0,0,0.2)',
+                                transform: showSettingsButton ? 'scale(1.1)' : 'scale(1)',
+                                '&.tour-highlight-settings': {
+                                    boxShadow: `0 0 0 6px ${customTheme.palette.primary.main}, 
+                                               0 0 0 12px rgba(255, 255, 255, 0.4),
+                                               0 0 25px 8px rgba(255, 255, 255, 0.6) !important`
+                                },
+                                '&:hover': {
+                                    transform: 'scale(1.15)',
+                                    boxShadow: '0 0 20px rgba(25, 118, 210, 0.8), 0 6px 14px rgba(0,0,0,0.25)'
+                                }
+                            }}
+                        >
+                            <SettingsIcon />
+                        </Fab>
+                    </Box>
+                </Tooltip>
+
+                {/* Delete Confirmation Dialog */}
+                <DeleteConfirmationDialog
+                    open={deleteDialogOpen}
+                    onClose={handleCloseDeleteDialog}
+                    onConfirm={handleConfirmDelete}
+                />
+
+                {/* Settings Drawer */}
+                <SettingsDrawer
+                    open={settingsOpen}
+                    onClose={toggleSettings}
+                    mode={mode}
+                    toggleColorMode={toggleColorMode}
+                    editMode={editMode}
+                    toggleEditMode={toggleEditMode}
+                    onResetToDefault={() => {
+                        if (window.confirm('Reset dashboard to default widgets?')) {
+                            setWidgets(defaultWidgets);
+                            setSettingsOpen(false);
+                        }
+                    }}
+                    onClearWidgets={() => {
+                        if (window.confirm('Clear all widgets? This cannot be undone.')) {
+                            setWidgets([]);
+                            setSettingsOpen(false);
+                        }
+                    }}
+                    fullscreen={isFullscreen}
+                    toggleFullscreen={toggleFullscreen}
+                    gridSnap={gridSnap}
+                    setGridSnap={setGridSnap}
+                    onApplyTemplate={onApplyTemplate}
+                    restartTour={restartTour}
+                    primaryColor={primaryColor}
+                    onChangePrimaryColor={handleChangePrimaryColor}
+                />
+
+                {/* Widget Edit Panel */}
+                <WidgetEditPanel
+                    open={editPanelOpen}
+                    widget={activeWidget}
+                    onClose={handleCloseEditPanel}
+                    onSave={updateWidget}
+                >
+                    {activeWidget?.type === 'text' && (
+                        <Box>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Text Content
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                You can edit the text content directly in the widget.
+                            </Typography>
+                        </Box>
+                    )}
+                    {/* Add more widget-specific edit content here */}
+                </WidgetEditPanel>
+
+                {showTour && (
+                    <Tour
+                        isOpen={showTour}
+                        onRequestClose={handleTourClose}
+                        editMode={editMode}
+                        setEditMode={setEditMode}
+                        widgets={widgets}
+                        setWidgets={setWidgets}
+                        defaultWidgets={defaultWidgets}
+                        settingsOpen={settingsOpen}
+                        setSettingsOpen={setSettingsOpen}
+                    />
+                )}
+            </Box>
+        </ThemeProvider>
     );
 };
 

@@ -20,14 +20,16 @@ import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import PhotoIcon from '@mui/icons-material/Photo';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import SlideshowIcon from '@mui/icons-material/Slideshow';
+import { WidgetType } from './types';
 
 interface AddWidgetsPanelProps {
-    addWidget: (type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos') => void;
+    addWidget: (type: WidgetType) => void;
 }
 
 // Define widget data structure for easier management
 interface WidgetInfo {
-    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos';
+    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow';
     label: string;
     icon: React.ReactNode;
     category: 'information' | 'productivity' | 'media';
@@ -41,7 +43,7 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
     const allWidgets: WidgetInfo[] = [
         // Information widgets
         { type: 'weather', label: 'Weather', icon: <Thermostat />, category: 'information' },
-        { type: 'news', label: 'News', icon: <PublicIcon />, category: 'information' },
+        // { type: 'news', label: 'News', icon: <PublicIcon />, category: 'information' },
 
         // Productivity widgets
         { type: 'email', label: 'Email', icon: <Email />, category: 'productivity' },
@@ -49,8 +51,9 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
         { type: 'text', label: 'Text', icon: <TextFieldsIcon />, category: 'productivity' },
 
         // Media widgets
-        { type: 'music', label: 'Music', icon: <MusicNoteIcon />, category: 'media' },
-        { type: 'photos', label: 'Photos', icon: <PhotoIcon />, category: 'media' },
+        // { type: 'music', label: 'Music', icon: <MusicNoteIcon />, category: 'media' },
+        // { type: 'photos', label: 'Photos', icon: <PhotoIcon />, category: 'media' },
+        { type: 'slideshow', label: 'Slideshow', icon: <SlideshowIcon />, category: 'media' },
     ];
 
     // Filter widgets based on search query and active tab
@@ -92,8 +95,6 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
 
     return (
         <Paper elevation={1} sx={{ p: 2, mb: 3 }} className="add-widgets-panel">
-
-
             <TextField
                 fullWidth
                 placeholder="Search widgets..."

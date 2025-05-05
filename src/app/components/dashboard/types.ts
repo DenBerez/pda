@@ -1,4 +1,4 @@
-export type WidgetType = 'text' | 'custom' | 'weather' | 'email' | 'social' | 'calendar' | 'news' | 'music' | 'photos';
+export type WidgetType = 'text' | 'custom' | 'weather' | 'email' | 'social' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow';
 
 export interface Widget {
     id: string;
@@ -14,6 +14,10 @@ export interface Widget {
     maxH?: number;
     config?: {
         city?: string;
+        images?: Array<{ url: string, caption?: string }>;
+        interval?: number;
+        showCaptions?: boolean;
+        transition?: 'fade' | 'slide';
         [key: string]: any;
     };
     content?: string;
@@ -24,6 +28,7 @@ export interface DashboardSettings {
     darkMode: boolean;
     layout: Layouts;
     widgets: Widget[];
+    primaryColor: string;
 }
 
 export interface Layouts {

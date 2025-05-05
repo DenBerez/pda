@@ -5,17 +5,21 @@ import { CssBaseline, IconButton } from '@mui/material';
 import { useEffect, useState, createContext, useContext } from 'react';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { lighten } from '@mui/material/styles';
+import { lighten, darken, alpha } from '@mui/material/styles';
 
 // Create a context for theme toggling
 interface ThemeContextType {
     toggleColorMode: () => void;
     mode: 'light' | 'dark';
+    primaryColor: string;
+    setPrimaryColor: (color: string) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType>({
     toggleColorMode: () => { },
     mode: 'light',
+    primaryColor: '#1976d2',
+    setPrimaryColor: () => { },
 });
 
 export function useThemeContext() {
@@ -39,13 +43,20 @@ export function ThemeToggleButton() {
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [mode, setMode] = useState<'light' | 'dark'>('light');
+    const [primaryColor, setPrimaryColor] = useState<string>('#1976d2');
 
     useEffect(() => {
         // Check system preference and saved preference
         const savedMode = localStorage.getItem('theme-mode');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const savedPrimaryColor = localStorage.getItem('dashboardPrimaryColor');
 
         setMode(savedMode === 'dark' || (!savedMode && prefersDark) ? 'dark' : 'light');
+
+        // Use saved primary color if available
+        if (savedPrimaryColor) {
+            setPrimaryColor(savedPrimaryColor);
+        }
     }, []);
 
     const toggleColorMode = () => {
@@ -56,11 +67,28 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         });
     };
 
+    // Function to update primary color
+    const handleSetPrimaryColor = (color: string) => {
+        setPrimaryColor(color);
+        localStorage.setItem('dashboardPrimaryColor', color);
+    };
+
+    // Ensure color is in a valid format for MUI color utilities
+    const safeColor = (color: string) => {
+        // Check if color is a valid hex, rgb, rgba, hsl, or hsla format
+        const validColorRegex = /^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|rgb\(.*\)|rgba\(.*\)|hsl\(.*\)|hsla\(.*\))$/;
+        return validColorRegex.test(color) ? color : '#1976d2'; // Fallback to default blue if invalid
+    };
+
+    // Calculate dark mode primary color (lighter version of the primary color)
+    const safePrimaryColor = safeColor(primaryColor);
+    const darkModePrimaryColor = lighten(safePrimaryColor, 0.2);
+
     const theme = createTheme({
         palette: {
             mode,
             primary: {
-                main: mode === 'light' ? '#1976d2' : '#90caf9',
+                main: mode === 'light' ? safePrimaryColor : darkModePrimaryColor,
             },
             secondary: {
                 main: mode === 'light' ? '#f50057' : '#f48fb1',
@@ -69,15 +97,97 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                 default: mode === 'light' ? '#f5f5f5' : '#121212',
                 paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
             },
+            action: {
+                // Customize hover states based on primary color
+                hover: mode === 'light'
+                    ? alpha(safePrimaryColor, 0.08)  // Light mode: slightly transparent primary
+                    : alpha(darkModePrimaryColor, 0.12), // Dark mode: slightly transparent primary
+                selected: mode === 'light'
+                    ? alpha(safePrimaryColor, 0.16)  // Light mode: more opaque primary
+                    : alpha(darkModePrimaryColor, 0.24), // Dark mode: more opaque primary
+            },
         },
         typography: {
-            fontFamily: 'var(--font-geist-sans), sans-serif',
+            fontFamily: 'var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            fontSize: 16,
+            fontWeightLight: 300,
+            fontWeightRegular: 400,
+            fontWeightMedium: 500,
+            fontWeightBold: 600,
             h1: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '2.5rem',
+                fontWeight: 600,
+                lineHeight: 1.2,
+            },
+            h2: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
                 fontSize: '2rem',
                 fontWeight: 600,
+                lineHeight: 1.3,
+            },
+            h3: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '1.75rem',
+                fontWeight: 600,
+                lineHeight: 1.3,
+            },
+            h4: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '1.5rem',
+                fontWeight: 600,
+                lineHeight: 1.4,
+            },
+            h5: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                lineHeight: 1.4,
             },
             h6: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '1rem',
                 fontWeight: 600,
+                lineHeight: 1.5,
+            },
+            body1: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '1rem',
+                lineHeight: 1.5,
+            },
+            body2: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '0.875rem',
+                lineHeight: 1.5,
+            },
+            button: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontWeight: 500,
+                textTransform: 'none',
+            },
+            caption: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '0.75rem',
+                lineHeight: 1.5,
+            },
+            overline: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                textTransform: 'uppercase',
+                letterSpacing: 1,
+            },
+            subtitle1: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '1rem',
+                fontWeight: 500,
+                lineHeight: 1.5,
+            },
+            subtitle2: {
+                fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                lineHeight: 1.5,
             },
         },
         components: {
@@ -88,6 +198,28 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                         textTransform: 'none',
                         fontWeight: 500,
                     },
+                    containedPrimary: {
+                        '&:hover': {
+                            backgroundColor: mode === 'light'
+                                ? darken(safePrimaryColor, 0.1) // Darken primary color in light mode
+                                : lighten(darkModePrimaryColor, 0.1) // Lighten primary color in dark mode
+                        }
+                    },
+                    outlinedPrimary: {
+                        '&:hover': {
+                            backgroundColor: mode === 'light'
+                                ? alpha(safePrimaryColor, 0.08)
+                                : alpha(darkModePrimaryColor, 0.12),
+                            borderColor: mode === 'light' ? safePrimaryColor : darkModePrimaryColor
+                        }
+                    },
+                    textPrimary: {
+                        '&:hover': {
+                            backgroundColor: mode === 'light'
+                                ? alpha(safePrimaryColor, 0.08)
+                                : alpha(darkModePrimaryColor, 0.12)
+                        }
+                    }
                 },
             },
             MuiPaper: {
@@ -116,12 +248,47 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                     },
                 },
             },
+            MuiIconButton: {
+                styleOverrides: {
+                    root: {
+                        '&:hover': {
+                            backgroundColor: mode === 'light'
+                                ? alpha(safePrimaryColor, 0.08)
+                                : alpha(darkModePrimaryColor, 0.12)
+                        }
+                    },
+                    colorPrimary: {
+                        '&:hover': {
+                            backgroundColor: mode === 'light'
+                                ? alpha(safePrimaryColor, 0.12)
+                                : alpha(darkModePrimaryColor, 0.16)
+                        }
+                    }
+                }
+            },
+            MuiCssBaseline: {
+                styleOverrides: {
+                    ':root': {
+                        '--primary': mode === 'light' ? safePrimaryColor : darkModePrimaryColor,
+                        '--primary-hover': mode === 'light'
+                            ? darken(safePrimaryColor, 0.1).toString()
+                            : lighten(darkModePrimaryColor, 0.1).toString(),
+                    },
+                    '@global': {
+                        'code, pre, .code-font': {
+                            fontFamily: 'var(--font-geist-mono), monospace',
+                        },
+                    },
+                },
+            },
         },
     });
 
     const themeContextValue = {
         toggleColorMode,
         mode,
+        primaryColor,
+        setPrimaryColor: handleSetPrimaryColor,
     };
 
     return (

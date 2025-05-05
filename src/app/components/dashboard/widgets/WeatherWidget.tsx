@@ -71,6 +71,7 @@ interface WeatherWidgetProps {
         background?: string;
         text?: string;
         card?: string;
+        primary?: string;
         icons?: {
             sun?: string;
             cloud?: string;
@@ -116,19 +117,26 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
     const [weatherData, setWeatherData] = useState<WeatherData | null>(sampleWeatherData);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [city, setCity] = useState('London'); // Default city
+    const [city, setCity] = useState(widget.config?.city || 'London');
+
+    // Get units from widget config or default to celsius
+    const units = widget.config?.units || 'celsius';
+
+    // Get refresh rate from widget config or default to 30 minutes
+    const refreshRate = widget.config?.refreshRate || 30;
 
     // Default color scheme that's minimalistic/grayscale
     const defaultColorScheme = {
         background: 'background.paper',
         text: 'text.primary',
         card: 'background.default',
+        primary: 'primary.main',
         icons: {
-            sun: 'text.primary',
-            cloud: 'text.secondary',
-            rain: 'text.primary',
-            snow: 'text.primary',
-            thunder: 'text.primary',
+            sun: 'yellow', //yellow 
+            cloud: 'text.primary',
+            rain: 'blue',
+            snow: 'white',
+            thunder: 'blue',
             temperature: 'text.primary',
             wind: 'text.primary',
             humidity: 'text.primary',
@@ -174,35 +182,46 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
         }
     }, [widget]);
 
-    useEffect(() => {
-        const fetchWeatherData = async () => {
-            setLoading(true);
-            setError(null);
+    // Function to fetch weather data
+    const fetchWeatherData = async () => {
+        setLoading(true);
+        setError(null);
 
-            try {
-                const response = await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
+        try {
+            const response = await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
 
-                if (!response.ok) {
-                    throw new Error('Failed to fetch weather data');
-                }
-
-                const data = await response.json();
-                setWeatherData(data);
-            } catch (err) {
-                console.error('Error fetching weather data:', err);
-                setError('Failed to load weather data');
-            } finally {
-                setLoading(false);
+            if (!response.ok) {
+                throw new Error('Failed to fetch weather data');
             }
-        };
 
+            const data = await response.json();
+            setWeatherData(data);
+        } catch (err) {
+            console.error('Error fetching weather data:', err);
+            setError('Failed to load weather data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchWeatherData();
 
-        // Refresh weather data every 30 minutes
-        const intervalId = setInterval(fetchWeatherData, 30 * 60 * 1000);
+        // Use the configured refresh rate
+        const intervalId = setInterval(fetchWeatherData, refreshRate * 60 * 1000);
 
         return () => clearInterval(intervalId);
-    }, [city]);
+    }, [city, refreshRate]);
+
+    // Function to format temperature based on selected units
+    const formatTemperature = (temp: number) => {
+        if (units === 'fahrenheit') {
+            // Convert to Fahrenheit
+            return `${Math.round((temp * 9 / 5) + 32)}°F`;
+        }
+        // Default to Celsius
+        return `${Math.round(temp)}°C`;
+    };
 
     // Function to get weather icon based on condition
     const getWeatherIcon = (condition: string) => {
@@ -270,7 +289,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                     flex: '1',
                     mb: isCompact ? 2 : 0
                 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.text }}>
+                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.primary }}>
                         {weatherData.location.name}
                     </Typography>
                     <Typography variant="body2" sx={{ color: theme.text }}>
@@ -301,8 +320,8 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                         {getWeatherIcon(weatherData.current.condition.text)}
                     </Box>
                     <Box>
-                        <Typography variant="h3" sx={{ fontWeight: 'medium', color: theme.text }}>
-                            {weatherData.current.temp_c}°C
+                        <Typography variant="h3" sx={{ fontWeight: 'medium', color: theme.primary }}>
+                            {formatTemperature(weatherData.current.temp_c)}
                         </Typography>
                         <Typography variant="body1" sx={{ color: theme.text }}>
                             {weatherData.current.condition.text}
@@ -325,7 +344,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                     }}>
                         <ThermostatIcon fontSize="small" sx={{ mr: 1, color: theme.icons.temperature }} />
                         <Typography variant="h5" sx={{ color: theme.text }}>
-                            {weatherData.current.feelslike_c}°C
+                            {formatTemperature(weatherData.current.feelslike_c)}
                         </Typography>
                     </Box>
                 </Box>

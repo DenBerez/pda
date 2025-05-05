@@ -27,6 +27,7 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import TemplateIcon from '@mui/icons-material/Dashboard';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import RestoreIcon from '@mui/icons-material/RestoreOutlined';
+import ColorLensIcon from '@mui/icons-material/ColorLens';
 
 interface SettingsDrawerProps {
     open: boolean;
@@ -43,6 +44,8 @@ interface SettingsDrawerProps {
     setGridSnap: (snap: number) => void;
     onApplyTemplate: (template: string) => void;
     restartTour: () => void;
+    primaryColor?: string;
+    onChangePrimaryColor?: (color: string) => void;
 }
 
 const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
@@ -59,10 +62,16 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     gridSnap,
     setGridSnap,
     onApplyTemplate,
-    restartTour
+    restartTour,
+    primaryColor = '#1976d2',
+    onChangePrimaryColor = () => { }
 }) => {
     // Add state for template selection
     const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
+
+    // Add state for custom color picker
+    const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
+    const [customColor, setCustomColor] = useState(primaryColor);
 
     // Available templates
     const templates = [
@@ -72,10 +81,25 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         { id: 'media', name: 'Media', description: 'Media-focused dashboard' }
     ];
 
+    // Predefined color themes
+    const colorThemes = [
+        { name: 'Blue', color: '#1976d2' },
+        { name: 'Purple', color: '#9c27b0' },
+        { name: 'Green', color: '#2e7d32' },
+        { name: 'Orange', color: '#ed6c02' },
+        { name: 'Red', color: '#d32f2f' },
+        { name: 'Teal', color: '#009688' }
+    ];
+
     // Handle template application
     const handleApplyTemplate = () => {
         onApplyTemplate(selectedTemplate);
         onClose();
+    };
+
+    // Handle color theme change
+    const handleColorChange = (color: string) => {
+        onChangePrimaryColor(color);
     };
 
     return (
@@ -117,8 +141,69 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     </IconButton>
                 </Box>
 
+
+
                 {/* Settings Content */}
                 <Box sx={{ p: 2, flexGrow: 1 }}>
+
+                    {/* Dashboard Modes Section */}
+                    <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
+                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
+                            Display
+                        </Typography>
+                        <FormControlLabel
+                            className="edit-mode-toggle"
+                            control={
+                                <Switch
+                                    checked={editMode}
+                                    onChange={toggleEditMode}
+                                    color="primary"
+                                />
+                            }
+                            label={
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    {editMode ? (
+                                        <>
+                                            <EditIcon fontSize="small" sx={{ mr: 1 }} />
+                                            Edit Mode
+                                        </>
+                                    ) : (
+                                        <>
+                                            <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
+                                            View Mode
+                                        </>
+                                    )}
+                                </Box>
+                            }
+                        />
+
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={fullscreen}
+                                    onChange={toggleFullscreen}
+                                    color="primary"
+                                />
+                            }
+                            label={
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    {fullscreen ? (
+                                        <>
+                                            <FullscreenExitIcon fontSize="small" sx={{ mr: 1 }} />
+                                            Exit Fullscreen
+                                        </>
+                                    ) : (
+                                        <>
+                                            <FullscreenIcon fontSize="small" sx={{ mr: 1 }} />
+                                            Fullscreen Mode
+                                        </>
+                                    )}
+                                </Box>
+                            }
+                        />
+                    </Paper>
+
+
                     {/* Appearance Section */}
                     <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
@@ -148,85 +233,85 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                 </Box>
                             }
                         />
-                    </Paper>
 
-                    {/* Dashboard Mode Section */}
-                    <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
-                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
-                            Dashboard Mode
-                        </Typography>
-                        <FormControlLabel
-                            className="edit-mode-toggle"
-                            control={
-                                <Switch
-                                    checked={editMode}
-                                    onChange={toggleEditMode}
-                                    color="primary"
-                                />
-                            }
-                            label={
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    {editMode ? (
-                                        <>
-                                            <EditIcon fontSize="small" sx={{ mr: 1 }} />
-                                            Edit Mode
-                                        </>
-                                    ) : (
-                                        <>
-                                            <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
-                                            View Mode
-                                        </>
-                                    )}
-                                </Box>
-                            }
-                        />
-                    </Paper>
-
-                    {/* Display Options Section */}
-                    <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
-                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
-                            Display Options
-                        </Typography>
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={fullscreen}
-                                    onChange={toggleFullscreen}
-                                    color="primary"
-                                />
-                            }
-                            label={
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    {fullscreen ? (
-                                        <>
-                                            <FullscreenExitIcon fontSize="small" sx={{ mr: 1 }} />
-                                            Exit Fullscreen
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FullscreenIcon fontSize="small" sx={{ mr: 1 }} />
-                                            Fullscreen Mode
-                                        </>
-                                    )}
-                                </Box>
-                            }
-                        />
-
+                        {/* Color Theme Selection */}
                         <Box sx={{ mt: 2 }}>
                             <Typography variant="body2" gutterBottom>
-                                Grid Snap
+                                Theme Color
                             </Typography>
-                            <FormControl fullWidth size="small">
-                                <Select
-                                    value={gridSnap}
-                                    onChange={(e) => setGridSnap(Number(e.target.value))}
-                                    displayEmpty
-                                >
-                                    <MenuItem value={5}>Fine (5px)</MenuItem>
-                                    <MenuItem value={10}>Medium (10px)</MenuItem>
-                                    <MenuItem value={20}>Coarse (20px)</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                                {colorThemes.map((theme) => (
+                                    <Tooltip key={theme.color} title={theme.name}>
+                                        <Box
+                                            onClick={() => handleColorChange(theme.color)}
+                                            sx={{
+                                                width: 36,
+                                                height: 36,
+                                                borderRadius: '50%',
+                                                bgcolor: theme.color,
+                                                cursor: 'pointer',
+                                                border: primaryColor === theme.color ? '2px solid' : '1px solid',
+                                                borderColor: primaryColor === theme.color ? 'primary.main' : 'divider',
+                                                transition: 'transform 0.2s',
+                                                '&:hover': {
+                                                    transform: 'scale(1.1)',
+                                                }
+                                            }}
+                                        />
+                                    </Tooltip>
+                                ))}
+                                <Tooltip title="Custom Color">
+                                    <Box
+                                        onClick={() => setShowCustomColorPicker(!showCustomColorPicker)}
+                                        sx={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: '50%',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            transition: 'transform 0.2s',
+                                            '&:hover': {
+                                                transform: 'scale(1.1)',
+                                            }
+                                        }}
+                                    >
+                                        <ColorLensIcon fontSize="small" />
+                                    </Box>
+                                </Tooltip>
+                            </Box>
+
+                            {showCustomColorPicker && (
+                                <Box sx={{ mt: 1 }}>
+                                    <Typography variant="caption" gutterBottom>
+                                        Custom Color
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Box
+                                            sx={{
+                                                width: 24,
+                                                height: 24,
+                                                borderRadius: '50%',
+                                                bgcolor: customColor,
+                                                border: '1px solid',
+                                                borderColor: 'divider'
+                                            }}
+                                        />
+                                        <input
+                                            type="color"
+                                            value={customColor}
+                                            onChange={(e) => {
+                                                setCustomColor(e.target.value);
+                                                handleColorChange(e.target.value);
+                                            }}
+                                            style={{ width: '100%' }}
+                                        />
+                                    </Box>
+                                </Box>
+                            )}
                         </Box>
                     </Paper>
 
@@ -235,7 +320,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     {/* Dashboard Actions Section */}
                     <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
                         <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
-                            Dashboard Actions
+                            Actions
                         </Typography>
 
                         <Grid container spacing={2}>

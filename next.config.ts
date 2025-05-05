@@ -4,6 +4,7 @@ import path from "path";
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
+  devIndicators: false,
 
 
   webpack(config) {
@@ -24,8 +25,8 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy',
             value: process.env.NODE_ENV === 'development'
-              ? "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https://your-api.com https://cdn.images.com; font-src 'self' data:;"
-              : "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: https://your-api.com https://cdn.images.com; font-src 'self' data:;"
+              ? "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; font-src 'self' data:; img-src 'self' data: https://source.unsplash.com https://picsum.photos https://*.picsum.photos https://cdn.weatherapi.com;"
+              : "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https://source.unsplash.com https://picsum.photos https://*.picsum.photos https://cdn.weatherapi.com;"
           },
         ],
       },

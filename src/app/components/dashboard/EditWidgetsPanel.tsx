@@ -11,10 +11,13 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Paper
+    Paper,
+    FormControlLabel,
+    Switch
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { Widget } from './types';
 
 interface WidgetEditPanelProps {
@@ -34,6 +37,8 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
 }) => {
     const [title, setTitle] = useState(widget?.title || '');
     const [tempWidget, setTempWidget] = useState<Widget | null>(null);
+    const [newImageUrl, setNewImageUrl] = useState('');
+    const [newImageCaption, setNewImageCaption] = useState('');
 
     // Reset form when widget changes
     useEffect(() => {
@@ -55,20 +60,43 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
         onClose();
     };
 
-    const handleCityChange = (city: string, additionalConfig?: any) => {
+    const handleCityChange = (city: string) => {
         if (tempWidget) {
             setTempWidget({
                 ...tempWidget,
                 config: {
                     ...tempWidget.config,
-                    city,
-                    ...additionalConfig
+                    city
+                }
+            });
+        }
+    };
+
+    const handleWeatherConfigChange = (config: any) => {
+        if (tempWidget) {
+            setTempWidget({
+                ...tempWidget,
+                config: {
+                    ...tempWidget.config,
+                    ...config
                 }
             });
         }
     };
 
     const handleEmailConfigChange = (config: any) => {
+        if (tempWidget) {
+            setTempWidget({
+                ...tempWidget,
+                config: {
+                    ...tempWidget.config,
+                    ...config
+                }
+            });
+        }
+    };
+
+    const handleConfigChange = (config: any) => {
         if (tempWidget) {
             setTempWidget({
                 ...tempWidget,
@@ -119,28 +147,10 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         size="small"
+                        margin="normal"
                     />
                 </Box>
 
-                <Box sx={{ mb: 3, mt: 2 }}>
-                    <Typography variant="subtitle2" gutterBottom>
-                        Widget Preview
-                    </Typography>
-                    <Paper
-                        elevation={1}
-                        sx={{
-                            p: 2,
-                            borderRadius: 2,
-                            border: '1px dashed',
-                            borderColor: 'divider',
-                            bgcolor: 'background.default'
-                        }}
-                    >
-                        <Typography variant="body2" align="center">
-                            {title || widget?.title}
-                        </Typography>
-                    </Paper>
-                </Box>
 
                 <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
                     {children}
@@ -154,7 +164,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 fullWidth
                                 label="City"
                                 variant="outlined"
-                                defaultValue={tempWidget?.config?.city || 'London'}
+                                value={tempWidget?.config?.city || 'London'}
                                 onChange={(e) => handleCityChange(e.target.value)}
                                 helperText="Enter a city name for weather information"
                                 size="small"
@@ -166,7 +176,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     labelId="units-label"
                                     value={tempWidget?.config?.units || 'celsius'}
                                     label="Temperature Units"
-                                    onChange={(e) => handleCityChange(tempWidget?.config?.city || 'London', { units: e.target.value })}
+                                    onChange={(e) => handleWeatherConfigChange({ units: e.target.value })}
                                 >
                                     <MenuItem value="celsius">Celsius (°C)</MenuItem>
                                     <MenuItem value="fahrenheit">Fahrenheit (°F)</MenuItem>
@@ -178,7 +188,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     labelId="refresh-rate-label"
                                     value={tempWidget?.config?.refreshRate || 30}
                                     label="Refresh Rate"
-                                    onChange={(e) => handleCityChange(tempWidget?.config?.city || 'London', { refreshRate: e.target.value })}
+                                    onChange={(e) => handleWeatherConfigChange({ refreshRate: e.target.value })}
                                 >
                                     <MenuItem value={15}>Every 15 minutes</MenuItem>
                                     <MenuItem value={30}>Every 30 minutes</MenuItem>
@@ -213,7 +223,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     label="OAuth Refresh Token"
                                     type="password"
                                     size="small"
-                                    defaultValue={tempWidget?.config?.refreshToken || ''}
+                                    value={tempWidget?.config?.refreshToken || ''}
                                     onChange={(e) => handleEmailConfigChange({ refreshToken: e.target.value })}
                                     helperText="For demo purposes, leave empty to use mock data"
                                 />
@@ -224,7 +234,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                         margin="normal"
                                         label="Email Address"
                                         size="small"
-                                        defaultValue={tempWidget?.config?.email || ''}
+                                        value={tempWidget?.config?.email || ''}
                                         onChange={(e) => handleEmailConfigChange({ email: e.target.value })}
                                     />
                                     <TextField
@@ -233,12 +243,136 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                         label="Password"
                                         type="password"
                                         size="small"
-                                        defaultValue={tempWidget?.config?.password || ''}
+                                        value={tempWidget?.config?.password || ''}
                                         onChange={(e) => handleEmailConfigChange({ password: e.target.value })}
                                         helperText="For demo purposes, leave empty to use mock data"
                                     />
                                 </>
                             )}
+                        </Box>
+                    )}
+
+                    {widget?.type === 'slideshow' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Slideshow Configuration
+                            </Typography>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="interval-label">Slide Interval</InputLabel>
+                                <Select
+                                    labelId="interval-label"
+                                    value={tempWidget?.config?.interval || 5000}
+                                    label="Slide Interval"
+                                    onChange={(e) => handleConfigChange({ interval: e.target.value })}
+                                >
+                                    <MenuItem value={3000}>3 seconds</MenuItem>
+                                    <MenuItem value={5000}>5 seconds</MenuItem>
+                                    <MenuItem value={8000}>8 seconds</MenuItem>
+                                    <MenuItem value={10000}>10 seconds</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="transition-label">Transition Effect</InputLabel>
+                                <Select
+                                    labelId="transition-label"
+                                    value={tempWidget?.config?.transition || 'fade'}
+                                    label="Transition Effect"
+                                    onChange={(e) => handleConfigChange({ transition: e.target.value })}
+                                >
+                                    <MenuItem value="fade">Fade</MenuItem>
+                                    <MenuItem value="slide">Slide</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={tempWidget?.config?.showCaptions !== false}
+                                        onChange={(e) => handleConfigChange({ showCaptions: e.target.checked })}
+                                    />
+                                }
+                                label="Show Captions"
+                            />
+
+                            <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                                Images
+                            </Typography>
+
+                            <Box sx={{ mb: 2 }}>
+                                {(tempWidget?.config?.images || []).map((img, index) => (
+                                    <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                        <Box
+                                            component="img"
+                                            src={img.url}
+                                            alt={img.caption || `Image ${index + 1}`}
+                                            sx={{ width: 60, height: 40, objectFit: 'cover', mr: 1, borderRadius: 1 }}
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/60x40?text=Error';
+                                            }}
+                                        />
+                                        <TextField
+                                            size="small"
+                                            placeholder="Caption"
+                                            value={img.caption || ''}
+                                            onChange={(e) => {
+                                                const newImages = [...(tempWidget?.config?.images || [])];
+                                                newImages[index] = { ...newImages[index], caption: e.target.value };
+                                                handleConfigChange({ images: newImages });
+                                            }}
+                                            sx={{ flexGrow: 1, mr: 1 }}
+                                        />
+                                        <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={() => {
+                                                const newImages = [...(tempWidget?.config?.images || [])];
+                                                newImages.splice(index, 1);
+                                                handleConfigChange({ images: newImages });
+                                            }}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                    </Box>
+                                ))}
+                            </Box>
+
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+                                <TextField
+                                    size="small"
+                                    label="Image URL"
+                                    fullWidth
+                                    value={newImageUrl || ''}
+                                    onChange={(e) => setNewImageUrl(e.target.value)}
+                                    sx={{ mr: 1 }}
+                                />
+                                <TextField
+                                    size="small"
+                                    label="Caption (optional)"
+                                    fullWidth
+                                    value={newImageCaption || ''}
+                                    onChange={(e) => setNewImageCaption(e.target.value)}
+                                    sx={{ mr: 1 }}
+                                />
+                                <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={() => {
+                                        if (newImageUrl) {
+                                            const newImages = [...(tempWidget?.config?.images || []), {
+                                                url: newImageUrl,
+                                                caption: newImageCaption
+                                            }];
+                                            handleConfigChange({ images: newImages });
+                                            setNewImageUrl('');
+                                            setNewImageCaption('');
+                                        }
+                                    }}
+                                >
+                                    Add
+                                </Button>
+                            </Box>
                         </Box>
                     )}
                 </Box>

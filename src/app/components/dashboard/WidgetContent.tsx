@@ -28,6 +28,7 @@ const TextWidget = lazy(() => import('./widgets/TextWidget'));
 const WeatherWidget = lazy(() => import('./widgets/WeatherWidget'));
 const CalendarWidget = lazy(() => import('./widgets/CalendarWidget'));
 const EmailWidget = lazy(() => import('./widgets/EmailWidget'));
+const SlideShowWidget = lazy(() => import('./widgets/SlideShowWidget'));
 
 const WidgetContent: React.FC<WidgetContentProps> = ({
     widget,
@@ -84,6 +85,13 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                         editMode={editMode}
                     />
                 );
+            case 'slideshow':
+                return (
+                    <SlideShowWidget
+                        widget={widget}
+                        editMode={editMode}
+                    />
+                );
             default:
                 return (
                     <Box sx={{ p: 2 }}>
@@ -126,6 +134,9 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                                 alignItems: 'center',
                                 borderBottom: `1px solid ${theme.palette.divider}`,
                                 bgcolor: theme.palette.background.default,
+                                border: `1px solid ${theme.palette.divider}`,
+                                borderTopLeftRadius: '6px',
+                                borderTopRightRadius: '6px',
                             }}
                         >
                             <Box
@@ -150,7 +161,7 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                                         onEdit(widget);
                                     }}
                                     sx={{
-                                        color: 'primary.contrastText',
+                                        color: theme.palette.primary.main,
                                         '&:hover': {
                                             bgcolor: 'rgba(255,255,255,0.2)'
                                         },
@@ -168,7 +179,7 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                                         onDelete(widget.id);
                                     }}
                                     sx={{
-                                        color: 'primary.contrastText',
+                                        color: theme.palette.primary.main,
                                         '&:hover': {
                                             bgcolor: 'rgba(255,255,255,0.2)'
                                         }

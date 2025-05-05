@@ -45,6 +45,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode }) => {
     const [refreshToken, setRefreshToken] = useState(widget.config?.refreshToken || '');
     const [password, setPassword] = useState(widget.config?.password || '');
     const [configuring, setConfiguring] = useState(false);
+    const [refreshInterval, setRefreshInterval] = useState(widget.config?.refreshInterval || 5);
 
     // Function to fetch emails
     const fetchEmails = async () => {
@@ -86,8 +87,13 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode }) => {
     useEffect(() => {
         if (!editMode) {
             fetchEmails();
+
+            // Set up refresh interval based on configuration
+            const intervalId = setInterval(fetchEmails, refreshInterval * 60 * 1000);
+
+            return () => clearInterval(intervalId);
         }
-    }, [editMode, provider, refreshToken, emailAddress, password]);
+    }, [editMode, provider, refreshToken, emailAddress, password, refreshInterval]);
 
     // Format date to a more readable format
     const formatDate = (dateString: string) => {
@@ -126,6 +132,15 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode }) => {
         // through a callback passed as props
         setConfiguring(false);
         fetchEmails();
+    };
+
+    // Toggle email read status
+    const toggleReadStatus = (emailId: string) => {
+        setEmails(emails.map(email =>
+            email.id === emailId
+                ? { ...email, unread: !email.unread }
+                : email
+        ));
     };
 
     // Render configuration form
@@ -305,6 +320,18 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode }) => {
                                             >
                                                 {email.snippet}
                                             </Typography>
+                                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={() => toggleReadStatus(email.id)}
+                                                    sx={{ p: 0.5 }}
+                                                >
+                                                    {email.unread ?
+                                                        <MarkEmailReadIcon fontSize="small" /> :
+                                                        <MarkEmailUnreadIcon fontSize="small" />
+                                                    }
+                                                </IconButton>
+                                            </Box>
                                         </>
                                     }
                                 />
