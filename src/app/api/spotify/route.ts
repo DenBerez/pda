@@ -5,17 +5,27 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const action = searchParams.get('action') || 'current'; // 'current' or 'recent'
 
-        // Get Spotify API credentials from environment variables
-        const clientId = process.env.SPOTIFY_CLIENT_ID;
-        const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-        const refreshToken = process.env.SPOTIFY_REFRESH_TOKEN || searchParams.get('refreshToken');
+        // Get Spotify API credentials from parameters or environment variables
+        const clientId = searchParams.get('clientId') || process.env.SPOTIFY_CLIENT_ID;
+        const clientSecret = searchParams.get('clientSecret') || process.env.SPOTIFY_CLIENT_SECRET;
+        const refreshToken = searchParams.get('refreshToken') || process.env.SPOTIFY_REFRESH_TOKEN;
 
         if (!clientId || !clientSecret) {
             return NextResponse.json({ error: 'Spotify API credentials not configured' }, { status: 500 });
         }
 
+        // Get the base URL from the request or environment variable
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
+            (request.headers.get('host') ?
+                `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}` :
+                'http://localhost:3000');
+
+        // No refresh token means we need to authenticate
         if (!refreshToken) {
-            return NextResponse.json({ error: 'Refresh token is required' }, { status: 400 });
+            return NextResponse.json({
+                error: 'Authentication required',
+                authUrl: `${baseUrl}/api/spotify/auth?clientId=${encodeURIComponent(clientId)}&clientSecret=${encodeURIComponent(clientSecret)}`
+            }, { status: 401 });
         }
 
         // Get a new access token using the refresh token

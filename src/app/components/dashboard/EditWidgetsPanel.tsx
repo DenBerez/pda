@@ -323,6 +323,66 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                 <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
                     {children}
 
+                    {widget?.type === 'spotify' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Spotify Configuration
+                            </Typography>
+
+                            <Box sx={{ textAlign: 'center', py: 2 }}>
+                                {tempWidget?.config?.refreshToken ? (
+                                    <>
+                                        <Typography variant="body2" color="success.main" sx={{ mb: 2 }}>
+                                            ✅ Your Spotify account is connected
+                                        </Typography>
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            size="small"
+                                            onClick={() => handleConfigChange({ refreshToken: '' })}
+                                        >
+                                            Disconnect Account
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Typography variant="body2" sx={{ mb: 2 }}>
+                                            Connect your Spotify account to display your currently playing music and recently played tracks.
+                                        </Typography>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            href={`/api/spotify/auth`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Connect Spotify Account
+                                        </Button>
+                                    </>
+                                )}
+                            </Box>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="spotify-refresh-rate-label">Refresh Rate</InputLabel>
+                                <Select
+                                    labelId="spotify-refresh-rate-label"
+                                    value={tempWidget?.config?.refreshInterval || 30}
+                                    label="Refresh Rate"
+                                    onChange={(e) => handleConfigChange({ refreshInterval: e.target.value })}
+                                >
+                                    <MenuItem value={10}>Every 10 seconds</MenuItem>
+                                    <MenuItem value={30}>Every 30 seconds</MenuItem>
+                                    <MenuItem value={60}>Every minute</MenuItem>
+                                    <MenuItem value={300}>Every 5 minutes</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                After connecting your Spotify account, you'll need to copy the refresh token from the new window back into your widget settings.
+                            </Typography>
+                        </Box>
+                    )}
+
                     {widget?.type === 'weather' && (
                         <Box sx={{ mb: 3 }}>
                             <Typography variant="subtitle2" gutterBottom>
@@ -576,45 +636,6 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     blockStyleFn={getBlockStyle}
                                 />
                             </Box>
-                        </Box>
-                    )}
-
-                    {widget?.type === 'spotify' && (
-                        <Box sx={{ mb: 3 }}>
-                            <Typography variant="subtitle2" gutterBottom>
-                                Spotify Configuration
-                            </Typography>
-                            <TextField
-                                fullWidth
-                                label="Spotify Refresh Token"
-                                variant="outlined"
-                                type="password"
-                                value={tempWidget?.config?.refreshToken || ''}
-                                onChange={(e) => handleConfigChange({ refreshToken: e.target.value })}
-                                helperText="Enter your Spotify API refresh token"
-                                size="small"
-                                margin="normal"
-                            />
-                            <FormControl fullWidth margin="normal" size="small">
-                                <InputLabel id="spotify-refresh-rate-label">Refresh Rate</InputLabel>
-                                <Select
-                                    labelId="spotify-refresh-rate-label"
-                                    value={tempWidget?.config?.refreshInterval || 30}
-                                    label="Refresh Rate"
-                                    onChange={(e) => handleConfigChange({ refreshInterval: e.target.value })}
-                                >
-                                    <MenuItem value={10}>Every 10 seconds</MenuItem>
-                                    <MenuItem value={30}>Every 30 seconds</MenuItem>
-                                    <MenuItem value={60}>Every minute</MenuItem>
-                                    <MenuItem value={300}>Every 5 minutes</MenuItem>
-                                </Select>
-                            </FormControl>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                You need to set up a Spotify Developer app and generate a refresh token.
-                                <Link href="https://developer.spotify.com/dashboard" target="_blank" sx={{ ml: 1 }}>
-                                    Learn more
-                                </Link>
-                            </Typography>
                         </Box>
                     )}
                 </Box>

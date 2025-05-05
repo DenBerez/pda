@@ -92,6 +92,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
     // Get config from widget
     const refreshToken = widget.config?.refreshToken || '';
+    const clientId = widget.config?.clientId || '';
+    const clientSecret = widget.config?.clientSecret || '';
     const refreshInterval = widget.config?.refreshInterval || 30; // seconds
 
     // Fetch Spotify data
@@ -106,6 +108,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             const params = new URLSearchParams({
                 action,
                 refreshToken,
+                clientId,
+                clientSecret
             });
 
             const response = await fetch(`/api/spotify?${params.toString()}`);
@@ -117,6 +121,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             const data = await response.json();
 
             if (data.error) {
+                // If we need authentication, redirect to auth URL if provided
+                if (data.authUrl && !refreshToken) {
+                    window.open(data.authUrl, '_blank');
+                    throw new Error('Please authenticate with Spotify');
+                }
                 throw new Error(data.error);
             }
 
@@ -242,13 +251,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     };
 
     // Loading state
-    if (loading && !spotifyData) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                <CircularProgress size={40} />
-            </Box>
-        );
-    }
+    // if (loading && !spotifyData) {
+    //     return (
+    //         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+    //             <CircularProgress size={40} />
+    //         </Box>
+    //     );
+    // }
 
     // Error state
     if (error && !spotifyData) {
@@ -275,8 +284,23 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 <MusicNoteIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" gutterBottom>Connect to Spotify</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Please configure your Spotify account in widget settings.
+                    Please configure your Spotify account in widget settings or connect directly.
                 </Typography>
+                {!clientId || !clientSecret ? (
+                    <Typography variant="body2" color="error" sx={{ mb: 2 }}>
+                        Please add your Spotify Client ID and Secret in widget settings first
+                    </Typography>
+                ) : (
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        href={`/api/spotify/auth?clientId=${encodeURIComponent(clientId)}&clientSecret=${encodeURIComponent(clientSecret)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Connect Spotify Account
+                    </Button>
+                )}
             </Box>
         );
     }
