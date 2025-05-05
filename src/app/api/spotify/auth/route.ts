@@ -71,20 +71,53 @@ export async function GET(request: NextRequest) {
         // Display the tokens (in a real app, you would store these securely)
         return new Response(`
             <html>
+                <head>
+                    <title>Spotify Authentication Complete</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 40px; }
+                        .success { color: #4caf50; }
+                        .container { max-width: 600px; margin: 0 auto; }
+                        pre { background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; }
+                        button { padding: 10px 15px; background: #1db954; color: white; border: none; border-radius: 4px; cursor: pointer; }
+                    </style>
+                </head>
                 <body>
-                    <h1>Spotify Authentication Complete</h1>
-                    <p>Here is your refresh token (store it securely):</p>
-                    <pre>${data.refresh_token}</pre>
-                    <p>Add this token to your widget configuration.</p>
-                    <button onclick="copyToClipboard()">Copy to Clipboard</button>
-                    <script>
-                        function copyToClipboard() {
-                            const token = '${data.refresh_token}';
-                            navigator.clipboard.writeText(token)
-                                .then(() => alert('Token copied to clipboard!'))
-                                .catch(err => console.error('Failed to copy: ', err));
-                        }
-                    </script>
+                    <div class="container">
+                        <h1 class="success">Spotify Connected Successfully</h1>
+                        <p>Your Spotify account has been connected to the dashboard.</p>
+                        <p>If the window doesn't close automatically, you can close it and return to the dashboard.</p>
+                        
+                        <script>
+                            // Try to send the token back to the opener window
+                            (function() {
+                                const token = '${data.refresh_token}';
+                                
+                                if (window.opener && !window.opener.closed) {
+                                    // Send message to parent window
+                                    window.opener.postMessage({ 
+                                        type: 'SPOTIFY_AUTH_SUCCESS', 
+                                        refreshToken: token 
+                                    }, '*');
+                                    
+                                    // Close this window after a short delay
+                                    setTimeout(() => window.close(), 2000);
+                                    document.write('<p>Token sent to dashboard! This window will close automatically...</p>');
+                                } else {
+                                    // If no opener, show the token for manual copying
+                                    document.write('<p>Please copy this refresh token and paste it in your widget settings:</p>');
+                                    document.write('<pre>' + token + '</pre>');
+                                    document.write('<button onclick="copyToClipboard()">Copy to Clipboard</button>');
+                                }
+                                
+                                function copyToClipboard() {
+                                    const token = '${data.refresh_token}';
+                                    navigator.clipboard.writeText(token)
+                                        .then(() => alert('Token copied to clipboard!'))
+                                        .catch(err => console.error('Failed to copy: ', err));
+                                }
+                            })();
+                        </script>
+                    </div>
                 </body>
             </html>
         `, {

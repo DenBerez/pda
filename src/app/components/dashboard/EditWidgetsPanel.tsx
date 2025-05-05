@@ -268,6 +268,31 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
         }
     };
 
+    useEffect(() => {
+        // Listen for messages from the Spotify auth window
+        const handleMessage = (event: MessageEvent) => {
+            // Make sure the message is the one we're looking for
+            if (event.data?.type === 'SPOTIFY_AUTH_SUCCESS' && event.data?.refreshToken) {
+                // Update the widget config with the received token
+                if (tempWidget && tempWidget.type === 'spotify') {
+                    handleConfigChange({ refreshToken: event.data.refreshToken });
+
+                    // Show a success notification (you might need to add a notification system)
+                    // or you could use a simple alert or console log for testing
+                    console.log('Spotify connected successfully!');
+                }
+            }
+        };
+
+        // Add event listener
+        window.addEventListener('message', handleMessage);
+
+        // Clean up
+        return () => {
+            window.removeEventListener('message', handleMessage);
+        };
+    }, [tempWidget, handleConfigChange]);
+
     if (!widget) return null;
 
     return (
@@ -352,9 +377,20 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                         <Button
                                             variant="contained"
                                             color="primary"
-                                            href={`/api/spotify/auth`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                            onClick={() => {
+                                                // Calculate center position for the popup
+                                                const width = 600;
+                                                const height = 700;
+                                                const left = window.screenX + (window.outerWidth - width) / 2;
+                                                const top = window.screenY + (window.outerHeight - height) / 2;
+
+                                                // Open the auth window as a popup
+                                                window.open(
+                                                    `/api/spotify/auth`,
+                                                    'spotify-auth-window',
+                                                    `width=${width},height=${height},left=${left},top=${top}`
+                                                );
+                                            }}
                                         >
                                             Connect Spotify Account
                                         </Button>
