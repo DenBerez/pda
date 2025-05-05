@@ -1,6 +1,8 @@
+export type WidgetType = 'text' | 'custom' | 'weather' | 'email' | 'social' | 'calendar' | 'news' | 'music' | 'photos';
+
 export interface Widget {
     id: string;
-    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar';
+    type: WidgetType;
     title: string;
     x: number;
     y: number;
@@ -15,4 +17,56 @@ export interface Widget {
         [key: string]: any;
     };
     content?: string;
-} 
+}
+
+export interface DashboardSettings {
+    editMode: boolean;
+    darkMode: boolean;
+    layout: Layouts;
+    widgets: Widget[];
+}
+
+export interface Layouts {
+    [breakpoint: string]: LayoutItem[];
+}
+
+
+export interface LayoutItem {
+    i: string;
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+}
+
+export interface EmailConfig {
+    provider: 'gmail' | 'aol';
+    email?: string;
+    refreshToken?: string;
+    password?: string;
+}
+
+export interface WeatherConfig {
+    city: string;
+}
+
+export interface CalendarConfig {
+    showWeekends: boolean;
+}
+
+export interface SocialConfig {
+    platform: 'twitter' | 'facebook' | 'instagram';
+    username: string;
+}
+
+export interface CustomConfig {
+    url: string;
+}
+
+export interface TextConfig {
+    text: string;
+}
+
+export interface WidgetConfig {
+    [key: string]: any;
+}

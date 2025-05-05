@@ -5,6 +5,7 @@ import { CssBaseline, IconButton } from '@mui/material';
 import { useEffect, useState, createContext, useContext } from 'react';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { lighten } from '@mui/material/styles';
 
 // Create a context for theme toggling
 interface ThemeContextType {
@@ -93,6 +94,25 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                 styleOverrides: {
                     root: {
                         borderRadius: 8,
+                        transition: 'box-shadow 0.3s ease, transform 0.2s ease',
+                    },
+                },
+            },
+            MuiCard: {
+                styleOverrides: {
+                    root: {
+                        borderRadius: 12,
+                        overflow: 'hidden',
+                    },
+                },
+            },
+            MuiCardContent: {
+                styleOverrides: {
+                    root: {
+                        padding: 16,
+                        '&:last-child': {
+                            paddingBottom: 16,
+                        },
                     },
                 },
             },

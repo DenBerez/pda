@@ -25,6 +25,8 @@ import GridLayout from './dashboard/GridLayout';
 import { Widget } from './dashboard/types';
 import WidgetEditPanel from './dashboard/EditWidgetsPanel';
 import EditIcon from '@mui/icons-material/Edit';
+import Tour from './dashboard/Tour';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
 // Default widgets for initial setup
 const defaultWidgets: Widget[] = [
@@ -77,10 +79,24 @@ interface LayoutItem {
     minH?: number;
 }
 
+// Add this interface for dashboard settings
+interface DashboardSettings {
+    editMode: boolean;
+    darkMode: boolean;
+    layout: Layouts;
+    widgets: Widget[];
+    // Add other settings you want to persist
+}
+
+// Update the layouts type
+interface Layouts {
+    [breakpoint: string]: LayoutItem[];
+}
+
 // Dashboard grid component
 const DashboardGrid: React.FC = () => {
     const [widgets, setWidgets] = useState<Widget[]>([]);
-    const [layouts, setLayouts] = useState<any>({});
+    const [layouts, setLayouts] = useState<Layouts>({});
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -93,12 +109,31 @@ const DashboardGrid: React.FC = () => {
     const [editPanelOpen, setEditPanelOpen] = useState(false);
     const [activeWidget, setActiveWidget] = useState<Widget | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [tourShownThisSession, setTourShownThisSession] = useState(false);
+    const [showTour, setShowTour] = useState(false);
+    const [gridSnap, setGridSnap] = useState(10);
+    const [onApplyTemplate, setOnApplyTemplate] = useState<(template: string) => void>(() => (template: string) => { });
+    const [isTourActive, setIsTourActive] = useState(false);
 
-    // Load saved layout from localStorage on component mount
+    // Add this function to save dashboard state
+    const saveDashboardState = useCallback(() => {
+        if (typeof window !== 'undefined') {
+            // Save widgets
+            localStorage.setItem('dashboardWidgets', JSON.stringify(widgets));
+
+            // Save other dashboard settings
+            localStorage.setItem('dashboardSettings', JSON.stringify({
+                editMode,
+                // Add other settings you want to persist
+            }));
+        }
+    }, [widgets, editMode]);
+
+    // Update the useEffect for loading saved layout
     useEffect(() => {
-        // Only run in browser environment
         if (typeof window !== 'undefined') {
             try {
+                // Load widgets
                 const savedWidgets = localStorage.getItem('dashboardWidgets');
                 let widgetsToSet;
 
@@ -110,7 +145,23 @@ const DashboardGrid: React.FC = () => {
 
                 setWidgets(widgetsToSet);
 
-                // Initialize layouts based on the loaded widgets
+                // Load dashboard settings
+                const savedSettings = localStorage.getItem('dashboardSettings');
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+                    setEditMode(settings.editMode ?? true);
+                    // Load other settings
+                }
+
+                // Load tour status
+                const hasSeenTour = localStorage.getItem('dashboard-tour-completed');
+                if (!hasSeenTour && !tourShownThisSession && !isTourActive) {
+                    setShowTour(true);
+                    setIsTourActive(true);
+                    setTourShownThisSession(true);
+                }
+
+                // Initialize layouts
                 const initialLayouts = {
                     lg: widgetsToSet.map((widget: Widget) => ({
                         i: widget.id,
@@ -125,18 +176,11 @@ const DashboardGrid: React.FC = () => {
 
                 setLayouts(initialLayouts);
             } catch (e) {
-                console.error('Failed to load widgets from localStorage:', e);
+                console.error('Failed to load dashboard state:', e);
                 setWidgets(defaultWidgets);
             }
         }
-    }, []);
-
-    // Save widgets to localStorage when they change
-    useEffect(() => {
-        if (typeof window !== 'undefined' && widgets.length >= 0) {
-            localStorage.setItem('dashboardWidgets', JSON.stringify(widgets));
-        }
-    }, [widgets]);
+    }, [tourShownThisSession, isTourActive]);
 
     // Remove a widget
     const removeWidget = useCallback((idToRemove: string) => {
@@ -200,7 +244,7 @@ const DashboardGrid: React.FC = () => {
         setActiveWidgetId(null);
     };
 
-    // Update the handleLayoutChange function with proper types
+    // Update the handleLayoutChange function
     const handleLayoutChange = (currentLayout: LayoutItem[], allLayouts: { [key: string]: LayoutItem[] }) => {
         // Only update if we have a valid layout
         if (!currentLayout || currentLayout.length === 0) return;
@@ -215,7 +259,7 @@ const DashboardGrid: React.FC = () => {
             );
 
             // Update each widget with its new position from the layout
-            return prevWidgets.map(widget => {
+            const updatedWidgets = prevWidgets.map(widget => {
                 const layoutItem = layoutMap.get(widget.id);
                 if (layoutItem) {
                     return {
@@ -228,11 +272,18 @@ const DashboardGrid: React.FC = () => {
                 }
                 return widget;
             });
+
+            // Save updated widgets to localStorage
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('dashboardWidgets', JSON.stringify(updatedWidgets));
+            }
+
+            return updatedWidgets;
         });
     };
 
     // Add a new widget
-    const addWidget = (type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar') => {
+    const addWidget = (type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos') => {
         // Generate a unique ID for the new widget
         const id = `${type}-${Date.now()}`;
 
@@ -264,9 +315,21 @@ const DashboardGrid: React.FC = () => {
         setSettingsOpen(!settingsOpen);
     };
 
-    const toggleEditMode = () => {
-        setEditMode(!editMode);
-    };
+    // Update the toggleEditMode function
+    const toggleEditMode = useCallback(() => {
+        const newEditMode = !editMode;
+        setEditMode(newEditMode);
+
+        // Save the new edit mode state
+        if (typeof window !== 'undefined') {
+            const savedSettings = localStorage.getItem('dashboardSettings');
+            const settings = savedSettings ? JSON.parse(savedSettings) : {};
+            localStorage.setItem('dashboardSettings', JSON.stringify({
+                ...settings,
+                editMode: newEditMode
+            }));
+        }
+    }, [editMode]);
 
     // Add this function to update text content
     const updateWidgetContent = useCallback((widgetId: string, content: string) => {
@@ -281,13 +344,20 @@ const DashboardGrid: React.FC = () => {
 
     // Add this function to update widget properties
     const updateWidget = useCallback((updatedWidget: Widget) => {
-        setWidgets(prevWidgets =>
-            prevWidgets.map(widget =>
+        setWidgets(prevWidgets => {
+            const newWidgets = prevWidgets.map(widget =>
                 widget.id === updatedWidget.id
                     ? updatedWidget
                     : widget
-            )
-        );
+            );
+
+            // Save to localStorage immediately
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('dashboardWidgets', JSON.stringify(newWidgets));
+            }
+
+            return newWidgets;
+        });
     }, []);
 
     // Add this function to handle opening the edit panel
@@ -331,6 +401,45 @@ const DashboardGrid: React.FC = () => {
         };
     }, []);
 
+    // Modify the handleTourClose function
+    const handleTourClose = useCallback(() => {
+        // Ensure any existing tour is properly closed
+        const shepherdElements = document.querySelectorAll('.shepherd-element, .shepherd-modal-overlay');
+        if (shepherdElements.length > 0) {
+            shepherdElements.forEach(el => el.remove());
+        }
+
+        setShowTour(false);
+        setIsTourActive(false);
+        localStorage.setItem('dashboard-tour-completed', 'true');
+    }, []);
+
+    // Modify the restartTour function
+    const restartTour = useCallback(() => {
+        // Only start the tour if it's not already active
+        if (!isTourActive) {
+            // Clean up any existing tour elements first
+            const shepherdElements = document.querySelectorAll('.shepherd-element, .shepherd-modal-overlay');
+            if (shepherdElements.length > 0) {
+                shepherdElements.forEach(el => el.remove());
+            }
+
+            setShowTour(true);
+            setIsTourActive(true);
+        }
+    }, [isTourActive]);
+
+    // Add this effect to clean up tour elements when component unmounts
+    useEffect(() => {
+        return () => {
+            // Clean up any tour elements when component unmounts
+            const shepherdElements = document.querySelectorAll('.shepherd-element, .shepherd-modal-overlay');
+            if (shepherdElements.length > 0) {
+                shepherdElements.forEach(el => el.remove());
+            }
+        };
+    }, []);
+
     return (
         <Box sx={{ width: '100%', p: 2, position: 'relative' }}>
             {/* Replace the style jsx global tag with regular style element */}
@@ -347,6 +456,8 @@ const DashboardGrid: React.FC = () => {
                     transition: all 200ms ease;
                     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
                 }
+                
+             
             `}</style>
 
             {/* <DashboardHeader /> */}
@@ -384,16 +495,25 @@ const DashboardGrid: React.FC = () => {
             )}
 
             {/* Floating Action Button for Settings */}
-            <Tooltip title="Dashboard Settings">
+            <Tooltip title="Settings">
                 <Fab
+                    size="medium"
                     color="primary"
                     aria-label="settings"
                     onClick={toggleSettings}
+                    className="settings-button"
                     sx={{
                         position: 'fixed',
-                        bottom: 24,
-                        right: 24,
+                        bottom: 20,
+                        right: 20,
                         zIndex: 1000,
+                        // Add transition for smoother highlighting
+                        transition: 'box-shadow 0.3s ease-in-out',
+                        '&.tour-highlight-settings': {
+                            boxShadow: `0 0 0 6px ${theme.palette.primary.main}, 
+                                       0 0 0 12px rgba(255, 255, 255, 0.4),
+                                       0 0 25px 8px rgba(255, 255, 255, 0.6) !important`
+                        }
                     }}
                 >
                     <SettingsIcon />
@@ -438,6 +558,10 @@ const DashboardGrid: React.FC = () => {
                 }}
                 fullscreen={isFullscreen}
                 toggleFullscreen={toggleFullscreen}
+                gridSnap={gridSnap}
+                setGridSnap={setGridSnap}
+                onApplyTemplate={onApplyTemplate}
+                restartTour={restartTour}
             />
 
             {/* Widget Edit Panel */}
@@ -459,6 +583,20 @@ const DashboardGrid: React.FC = () => {
                 )}
                 {/* Add more widget-specific edit content here */}
             </WidgetEditPanel>
+
+            {showTour && (
+                <Tour
+                    isOpen={showTour}
+                    onRequestClose={handleTourClose}
+                    editMode={editMode}
+                    setEditMode={setEditMode}
+                    widgets={widgets}
+                    setWidgets={setWidgets}
+                    defaultWidgets={defaultWidgets}
+                    settingsOpen={settingsOpen}
+                    setSettingsOpen={setSettingsOpen}
+                />
+            )}
         </Box>
     );
 };

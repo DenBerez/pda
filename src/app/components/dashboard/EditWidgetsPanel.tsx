@@ -10,7 +10,8 @@ import {
     FormControl,
     InputLabel,
     Select,
-    MenuItem
+    MenuItem,
+    Paper
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
@@ -54,13 +55,14 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
         onClose();
     };
 
-    const handleCityChange = (city: string) => {
+    const handleCityChange = (city: string, additionalConfig?: any) => {
         if (tempWidget) {
             setTempWidget({
                 ...tempWidget,
                 config: {
                     ...tempWidget.config,
-                    city
+                    city,
+                    ...additionalConfig
                 }
             });
         }
@@ -120,13 +122,33 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                     />
                 </Box>
 
+                <Box sx={{ mb: 3, mt: 2 }}>
+                    <Typography variant="subtitle2" gutterBottom>
+                        Widget Preview
+                    </Typography>
+                    <Paper
+                        elevation={1}
+                        sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            border: '1px dashed',
+                            borderColor: 'divider',
+                            bgcolor: 'background.default'
+                        }}
+                    >
+                        <Typography variant="body2" align="center">
+                            {title || widget?.title}
+                        </Typography>
+                    </Paper>
+                </Box>
+
                 <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
                     {children}
 
                     {widget?.type === 'weather' && (
                         <Box sx={{ mb: 3 }}>
                             <Typography variant="subtitle2" gutterBottom>
-                                Weather Location
+                                Weather Configuration
                             </Typography>
                             <TextField
                                 fullWidth
@@ -138,6 +160,31 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 size="small"
                                 margin="normal"
                             />
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="units-label">Temperature Units</InputLabel>
+                                <Select
+                                    labelId="units-label"
+                                    value={tempWidget?.config?.units || 'celsius'}
+                                    label="Temperature Units"
+                                    onChange={(e) => handleCityChange(tempWidget?.config?.city || 'London', { units: e.target.value })}
+                                >
+                                    <MenuItem value="celsius">Celsius (°C)</MenuItem>
+                                    <MenuItem value="fahrenheit">Fahrenheit (°F)</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="refresh-rate-label">Refresh Rate</InputLabel>
+                                <Select
+                                    labelId="refresh-rate-label"
+                                    value={tempWidget?.config?.refreshRate || 30}
+                                    label="Refresh Rate"
+                                    onChange={(e) => handleCityChange(tempWidget?.config?.city || 'London', { refreshRate: e.target.value })}
+                                >
+                                    <MenuItem value={15}>Every 15 minutes</MenuItem>
+                                    <MenuItem value={30}>Every 30 minutes</MenuItem>
+                                    <MenuItem value={60}>Every hour</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                     )}
 

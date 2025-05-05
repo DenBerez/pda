@@ -14,14 +14,18 @@
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
     "axios": "^1.9.0",
+    "body-scroll-lock": "^4.0.0-beta.0",
     "draft-js": "^0.11.7",
     "draft-js-export-html": "^1.4.1",
+    "framer-motion": "^12.9.4",
     "googleapis": "^148.0.0",
     "next": "15.3.1",
     "nodemailer": "^7.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-grid-layout": "^1.5.1"
+    "react-grid-layout": "^1.5.1",
+    "react-intersection-observer": "^9.16.0",
+    "shepherd.js": "^14.5.0"
   },
   "devDependencies": {
     "@types/draft-js": "^0.11.18",

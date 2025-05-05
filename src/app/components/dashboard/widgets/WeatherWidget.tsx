@@ -231,16 +231,16 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
         );
     }
 
-    if (error) {
-        return (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-                <Typography color="error">{error}</Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                    Please check your connection and try again.
-                </Typography>
-            </Box>
-        );
-    }
+    // if (error) {
+    //     return (
+    //         <Box sx={{ p: 2, textAlign: 'center' }}>
+    //             <Typography color="error">{error}</Typography>
+    //             <Typography variant="body2" sx={{ mt: 1 }}>
+    //                 Please check your connection and try again.
+    //             </Typography>
+    //         </Box>
+    //     );
+    // }
 
     if (!weatherData) {
         return (
