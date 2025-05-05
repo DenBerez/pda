@@ -1,4 +1,4 @@
-export type WidgetType = 'text' | 'custom' | 'weather' | 'email' | 'social' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow';
+export type WidgetType = 'text' | 'custom' | 'weather' | 'email' | 'social' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow' | 'spotify';
 
 export interface Widget {
     id: string;
@@ -18,6 +18,8 @@ export interface Widget {
         interval?: number;
         showCaptions?: boolean;
         transition?: 'fade' | 'slide';
+        refreshToken?: string;
+        refreshInterval?: number;
         [key: string]: any;
     };
     content?: string;

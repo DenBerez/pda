@@ -26,6 +26,7 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
         <Dialog
             open={open}
             onClose={onClose}
+            disableScrollLock={true}
             aria-labelledby="alert-dialog-title"
             aria-describedby="alert-dialog-description"
             PaperProps={{

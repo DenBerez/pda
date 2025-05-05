@@ -627,8 +627,6 @@ const TextWidget = ({
             flexDirection: 'column',
             position: 'relative'
         }}>
-
-
             {/* Show edit panel when in edit mode and panel is open */}
             {editMode && editPanelOpen && (
                 <WidgetEditPanel
@@ -641,10 +639,8 @@ const TextWidget = ({
                         <Typography variant="subtitle2" gutterBottom>
                             Text Content
                         </Typography>
-
                         {/* Text formatting toolbar */}
                         <TextFormattingToolbar />
-
                         {/* Editor */}
                         <Box sx={{
                             flexGrow: 1,
@@ -678,12 +674,10 @@ const TextWidget = ({
                 </WidgetEditPanel>
             )}
 
-            {/* Display the rich text content when not editing */}
-
+            {/* Always show the rich text content in view mode (never the editor) */}
             <Box sx={{ height: '100%', overflow: 'auto' }}>
                 <RichTextDisplay />
             </Box>
-
         </Box>
     );
 };

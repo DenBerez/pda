@@ -1,0 +1,101 @@
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const action = searchParams.get('action') || 'current'; // 'current' or 'recent'
+
+        // Get Spotify API credentials from environment variables
+        const clientId = process.env.SPOTIFY_CLIENT_ID;
+        const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+        const refreshToken = process.env.SPOTIFY_REFRESH_TOKEN || searchParams.get('refreshToken');
+
+        if (!clientId || !clientSecret) {
+            return NextResponse.json({ error: 'Spotify API credentials not configured' }, { status: 500 });
+        }
+
+        if (!refreshToken) {
+            return NextResponse.json({ error: 'Refresh token is required' }, { status: 400 });
+        }
+
+        // Get a new access token using the refresh token
+        const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
+            },
+            body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken
+            })
+        });
+
+        if (!tokenResponse.ok) {
+            throw new Error('Failed to refresh Spotify access token');
+        }
+
+        const tokenData = await tokenResponse.json();
+        const accessToken = tokenData.access_token;
+
+        // Fetch currently playing or recently played tracks based on action
+        let endpoint = '';
+        if (action === 'current') {
+            endpoint = 'https://api.spotify.com/v1/me/player/currently-playing';
+        } else {
+            endpoint = 'https://api.spotify.com/v1/me/player/recently-played?limit=5';
+        }
+
+        const response = await fetch(endpoint, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        // If no content (204) for currently playing, fall back to recently played
+        if (response.status === 204 && action === 'current') {
+            const recentResponse = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=1', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (!recentResponse.ok) {
+                throw new Error('Failed to fetch recently played tracks');
+            }
+
+            const recentData = await recentResponse.json();
+            return NextResponse.json({
+                isPlaying: false,
+                lastPlayed: recentData.items[0],
+                recentTracks: [recentData.items[0]]
+            });
+        }
+
+        if (!response.ok && response.status !== 204) {
+            throw new Error(`Spotify API request failed with status: ${response.status}`);
+        }
+
+        // Parse the response based on the action
+        if (action === 'current' && response.status !== 204) {
+            const data = await response.json();
+            return NextResponse.json({
+                isPlaying: true,
+                currentTrack: data,
+            });
+        } else if (action === 'recent') {
+            const data = await response.json();
+            return NextResponse.json({
+                recentTracks: data.items
+            });
+        } else {
+            return NextResponse.json({
+                isPlaying: false,
+                message: 'No track currently playing'
+            });
+        }
+    } catch (error) {
+        console.error('Spotify API error:', error);
+        return NextResponse.json({ error: 'Failed to fetch Spotify data' }, { status: 500 });
+    }
+} 

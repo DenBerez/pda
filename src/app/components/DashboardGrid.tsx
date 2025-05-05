@@ -595,16 +595,7 @@ const DashboardGrid: React.FC = () => {
                     onClose={handleCloseEditPanel}
                     onSave={updateWidget}
                 >
-                    {activeWidget?.type === 'text' && (
-                        <Box>
-                            <Typography variant="subtitle2" gutterBottom>
-                                Text Content
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                You can edit the text content directly in the widget.
-                            </Typography>
-                        </Box>
-                    )}
+
                     {/* Add more widget-specific edit content here */}
                 </WidgetEditPanel>
 

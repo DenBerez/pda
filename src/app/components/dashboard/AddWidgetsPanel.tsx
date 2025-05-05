@@ -29,7 +29,7 @@ interface AddWidgetsPanelProps {
 
 // Define widget data structure for easier management
 interface WidgetInfo {
-    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow';
+    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow' | 'spotify';
     label: string;
     icon: React.ReactNode;
     category: 'information' | 'productivity' | 'media';
@@ -54,6 +54,7 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
         // { type: 'music', label: 'Music', icon: <MusicNoteIcon />, category: 'media' },
         // { type: 'photos', label: 'Photos', icon: <PhotoIcon />, category: 'media' },
         { type: 'slideshow', label: 'Slideshow', icon: <SlideshowIcon />, category: 'media' },
+        { type: 'spotify', label: 'Spotify', icon: <MusicNoteIcon />, category: 'media' },
     ];
 
     // Filter widgets based on search query and active tab

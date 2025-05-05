@@ -107,11 +107,26 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
             anchor="right"
             open={open}
             onClose={onClose}
+            variant="temporary"
+            disableScrollLock={true}
             PaperProps={{
                 sx: {
                     width: { xs: '100%', sm: 360 },
                     maxWidth: '100%'
                 }
+            }}
+            ModalProps={{
+                keepMounted: true, // Better performance on mobile
+            }}
+            sx={{
+                '& .MuiDrawer-paper': {
+                    boxSizing: 'border-box',
+                },
+                '& .MuiBackdrop-root': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                },
+                position: 'fixed', // Ensures the drawer is absolutely positioned
+                zIndex: (theme) => theme.zIndex.drawer,
             }}
         >
             <Box

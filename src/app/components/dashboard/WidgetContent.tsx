@@ -29,6 +29,7 @@ const WeatherWidget = lazy(() => import('./widgets/WeatherWidget'));
 const CalendarWidget = lazy(() => import('./widgets/CalendarWidget'));
 const EmailWidget = lazy(() => import('./widgets/EmailWidget'));
 const SlideShowWidget = lazy(() => import('./widgets/SlideShowWidget'));
+const SpotifyWidget = lazy(() => import('./widgets/SpotifyWidget'));
 
 const WidgetContent: React.FC<WidgetContentProps> = ({
     widget,
@@ -88,6 +89,13 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
             case 'slideshow':
                 return (
                     <SlideShowWidget
+                        widget={widget}
+                        editMode={editMode}
+                    />
+                );
+            case 'spotify':
+                return (
+                    <SpotifyWidget
                         widget={widget}
                         editMode={editMode}
                     />

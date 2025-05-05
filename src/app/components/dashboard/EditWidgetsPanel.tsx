@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -13,12 +13,31 @@ import {
     MenuItem,
     Paper,
     FormControlLabel,
-    Switch
+    Switch,
+    Tooltip,
+    Link
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { Widget } from './types';
+import {
+    Editor,
+    EditorState,
+    RichUtils,
+    convertToRaw,
+    convertFromRaw,
+    ContentBlock
+} from 'draft-js';
+import 'draft-js/dist/Draft.css';
+import { stateToHTML } from 'draft-js-export-html';
+import FormatBoldIcon from '@mui/icons-material/FormatBold';
+import FormatItalicIcon from '@mui/icons-material/FormatItalic';
+import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
+import CodeIcon from '@mui/icons-material/Code';
 
 interface WidgetEditPanelProps {
     open: boolean;
@@ -39,6 +58,147 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
     const [tempWidget, setTempWidget] = useState<Widget | null>(null);
     const [newImageUrl, setNewImageUrl] = useState('');
     const [newImageCaption, setNewImageCaption] = useState('');
+
+    // Only initialize these if editing a text widget
+    const [editorState, setEditorState] = useState(() => {
+        if (widget?.type === 'text' && widget.content) {
+            try {
+                const contentState = convertFromRaw(JSON.parse(widget.content));
+                return EditorState.createWithContent(contentState);
+            } catch {
+                return EditorState.createEmpty();
+            }
+        }
+        return EditorState.createEmpty();
+    });
+    const [fontSize, setFontSize] = useState("medium");
+
+    // Custom style map (copy from your TextWidget)
+    const styleMap = {
+        'COLOR-FF0000': { color: '#FF0000' },
+        'COLOR-00FF00': { color: '#00FF00' },
+        'COLOR-0000FF': { color: '#0000FF' },
+        'COLOR-FFFF00': { color: '#FFFF00' },
+        'COLOR-FF00FF': { color: '#FF00FF' },
+        'COLOR-00FFFF': { color: '#00FFFF' },
+        'COLOR-000000': { color: '#000000' },
+        'COLOR-FFFFFF': { color: '#FFFFFF' },
+        'COLOR-808080': { color: '#808080' },
+        'BGCOLOR-FF0000': { backgroundColor: '#FF0000' },
+        'BGCOLOR-00FF00': { backgroundColor: '#00FF00' },
+        'BGCOLOR-0000FF': { backgroundColor: '#0000FF' },
+        'BGCOLOR-FFFF00': { backgroundColor: '#FFFF00' },
+        'BGCOLOR-FF00FF': { backgroundColor: '#FF00FF' },
+        'BGCOLOR-00FFFF': { backgroundColor: '#00FFFF' },
+        'BGCOLOR-000000': { backgroundColor: '#000000' },
+        'BGCOLOR-FFFFFF': { backgroundColor: '#FFFFFF' },
+        'BGCOLOR-transparent': { backgroundColor: 'transparent' },
+    };
+
+    const handleEditorChange = useCallback((newState: EditorState) => {
+        setEditorState(newState);
+        // Save to tempWidget so it can be saved on panel save
+        if (tempWidget) {
+            const contentRaw = convertToRaw(newState.getCurrentContent());
+            setTempWidget({
+                ...tempWidget,
+                content: JSON.stringify(contentRaw)
+            });
+        }
+    }, [tempWidget, setTempWidget]);
+
+    const handleKeyCommand = useCallback((command: string) => {
+        const newState = RichUtils.handleKeyCommand(editorState, command);
+        if (newState) {
+            handleEditorChange(newState);
+            return 'handled';
+        }
+        return 'not-handled';
+    }, [editorState, handleEditorChange]);
+
+    const toggleInlineStyle = useCallback((style: string) => {
+        handleEditorChange(RichUtils.toggleInlineStyle(editorState, style));
+    }, [editorState, handleEditorChange]);
+
+    const toggleBlockType = useCallback((blockType: string) => {
+        handleEditorChange(RichUtils.toggleBlockType(editorState, blockType));
+    }, [editorState, handleEditorChange]);
+
+    const hasInlineStyle = (style: string) => editorState.getCurrentInlineStyle().has(style);
+    const hasBlockType = (blockType: string) => {
+        const selection = editorState.getSelection();
+        const blockKey = selection.getStartKey();
+        const block = editorState.getCurrentContent().getBlockForKey(blockKey);
+        return block.getType() === blockType;
+    };
+
+    const getBlockStyle = (block: ContentBlock) => {
+        const type = block.getType();
+        if (type.startsWith('align-')) {
+            return `text-align-${type.split('-')[1]}`;
+        }
+        return '';
+    };
+
+    // Toolbar component (simplified)
+    const TextFormattingToolbar = () => (
+        <Paper elevation={0} sx={{ mb: 1, p: 0.5, display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Tooltip title="Bold">
+                <IconButton size="small" onClick={() => toggleInlineStyle('BOLD')} color={hasInlineStyle('BOLD') ? "primary" : "default"}>
+                    <FormatBoldIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Italic">
+                <IconButton size="small" onClick={() => toggleInlineStyle('ITALIC')} color={hasInlineStyle('ITALIC') ? "primary" : "default"}>
+                    <FormatItalicIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Underline">
+                <IconButton size="small" onClick={() => toggleInlineStyle('UNDERLINE')} color={hasInlineStyle('UNDERLINE') ? "primary" : "default"}>
+                    <FormatUnderlinedIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+            <Tooltip title="Bulleted List">
+                <IconButton size="small" onClick={() => toggleBlockType('unordered-list-item')} color={hasBlockType('unordered-list-item') ? "primary" : "default"}>
+                    <FormatListBulletedIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Numbered List">
+                <IconButton size="small" onClick={() => toggleBlockType('ordered-list-item')} color={hasBlockType('ordered-list-item') ? "primary" : "default"}>
+                    <FormatListNumberedIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Quote">
+                <IconButton size="small" onClick={() => toggleBlockType('blockquote')} color={hasBlockType('blockquote') ? "primary" : "default"}>
+                    <FormatQuoteIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            <Tooltip title="Code Block">
+                <IconButton size="small" onClick={() => toggleBlockType('code-block')} color={hasBlockType('code-block') ? "primary" : "default"}>
+                    <CodeIcon fontSize="small" />
+                </IconButton>
+            </Tooltip>
+            {/* Add more formatting as needed */}
+            <FormControl size="small" sx={{ minWidth: 120, ml: 1 }}>
+                <InputLabel id="font-size-select-label">Size</InputLabel>
+                <Select
+                    labelId="font-size-select-label"
+                    id="font-size-select"
+                    value={fontSize}
+                    label="Size"
+                    onChange={e => setFontSize(e.target.value)}
+                    size="small"
+                >
+                    <MenuItem value="x-small">X-Small</MenuItem>
+                    <MenuItem value="small">Small</MenuItem>
+                    <MenuItem value="medium">Medium</MenuItem>
+                    <MenuItem value="large">Large</MenuItem>
+                    <MenuItem value="x-large">X-Large</MenuItem>
+                </Select>
+            </FormControl>
+        </Paper>
+    );
 
     // Reset form when widget changes
     useEffect(() => {
@@ -115,6 +275,14 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
             anchor="right"
             open={open}
             onClose={onClose}
+            variant="temporary"
+            disableScrollLock={true}
+            PaperProps={{
+                sx: {
+                    width: { xs: '100%', sm: 400 },
+                    maxWidth: '100%'
+                }
+            }}
         >
             <Box
                 sx={{
@@ -373,6 +541,80 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     Add
                                 </Button>
                             </Box>
+                        </Box>
+                    )}
+
+                    {widget?.type === 'text' && (
+                        <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Text Content
+                            </Typography>
+                            <TextFormattingToolbar />
+                            <Box sx={{
+                                flexGrow: 1,
+                                padding: 1,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                bgcolor: 'background.paper',
+                                overflow: 'auto',
+                                '& .DraftEditor-root': { height: '100%' },
+                                '& .public-DraftEditor-content': {
+                                    minHeight: '100px',
+                                    fontSize: fontSize === "x-small" ? "0.75rem" :
+                                        fontSize === "small" ? "0.875rem" :
+                                            fontSize === "large" ? "1.25rem" :
+                                                fontSize === "x-large" ? "1.5rem" : "1rem",
+                                }
+                            }}>
+                                <Editor
+                                    editorState={editorState}
+                                    onChange={handleEditorChange}
+                                    handleKeyCommand={handleKeyCommand}
+                                    placeholder="Start typing here..."
+                                    customStyleMap={styleMap}
+                                    blockStyleFn={getBlockStyle}
+                                />
+                            </Box>
+                        </Box>
+                    )}
+
+                    {widget?.type === 'spotify' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Spotify Configuration
+                            </Typography>
+                            <TextField
+                                fullWidth
+                                label="Spotify Refresh Token"
+                                variant="outlined"
+                                type="password"
+                                value={tempWidget?.config?.refreshToken || ''}
+                                onChange={(e) => handleConfigChange({ refreshToken: e.target.value })}
+                                helperText="Enter your Spotify API refresh token"
+                                size="small"
+                                margin="normal"
+                            />
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="spotify-refresh-rate-label">Refresh Rate</InputLabel>
+                                <Select
+                                    labelId="spotify-refresh-rate-label"
+                                    value={tempWidget?.config?.refreshInterval || 30}
+                                    label="Refresh Rate"
+                                    onChange={(e) => handleConfigChange({ refreshInterval: e.target.value })}
+                                >
+                                    <MenuItem value={10}>Every 10 seconds</MenuItem>
+                                    <MenuItem value={30}>Every 30 seconds</MenuItem>
+                                    <MenuItem value={60}>Every minute</MenuItem>
+                                    <MenuItem value={300}>Every 5 minutes</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                You need to set up a Spotify Developer app and generate a refresh token.
+                                <Link href="https://developer.spotify.com/dashboard" target="_blank" sx={{ ml: 1 }}>
+                                    Learn more
+                                </Link>
+                            </Typography>
                         </Box>
                     )}
                 </Box>
