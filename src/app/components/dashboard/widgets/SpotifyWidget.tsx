@@ -114,6 +114,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
             const response = await fetch(`/api/spotify?${params.toString()}`);
 
+            console.log('response', response);
+
             if (!response.ok) {
                 throw new Error('Failed to fetch Spotify data');
             }
