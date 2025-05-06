@@ -276,17 +276,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     };
 
     // Add this function to control Spotify playback
-    const controlSpotifyPlayback = async (action: 'play' | 'pause' | 'next' | 'previous') => {
-        try {
-            const params = new URLSearchParams({
-                action,
-                refreshToken,
-                clientId,
-                clientSecret
-            });
+    const controlSpotifyPlayback = async (action: 'play' | 'pause' | 'next' | 'previous' | 'shuffle' | 'repeat') => {
+        if (!refreshToken) return;
 
-            const response = await fetch(`/api/spotify/control?${params.toString()}`, {
-                method: 'POST'
+        try {
+            const response = await fetch(`/api/spotify/control/${action}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${refreshToken}` }
             });
 
             if (!response.ok) {
