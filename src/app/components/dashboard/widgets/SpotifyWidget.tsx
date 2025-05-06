@@ -114,6 +114,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
             const response = await fetch(`/api/spotify?${params.toString()}`);
 
+
             console.log('response', response);
 
             if (!response.ok) {
@@ -121,6 +122,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             }
 
             const data = await response.json();
+
+            console.log('data', data);
 
             if (data.error) {
                 // If we need authentication, redirect to auth URL if provided
