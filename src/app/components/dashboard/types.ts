@@ -62,6 +62,12 @@ export interface WeatherConfig {
 
 export interface CalendarConfig {
     showWeekends: boolean;
+    firstDayOfWeek?: number;
+    dateFormat?: 'short' | 'medium' | 'long';
+    colorTheme?: string;
+    showEvents?: boolean;
+    maxEvents?: number;
+    calendarRefreshToken?: string;
 }
 
 export interface SocialConfig {
@@ -79,4 +85,12 @@ export interface TextConfig {
 
 export interface WidgetConfig {
     [key: string]: any;
+}
+
+export interface SpotifyConfig {
+    refreshToken?: string;
+    clientId?: string;
+    clientSecret?: string;
+    refreshInterval?: number;
+    layoutOption?: 'compact' | 'normal' | 'detailed';
 }

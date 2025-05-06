@@ -233,9 +233,15 @@ const DashboardGrid: React.FC = () => {
         if (type === 'weather') {
             newWidget.config = { city: 'London' };
         } else if (type === 'calendar') {
-            newWidget.config = { showWeekends: true };
+            newWidget.config = {
+                showWeekends: true,
+                firstDayOfWeek: 0,
+                dateFormat: 'long',
+                colorTheme: 'default',
+                showEvents: true,
+                maxEvents: 5
+            };
         }
-
         // Add the new widget to the state
         setWidgets((prevWidgets: Widget[]) => [...prevWidgets, newWidget]);
     };

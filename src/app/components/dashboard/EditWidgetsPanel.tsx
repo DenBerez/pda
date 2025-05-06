@@ -44,6 +44,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
+import LayoutStyleSelector from './LayoutStyle';
 
 interface WidgetEditPanelProps {
     open: boolean;
@@ -279,17 +280,23 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
     };
 
     useEffect(() => {
-        // Listen for messages from the Spotify auth window
+        // Listen for messages from the auth windows
         const handleMessage = (event: MessageEvent) => {
-            // Make sure the message is the one we're looking for
+            // Handle Spotify auth
             if (event.data?.type === 'SPOTIFY_AUTH_SUCCESS' && event.data?.refreshToken) {
                 // Update the widget config with the received token
                 if (tempWidget && tempWidget.type === 'spotify') {
                     handleConfigChange({ refreshToken: event.data.refreshToken });
-
-                    // Show a success notification (you might need to add a notification system)
-                    // or you could use a simple alert or console log for testing
                     console.log('Spotify connected successfully!');
+                }
+            }
+
+            // Handle Google Calendar auth
+            if (event.data?.type === 'GOOGLE_CALENDAR_AUTH_SUCCESS' && event.data?.refreshToken) {
+                // Update the widget config with the received token
+                if (tempWidget && tempWidget.type === 'calendar') {
+                    handleConfigChange({ calendarRefreshToken: event.data.refreshToken });
+                    console.log('Google Calendar connected successfully!');
                 }
             }
         };
@@ -359,7 +366,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
 
                 <Divider sx={{ mb: 3 }} />
 
-                <Box sx={{ mb: 3 }}>
+                <Box sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" gutterBottom>
                         Widget Title
                     </Typography>
@@ -446,6 +453,15 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                                 After connecting your Spotify account, you'll need to copy the refresh token from the new window back into your widget settings.
                             </Typography>
+
+                            <Typography variant="subtitle2" sx={{ my: 2 }}>
+                                Layout Style
+                            </Typography>
+                            <LayoutStyleSelector
+                                value={tempWidget?.config?.layoutOption || 'normal'}
+                                onChange={(newValue) => handleConfigChange({ layoutOption: newValue })}
+                                helperText="Select how much Spotify information to display"
+                            />
                         </Box>
                     )}
 
@@ -477,52 +493,6 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 </Select>
                             </FormControl>
 
-                            <Box sx={{ mb: 2 }}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Layout Style
-                                </Typography>
-                                <ToggleButtonGroup
-                                    value={tempWidget?.config?.layoutOption || 'normal'}
-                                    exclusive
-                                    onChange={(e, newValue) => {
-                                        if (newValue !== null) { // Prevent unselecting all options
-                                            handleWeatherConfigChange({ layoutOption: newValue });
-                                        }
-                                    }}
-                                    aria-label="layout style"
-                                    fullWidth
-                                    size="small"
-                                >
-                                    <ToggleButton value="compact" aria-label="compact layout">
-                                        <Tooltip title="Compact (Basic info only)">
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <ViewListIcon fontSize="small" sx={{ mr: 1 }} />
-                                                Compact
-                                            </Box>
-                                        </Tooltip>
-                                    </ToggleButton>
-                                    <ToggleButton value="normal" aria-label="normal layout">
-                                        <Tooltip title="Normal (Standard view)">
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <ViewModuleIcon fontSize="small" sx={{ mr: 1 }} />
-                                                Normal
-                                            </Box>
-                                        </Tooltip>
-                                    </ToggleButton>
-                                    <ToggleButton value="detailed" aria-label="detailed layout">
-                                        <Tooltip title="Detailed (All weather data)">
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <ViewAgendaIcon fontSize="small" sx={{ mr: 1 }} />
-                                                Detailed
-                                            </Box>
-                                        </Tooltip>
-                                    </ToggleButton>
-                                </ToggleButtonGroup>
-                                <FormHelperText>
-                                    Select how much weather information to display
-                                </FormHelperText>
-                            </Box>
-
                             <FormControl fullWidth margin="normal" size="small">
                                 <InputLabel id="refresh-rate-label">Refresh Rate</InputLabel>
                                 <Select
@@ -536,6 +506,17 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     <MenuItem value={60}>Every hour</MenuItem>
                                 </Select>
                             </FormControl>
+
+                            <Typography variant="subtitle2" sx={{ my: 2 }}>
+                                Layout Style
+                            </Typography>
+                            <LayoutStyleSelector
+                                value={tempWidget?.config?.layoutOption || 'normal'}
+                                onChange={(newValue) => handleWeatherConfigChange({ layoutOption: newValue })}
+                                helperText="Select how much weather information to display"
+                            />
+
+
                         </Box>
                     )}
 
@@ -635,6 +616,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     />
                                 }
                                 label="Show Captions"
+                                sx={{ ml: 0.5 }}
                             />
 
                             <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
@@ -749,6 +731,129 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     blockStyleFn={getBlockStyle}
                                 />
                             </Box>
+                        </Box>
+                    )}
+
+                    {widget?.type === 'calendar' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Calendar Configuration
+                            </Typography>
+
+                            <Box sx={{ textAlign: 'center', py: 2, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                                {tempWidget?.config?.calendarRefreshToken ? (
+                                    <>
+                                        <Typography variant="body2" color="success.main" sx={{ mb: 2 }}>
+                                            ✅ Your Google Calendar account is connected
+                                        </Typography>
+                                        <Button
+                                            variant="outlined"
+                                            color="error"
+                                            size="small"
+                                            onClick={() => handleConfigChange({ calendarRefreshToken: '' })}
+                                        >
+                                            Disconnect Account
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Typography variant="body2" sx={{ mb: 2 }}>
+                                            Connect your Google Calendar account to display your events.
+                                        </Typography>
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            onClick={() => {
+                                                // Calculate center position for the popup
+                                                const width = 600;
+                                                const height = 700;
+                                                const left = window.screenX + (window.outerWidth - width) / 2;
+                                                const top = window.screenY + (window.outerHeight - height) / 2;
+
+                                                // Open the auth window as a popup
+                                                window.open(
+                                                    `/api/calendar/auth`,
+                                                    'google-calendar-auth-window',
+                                                    `width=${width},height=${height},left=${left},top=${top}`
+                                                );
+                                            }}
+                                        >
+                                            Connect Google Calendar
+                                        </Button>
+                                    </>
+                                )}
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                    {!tempWidget?.config?.calendarRefreshToken &&
+                                        "For demo purposes, you'll see mock calendar data if no account is connected."}
+                                </Typography>
+                            </Box>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="first-day-label">First Day of Week</InputLabel>
+                                <Select
+                                    labelId="first-day-label"
+                                    value={tempWidget?.config?.firstDayOfWeek || 0}
+                                    label="First Day of Week"
+                                    onChange={(e) => handleConfigChange({ firstDayOfWeek: e.target.value })}
+                                >
+                                    <MenuItem value={0}>Sunday</MenuItem>
+                                    <MenuItem value={1}>Monday</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="date-format-label">Date Format</InputLabel>
+                                <Select
+                                    labelId="date-format-label"
+                                    value={tempWidget?.config?.dateFormat || 'long'}
+                                    label="Date Format"
+                                    onChange={(e) => handleConfigChange({ dateFormat: e.target.value })}
+                                >
+                                    <MenuItem value="short">Short (e.g., 1/1/2023)</MenuItem>
+                                    <MenuItem value="medium">Medium (e.g., Jan 1, 2023)</MenuItem>
+                                    <MenuItem value="long">Long (e.g., January 1, 2023)</MenuItem>
+                                </Select>
+                            </FormControl>
+
+
+                            <FormControlLabel
+                                sx={{ ml: 0.5 }}
+                                control={
+                                    <Switch
+                                        checked={tempWidget?.config?.showWeekends !== false}
+                                        onChange={(e) => handleConfigChange({ showWeekends: e.target.checked })}
+                                    />
+                                }
+                                label="Highlight Weekends"
+                            />
+
+                            <FormControlLabel
+                                sx={{ ml: 0.5 }}
+
+                                control={
+                                    <Switch
+                                        checked={tempWidget?.config?.showEvents !== false}
+                                        onChange={(e) => handleConfigChange({ showEvents: e.target.checked })}
+                                    />
+                                }
+                                label="Show Events"
+                            />
+
+                            {tempWidget?.config?.showEvents !== false && (
+                                <FormControl fullWidth margin="normal" size="small">
+                                    <InputLabel id="max-events-label">Max Events</InputLabel>
+                                    <Select
+                                        labelId="max-events-label"
+                                        value={tempWidget?.config?.maxEvents || 5}
+                                        label="Max Events"
+                                        onChange={(e) => handleConfigChange({ maxEvents: e.target.value })}
+                                    >
+                                        <MenuItem value={5}>5 events</MenuItem>
+                                        <MenuItem value={10}>10 events</MenuItem>
+                                        <MenuItem value={20}>20 events</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            )}
                         </Box>
                     )}
                 </Box>
