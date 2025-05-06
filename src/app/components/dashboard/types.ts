@@ -55,6 +55,9 @@ export interface EmailConfig {
 
 export interface WeatherConfig {
     city: string;
+    units?: 'celsius' | 'fahrenheit';
+    refreshRate?: number;
+    layoutOption?: 'compact' | 'normal' | 'detailed';
 }
 
 export interface CalendarConfig {

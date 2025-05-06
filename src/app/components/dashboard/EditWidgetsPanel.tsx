@@ -15,7 +15,8 @@ import {
     FormControlLabel,
     Switch,
     Tooltip,
-    Link
+    Link,
+    FormHelperText
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
@@ -210,10 +211,14 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
 
     const handleSave = () => {
         if (tempWidget) {
-            // Update the title from the state
+            // Update the title and ensure fontSize is included in config
             const updatedWidget = {
                 ...tempWidget,
-                title
+                title,
+                config: {
+                    ...tempWidget.config,
+                    fontSize  // Include fontSize in config
+                }
             };
             onSave(updatedWidget);
         }
@@ -292,6 +297,26 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
             window.removeEventListener('message', handleMessage);
         };
     }, [tempWidget, handleConfigChange]);
+
+    useEffect(() => {
+        // When widget content changes externally, reinitialize the editor state
+        if (widget?.content) {
+            try {
+                const contentState = convertFromRaw(JSON.parse(widget.content));
+                setEditorState(EditorState.createWithContent(contentState));
+            } catch (e) {
+                console.error("Error parsing widget content:", e);
+                // Don't reset to empty if there's an error to avoid losing current edits
+            }
+        }
+    }, [widget?.content]); // Only re-run when widget.content changes
+
+    useEffect(() => {
+        // Sync fontSize with widget config if present
+        if (widget?.config?.fontSize) {
+            setFontSize(widget.config.fontSize);
+        }
+    }, [widget?.config?.fontSize]);
 
     if (!widget) return null;
 
@@ -446,6 +471,24 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     <MenuItem value="fahrenheit">Fahrenheit (°F)</MenuItem>
                                 </Select>
                             </FormControl>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="layout-option-label">Layout Style</InputLabel>
+                                <Select
+                                    labelId="layout-option-label"
+                                    value={tempWidget?.config?.layoutOption || 'normal'}
+                                    label="Layout Style"
+                                    onChange={(e) => handleWeatherConfigChange({ layoutOption: e.target.value })}
+                                >
+                                    <MenuItem value="compact">Compact</MenuItem>
+                                    <MenuItem value="normal">Normal</MenuItem>
+                                    <MenuItem value="detailed">Detailed</MenuItem>
+                                </Select>
+                                <FormHelperText>
+                                    Compact: Basic info only | Normal: Standard view | Detailed: All weather data
+                                </FormHelperText>
+                            </FormControl>
+
                             <FormControl fullWidth margin="normal" size="small">
                                 <InputLabel id="refresh-rate-label">Refresh Rate</InputLabel>
                                 <Select

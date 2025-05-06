@@ -610,11 +610,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                 </IconButton>
                             </Stack> */}
 
-                            {!currentTrack.preview_url && (
+                            {/* {!currentTrack.preview_url && (
                                 <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
                                     Preview not available
                                 </Typography>
-                            )}
+                            )} */}
 
                             {!spotifyData.isPlaying && (
                                 <Chip

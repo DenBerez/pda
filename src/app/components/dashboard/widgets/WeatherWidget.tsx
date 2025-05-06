@@ -114,7 +114,7 @@ interface WeatherData {
 }
 
 const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorScheme }) => {
-    const [weatherData, setWeatherData] = useState<WeatherData | null>(sampleWeatherData);
+    const [weatherData, setWeatherData] = useState<WeatherData>(sampleWeatherData);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [city, setCity] = useState(widget.config?.city || 'London');
@@ -124,6 +124,9 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
 
     // Get refresh rate from widget config or default to 30 minutes
     const refreshRate = widget.config?.refreshRate || 30;
+
+    // Get layout option from widget config or default to 'normal'
+    const layoutOption = widget.config?.layoutOption || 'normal';
 
     // Default color scheme that's minimalistic/grayscale
     const defaultColorScheme = {
@@ -242,116 +245,115 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
         }
     };
 
-    if (loading) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                <CircularProgress size={40} />
+    // Render functions for each layout
+    const renderCompactLayout = () => (
+        <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 2
+        }}>
+            {weatherData && (
+                <Box sx={{ mr: 2 }}>
+                    {getWeatherIcon(weatherData.current.condition.text)}
+                </Box>
+            )}
+            <Box>
+                <Typography variant="h4" sx={{ fontWeight: 'medium', color: theme.primary }}>
+                    {formatTemperature(weatherData.current.temp_c)}
+                </Typography>
+                <Typography variant="body2" sx={{ color: theme.text }}>
+                    {weatherData.location.name}
+                </Typography>
             </Box>
-        );
-    }
+        </Box>
+    );
 
-    // if (error) {
-    //     return (
-    //         <Box sx={{ p: 2, textAlign: 'center' }}>
-    //             <Typography color="error">{error}</Typography>
-    //             <Typography variant="body2" sx={{ mt: 1 }}>
-    //                 Please check your connection and try again.
-    //             </Typography>
-    //         </Box>
-    //     );
-    // }
-
-    if (!weatherData) {
-        return (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
-                <Typography>No weather data available</Typography>
+    const renderNormalLayout = () => (
+        <Box sx={{
+            display: 'flex',
+            flexDirection: isCompact ? 'column' : 'row',
+            alignItems: isCompact ? 'center' : 'flex-start',
+            justifyContent: 'space-between',
+            mb: 3,
+            backgroundColor: theme.card,
+            borderRadius: 2,
+            p: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+            {/* Location info */}
+            <Box sx={{
+                textAlign: isCompact ? 'center' : 'left',
+                flex: '1',
+                mb: isCompact ? 2 : 0
+            }}>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.primary }}>
+                    {weatherData.location.name}
+                </Typography>
+                <Typography variant="body2" sx={{ color: theme.text }}>
+                    {weatherData.location.country}
+                </Typography>
+                <Typography variant="caption" sx={{ color: theme.text, display: 'block' }}>
+                    {
+                        new Date(weatherData.location.localtime).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    }
+                </Typography>
             </Box>
-        );
-    }
 
-    return (
-        <Box sx={{ p: 2 }} ref={setContainerRef}>
-            {/* Responsive top section with location, weather, and feels like */}
+            {/* Current weather */}
             <Box sx={{
                 display: 'flex',
-                flexDirection: isCompact ? 'column' : 'row',
-                alignItems: isCompact ? 'center' : 'flex-start',
-                justifyContent: 'space-between',
-                mb: 3,
-                backgroundColor: theme.card,
-                borderRadius: 2,
-                p: 2,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: '1',
+                mb: isCompact ? 2 : 0
             }}>
-                {/* Location info */}
-                <Box sx={{
-                    textAlign: isCompact ? 'center' : 'left',
-                    flex: '1',
-                    mb: isCompact ? 2 : 0
-                }}>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.primary }}>
-                        {weatherData.location.name}
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: theme.text }}>
-                        {weatherData.location.country}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: theme.text, display: 'block' }}>
-                        {
-                            new Date(weatherData.location.localtime).toLocaleString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            })
-                        }
-                    </Typography>
-                </Box>
-
-                {/* Current weather */}
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flex: '1',
-                    mb: isCompact ? 2 : 0
-                }}>
+                {weatherData && (
                     <Box sx={{ mr: 2 }}>
                         {getWeatherIcon(weatherData.current.condition.text)}
                     </Box>
-                    <Box>
-                        <Typography variant="h3" sx={{ fontWeight: 'medium', color: theme.primary }}>
-                            {formatTemperature(weatherData.current.temp_c)}
-                        </Typography>
-                        <Typography variant="body1" sx={{ color: theme.text }}>
-                            {weatherData.current.condition.text}
-                        </Typography>
-                    </Box>
-                </Box>
-
-                {/* Feels like */}
-                <Box sx={{
-                    textAlign: isCompact ? 'center' : 'right',
-                    flex: '1'
-                }}>
-                    <Typography variant="body2" sx={{ color: theme.text, fontWeight: 'medium' }}>
-                        Feels like
+                )}
+                <Box>
+                    <Typography variant="h3" sx={{ fontWeight: 'medium', color: theme.primary }}>
+                        {formatTemperature(weatherData.current.temp_c)}
                     </Typography>
-                    <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: isCompact ? 'center' : 'flex-end'
-                    }}>
-                        <ThermostatIcon fontSize="small" sx={{ mr: 1, color: theme.icons.temperature }} />
-                        <Typography variant="h5" sx={{ color: theme.text }}>
-                            {formatTemperature(weatherData.current.feelslike_c)}
-                        </Typography>
-                    </Box>
+                    <Typography variant="body1" sx={{ color: theme.text }}>
+                        {weatherData.current.condition.text}
+                    </Typography>
                 </Box>
             </Box>
 
-            <Divider sx={{ my: 2 }} />
+            {/* Feels like */}
+            <Box sx={{
+                textAlign: isCompact ? 'center' : 'right',
+                flex: '1'
+            }}>
+                <Typography variant="body2" sx={{ color: theme.text, fontWeight: 'medium' }}>
+                    Feels like
+                </Typography>
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCompact ? 'center' : 'flex-end'
+                }}>
+                    <ThermostatIcon fontSize="small" sx={{ mr: 1, color: theme.icons.temperature }} />
+                    <Typography variant="h5" sx={{ color: theme.text }}>
+                        {formatTemperature(weatherData.current.feelslike_c)}
+                    </Typography>
+                </Box>
+            </Box>
+        </Box>
+    );
 
+    const renderWeatherDetails = () => (
+        <>
+            <Divider sx={{ my: 2 }} />
             {/* Weather Details - Improved Layout with responsive grid */}
             <Box
                 sx={{
@@ -389,7 +391,6 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                         value: `${weatherData.current.pressure_mb} mb`
                     },
                     {
-                        // Cloud coverage percentage
                         icon: <CloudIcon fontSize="small" sx={{ color: theme.icons.cloud }} />,
                         label: "Cloud Coverage",
                         value: `${weatherData.current.cloud}%`
@@ -419,6 +420,36 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                     </Paper>
                 ))}
             </Box>
+        </>
+    );
+
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                <CircularProgress size={40} />
+            </Box>
+        );
+    }
+
+    if (!weatherData) {
+        return (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography>No weather data available</Typography>
+            </Box>
+        );
+    }
+
+    return (
+        <Box sx={{ p: 2 }} ref={setContainerRef}>
+            {/* Render the appropriate layout based on layoutOption */}
+            {layoutOption === 'compact' ? (
+                renderCompactLayout()
+            ) : (
+                renderNormalLayout()
+            )}
+
+            {/* Only show weather details for detailed layout */}
+            {layoutOption === 'detailed' && renderWeatherDetails()}
         </Box>
     );
 };
