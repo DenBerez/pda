@@ -25,6 +25,7 @@ import ShuffleIcon from '@mui/icons-material/Shuffle';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import LaunchIcon from '@mui/icons-material/Launch';
 
 // Sample data for demonstration when not connected
 const sampleSpotifyData = {
@@ -89,6 +90,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     const [showRecent, setShowRecent] = useState(false);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
     // Get config from widget
     const refreshToken = widget.config?.refreshToken || '';
@@ -98,7 +100,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
     // Fetch Spotify data
     const fetchSpotifyData = async () => {
-        if (editMode) return;
+        // if (editMode) return;
 
         setLoading(true);
         setError(null);
@@ -238,11 +240,22 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     const getCurrentTrack = () => {
         if (!spotifyData) return null;
 
-        if (spotifyData.isPlaying && spotifyData.currentTrack) {
+        // For currently playing track
+        if (spotifyData.isPlaying &&
+            spotifyData.currentTrack?.item &&
+            typeof spotifyData.currentTrack.item === 'object') {
             return spotifyData.currentTrack.item;
-        } else if (spotifyData.lastPlayed) {
+        }
+        // For last played track
+        else if (spotifyData.lastPlayed?.track &&
+            typeof spotifyData.lastPlayed.track === 'object') {
             return spotifyData.lastPlayed.track;
-        } else if (spotifyData.recentTracks && spotifyData.recentTracks.length > 0) {
+        }
+        // For recent tracks
+        else if (spotifyData.recentTracks &&
+            Array.isArray(spotifyData.recentTracks) &&
+            spotifyData.recentTracks.length > 0 &&
+            spotifyData.recentTracks[0].track) {
             return spotifyData.recentTracks[0].track;
         }
 
@@ -255,14 +268,77 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         fetchSpotifyData();
     };
 
+    // Add this function to open track in Spotify
+    const openInSpotify = (url: string) => {
+        if (url) {
+            window.open(url, '_blank');
+        }
+    };
+
+    // Add this function to control Spotify playback
+    const controlSpotifyPlayback = async (action: 'play' | 'pause' | 'next' | 'previous') => {
+        try {
+            const params = new URLSearchParams({
+                action,
+                refreshToken,
+                clientId,
+                clientSecret
+            });
+
+            const response = await fetch(`/api/spotify/control?${params.toString()}`, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to ${action} Spotify playback`);
+            }
+
+            // Refresh data after action
+            setTimeout(fetchSpotifyData, 500);
+            showStatus(`${action.charAt(0).toUpperCase() + action.slice(1)}ing...`);
+        } catch (err) {
+            console.error(`Error controlling Spotify playback (${action}):`, err);
+            showStatus(`Failed to ${action}`);
+        }
+    };
+
+    // Add status message component
+    const StatusMessage = ({ message }: { message: string }) => (
+        <Box
+            sx={{
+                position: 'absolute',
+                bottom: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                bgcolor: 'background.paper',
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                boxShadow: 1,
+                zIndex: 10
+            }}
+        >
+            <Typography variant="body2">{message}</Typography>
+        </Box>
+    );
+
+    // Show messages when actions are performed
+    const showStatus = (message: string) => {
+        setStatusMessage(message);
+        setTimeout(() => setStatusMessage(null), 3000);
+    };
+
     // Loading state
-    // if (loading && !spotifyData) {
-    //     return (
-    //         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-    //             <CircularProgress size={40} />
-    //         </Box>
-    //     );
-    // }
+    if (loading && !spotifyData) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexDirection: 'column' }}>
+                <CircularProgress size={40} sx={{ mb: 2 }} />
+                <Typography variant="body2" color="text.secondary">
+                    Loading Spotify data...
+                </Typography>
+            </Box>
+        );
+    }
 
     // Error state
     if (error && !spotifyData) {
@@ -351,9 +427,29 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                             }
                             sx={{
                                 borderRadius: 1,
-                                '&:hover': { bgcolor: 'action.hover' }
+                                '&:hover': { bgcolor: 'action.hover' },
+                                bgcolor: spotifyData.isPlaying &&
+                                    spotifyData.currentTrack?.item?.id === item.track.id
+                                    ? 'action.selected' : 'transparent',
+                                position: 'relative'
                             }}
                         >
+                            {/* Add indicator for currently playing */}
+                            {spotifyData.isPlaying &&
+                                spotifyData.currentTrack?.item?.id === item.track.id && (
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            left: 0,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 4,
+                                            bgcolor: 'primary.main',
+                                            borderTopLeftRadius: 4,
+                                            borderBottomLeftRadius: 4
+                                        }}
+                                    />
+                                )}
                             <ListItemAvatar>
                                 <Avatar
                                     alt={item.track.name}
@@ -479,33 +575,37 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
                             {/* Playback controls */}
                             <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
-                                <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <IconButton
+                                    size="small"
+                                    sx={{ color: 'text.secondary' }}
+                                    onClick={() => controlSpotifyPlayback('shuffle')}
+                                >
                                     <ShuffleIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small">
+                                <IconButton
+                                    size="small"
+                                    onClick={() => controlSpotifyPlayback('previous')}
+                                >
                                     <SkipPreviousIcon />
                                 </IconButton>
-                                {currentTrack.preview_url ? (
-                                    <IconButton
-                                        size="large"
-                                        sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
-                                        onClick={() => playPreview(currentTrack.preview_url)}
-                                    >
-                                        <PlayArrowIcon fontSize="medium" />
-                                    </IconButton>
-                                ) : (
-                                    <IconButton
-                                        size="large"
-                                        sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
-                                        disabled
-                                    >
-                                        <PlayArrowIcon fontSize="medium" />
-                                    </IconButton>
-                                )}
-                                <IconButton size="small">
+                                <IconButton
+                                    size="large"
+                                    sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
+                                    onClick={() => isPlaying ? controlSpotifyPlayback('pause') : controlSpotifyPlayback('play')}
+                                >
+                                    {isPlaying ? <PauseIcon fontSize="medium" /> : <PlayArrowIcon fontSize="medium" />}
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => controlSpotifyPlayback('next')}
+                                >
                                     <SkipNextIcon />
                                 </IconButton>
-                                <IconButton size="small" sx={{ color: 'text.secondary' }}>
+                                <IconButton
+                                    size="small"
+                                    sx={{ color: 'text.secondary' }}
+                                    onClick={() => controlSpotifyPlayback('repeat')}
+                                >
                                     <RepeatIcon fontSize="small" />
                                 </IconButton>
                             </Stack>
@@ -525,6 +625,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                     icon={<AccessTimeIcon fontSize="small" />}
                                 />
                             )}
+
+                            {/* Add Open in Spotify button */}
+                            {currentTrack.external_urls?.spotify && (
+                                <Button
+                                    size="small"
+                                    startIcon={<LaunchIcon fontSize="small" />}
+                                    onClick={() => openInSpotify(currentTrack.external_urls.spotify)}
+                                    sx={{ mt: 1, mb: 2 }}
+                                >
+                                    Open in Spotify
+                                </Button>
+                            )}
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -534,6 +646,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                     )}
                 </>
             )}
+            {statusMessage && <StatusMessage message={statusMessage} />}
         </Box>
     );
 };
