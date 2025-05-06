@@ -280,9 +280,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         if (!refreshToken) return;
 
         try {
-            const response = await fetch(`/api/spotify/control/${action}`, {
+            const response = await fetch(`/api/spotify/control`, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${refreshToken}` }
+                headers: {
+                    'Authorization': `Bearer ${refreshToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ action })
             });
 
             if (!response.ok) {

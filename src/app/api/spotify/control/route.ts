@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(
-    request: NextRequest,
-    { params }: { params: { action: string } }
-) {
+export async function POST(request: NextRequest) {
+    let action: string = 'unknown';  // Initialize with default value
     try {
-        const action = params.action;
+        // Get the action from the request body
+        const data = await request.json();
+        action = data.action;  // Assign inside try block
+
+        if (!action) {
+            return NextResponse.json({ error: 'Missing action parameter' }, { status: 400 });
+        }
 
         // Get authorization header which contains the refresh token
         const authHeader = request.headers.get('Authorization');
@@ -102,7 +106,7 @@ export async function POST(
     } catch (error) {
         console.error('Spotify control API error:', error);
         return NextResponse.json({
-            error: `Failed to ${params.action} Spotify playback`,
+            error: `Failed to ${action} Spotify playback`,
             details: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 });
     }
