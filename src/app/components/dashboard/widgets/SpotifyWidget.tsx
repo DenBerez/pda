@@ -486,8 +486,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                 elevation={3}
                                 sx={{
                                     width: '100%',
-                                    maxWidth: 280,
-                                    height: 280,
+                                    maxWidth: 150,
+                                    height: 150,
                                     mb: 3,
                                     overflow: 'hidden',
                                     borderRadius: 2,
@@ -574,7 +574,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                             </Box>
 
                             {/* Playback controls */}
-                            <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                            {/* <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                                 <IconButton
                                     size="small"
                                     sx={{ color: 'text.secondary' }}
@@ -608,7 +608,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                 >
                                     <RepeatIcon fontSize="small" />
                                 </IconButton>
-                            </Stack>
+                            </Stack> */}
 
                             {!currentTrack.preview_url && (
                                 <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
