@@ -16,7 +16,9 @@ import {
     Switch,
     Tooltip,
     Link,
-    FormHelperText
+    FormHelperText,
+    ToggleButtonGroup,
+    ToggleButton
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
@@ -39,6 +41,9 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import FormatListNumberedIcon from '@mui/icons-material/FormatListNumbered';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import CodeIcon from '@mui/icons-material/Code';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 
 interface WidgetEditPanelProps {
     open: boolean;
@@ -472,22 +477,51 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 </Select>
                             </FormControl>
 
-                            <FormControl fullWidth margin="normal" size="small">
-                                <InputLabel id="layout-option-label">Layout Style</InputLabel>
-                                <Select
-                                    labelId="layout-option-label"
+                            <Box sx={{ mb: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Layout Style
+                                </Typography>
+                                <ToggleButtonGroup
                                     value={tempWidget?.config?.layoutOption || 'normal'}
-                                    label="Layout Style"
-                                    onChange={(e) => handleWeatherConfigChange({ layoutOption: e.target.value })}
+                                    exclusive
+                                    onChange={(e, newValue) => {
+                                        if (newValue !== null) { // Prevent unselecting all options
+                                            handleWeatherConfigChange({ layoutOption: newValue });
+                                        }
+                                    }}
+                                    aria-label="layout style"
+                                    fullWidth
+                                    size="small"
                                 >
-                                    <MenuItem value="compact">Compact</MenuItem>
-                                    <MenuItem value="normal">Normal</MenuItem>
-                                    <MenuItem value="detailed">Detailed</MenuItem>
-                                </Select>
+                                    <ToggleButton value="compact" aria-label="compact layout">
+                                        <Tooltip title="Compact (Basic info only)">
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <ViewListIcon fontSize="small" sx={{ mr: 1 }} />
+                                                Compact
+                                            </Box>
+                                        </Tooltip>
+                                    </ToggleButton>
+                                    <ToggleButton value="normal" aria-label="normal layout">
+                                        <Tooltip title="Normal (Standard view)">
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <ViewModuleIcon fontSize="small" sx={{ mr: 1 }} />
+                                                Normal
+                                            </Box>
+                                        </Tooltip>
+                                    </ToggleButton>
+                                    <ToggleButton value="detailed" aria-label="detailed layout">
+                                        <Tooltip title="Detailed (All weather data)">
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <ViewAgendaIcon fontSize="small" sx={{ mr: 1 }} />
+                                                Detailed
+                                            </Box>
+                                        </Tooltip>
+                                    </ToggleButton>
+                                </ToggleButtonGroup>
                                 <FormHelperText>
-                                    Compact: Basic info only | Normal: Standard view | Detailed: All weather data
+                                    Select how much weather information to display
                                 </FormHelperText>
-                            </FormControl>
+                            </Box>
 
                             <FormControl fullWidth margin="normal" size="small">
                                 <InputLabel id="refresh-rate-label">Refresh Rate</InputLabel>
