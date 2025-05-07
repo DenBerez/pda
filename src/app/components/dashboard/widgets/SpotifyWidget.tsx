@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -105,8 +105,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     // Get layout option from widget config or default to 'normal'
     const layoutOption = widget.config?.layoutOption || 'normal';
 
-    // Fetch Spotify data
-    const fetchSpotifyData = async () => {
+    // Fetch Spotify data - memoized with useCallback
+    const fetchSpotifyData = useCallback(async () => {
         // if (editMode) return;
 
         const requestId = Date.now();
@@ -191,15 +191,17 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 setLoading(false);
             }
         }
-    };
+    }, [showRecent, refreshToken, clientId, clientSecret, manualControlTime, editMode]);
 
     // Initial fetch and refresh interval
     useEffect(() => {
+        console.log('Setting up initial fetch and refresh interval');
         fetchSpotifyData();
 
         const intervalId = setInterval(fetchSpotifyData, refreshInterval * 1000);
 
         return () => {
+            console.log('Cleaning up refresh interval');
             clearInterval(intervalId);
             if (progressIntervalRef.current) {
                 clearInterval(progressIntervalRef.current);
@@ -208,12 +210,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 audioRef.current.pause();
             }
         };
-    }, [refreshInterval, showRecent, refreshToken, editMode]);
+    }, [refreshInterval, showRecent, refreshToken, editMode, fetchSpotifyData]);
 
     // Update the progress update effect to respond to isPlaying changes
     useEffect(() => {
+        console.log('Progress effect triggered - isPlaying:', isPlaying);
+
         // Clear any existing interval when isPlaying changes
         if (progressIntervalRef.current) {
+            console.log('Clearing existing progress interval');
             clearInterval(progressIntervalRef.current);
             progressIntervalRef.current = null;
         }
@@ -226,6 +231,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                     // Reset progress when it exceeds duration
                     const duration = spotifyData?.currentTrack?.item?.duration_ms || 0;
                     if (prev >= duration) {
+                        console.log('Progress exceeded duration, fetching new data');
                         fetchSpotifyData();
                         return 0;
                     }
@@ -241,7 +247,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 clearInterval(progressIntervalRef.current);
             }
         };
-    }, [isPlaying, spotifyData]);
+    }, [isPlaying, spotifyData, fetchSpotifyData]);
 
     // Audio player functions
     const playPreview = (previewUrl: string) => {
@@ -308,7 +314,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         }
     };
 
-    // Update the controlSpotifyPlayback function to remove status messages
+    // Update the controlSpotifyPlayback function with more debugging
     const controlSpotifyPlayback = async (action: 'play' | 'pause' | 'next' | 'previous' | 'shuffle' | 'repeat') => {
         if (!refreshToken || controlsDisabled) return;
 
@@ -323,11 +329,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         setTimeout(() => setControlsDisabled(false), 500);
 
         try {
+            console.log(`Spotify control action: ${action}`);
+
             // Immediately update local state for better UX
             if (action === 'play') {
+                console.log('Setting isPlaying to true');
                 setIsPlaying(true);
                 setManualControlTime(Date.now()); // Track when we manually set playing state
             } else if (action === 'pause') {
+                console.log('Setting isPlaying to false');
                 setIsPlaying(false);
                 setManualControlTime(Date.now()); // Track when we manually set playing state
             }
@@ -350,8 +360,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             if (!response.ok) {
                 // Revert state change if request failed
                 if (action === 'play') {
+                    console.log('API request failed, reverting isPlaying to false');
                     setIsPlaying(false);
                 } else if (action === 'pause') {
+                    console.log('API request failed, reverting isPlaying to true');
                     setIsPlaying(true);
                 }
 
@@ -364,7 +376,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             console.log(`Spotify ${action} successful:`, data);
 
             // Refresh data after action with a slight delay to allow Spotify API to update
-            setTimeout(fetchSpotifyData, 1000);
+            setTimeout(() => {
+                console.log(`Refreshing data after ${action} action`);
+                fetchSpotifyData();
+            }, 1000);
         } catch (err) {
             console.error(`Error controlling Spotify playback (${action}):`, err);
         }
