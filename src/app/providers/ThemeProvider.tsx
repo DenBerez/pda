@@ -46,6 +46,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const [mode, setMode] = useState<'light' | 'dark'>('light');
     const [primaryColor, setPrimaryColor] = useState<string>('#1976d2');
     const [fontFamily, setFontFamily] = useState('var(--font-geist-sans), system-ui, sans-serif');
+    const [theme, setTheme] = useState(createTheme());
 
     useEffect(() => {
         // Check system preference and saved preference
@@ -96,207 +97,29 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const handleSetFontFamily = (font: string) => {
         setFontFamily(font);
         localStorage.setItem('dashboardFontFamily', font);
-    };
 
-    const theme = createTheme({
-        palette: {
-            mode,
-            primary: {
-                main: mode === 'light' ? safePrimaryColor : darkModePrimaryColor,
-            },
-            secondary: {
-                main: mode === 'light' ? '#f50057' : '#f48fb1',
-            },
-            background: {
-                default: mode === 'light' ? '#f5f5f5' : '#121212',
-                paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
-            },
-            action: {
-                // Customize hover states based on primary color
-                hover: mode === 'light'
-                    ? alpha(safePrimaryColor, 0.08)  // Light mode: slightly transparent primary
-                    : alpha(darkModePrimaryColor, 0.12), // Dark mode: slightly transparent primary
-                selected: mode === 'light'
-                    ? alpha(safePrimaryColor, 0.16)  // Light mode: more opaque primary
-                    : alpha(darkModePrimaryColor, 0.24), // Dark mode: more opaque primary
-            },
-        },
-        typography: {
-            fontFamily: fontFamily,
-            fontSize: 16,
-            fontWeightLight: 300,
-            fontWeightRegular: 400,
-            fontWeightMedium: 500,
-            fontWeightBold: 600,
-            h1: {
-                fontFamily: fontFamily,
-                fontSize: '2.5rem',
-                fontWeight: 600,
-                lineHeight: 1.2,
-            },
-            h2: {
-                fontFamily: fontFamily,
-                fontSize: '2rem',
-                fontWeight: 600,
-                lineHeight: 1.3,
-            },
-            h3: {
-                fontFamily: fontFamily,
-                fontSize: '1.75rem',
-                fontWeight: 600,
-                lineHeight: 1.3,
-            },
-            h4: {
-                fontFamily: fontFamily,
-                fontSize: '1.5rem',
-                fontWeight: 600,
-                lineHeight: 1.4,
-            },
-            h5: {
-                fontFamily: fontFamily,
-                fontSize: '1.25rem',
-                fontWeight: 600,
-                lineHeight: 1.4,
-            },
-            h6: {
-                fontFamily: fontFamily,
-                fontSize: '1rem',
-                fontWeight: 600,
-                lineHeight: 1.5,
-            },
-            body1: {
-                fontFamily: fontFamily,
-                fontSize: '1rem',
-                lineHeight: 1.5,
-            },
-            body2: {
-                fontFamily: fontFamily,
-                fontSize: '0.875rem',
-                lineHeight: 1.5,
-            },
-            button: {
-                fontFamily: fontFamily,
-                fontWeight: 500,
-                textTransform: 'none',
-            },
-            caption: {
-                fontFamily: fontFamily,
-                fontSize: '0.75rem',
-                lineHeight: 1.5,
-            },
-            overline: {
-                fontFamily: fontFamily,
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: 1,
-            },
-            subtitle1: {
-                fontFamily: fontFamily,
-                fontSize: '1rem',
-                fontWeight: 500,
-                lineHeight: 1.5,
-            },
-            subtitle2: {
-                fontFamily: fontFamily,
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                lineHeight: 1.5,
-            },
-        },
-        components: {
-            MuiButton: {
-                styleOverrides: {
-                    root: {
-                        borderRadius: 8,
-                        textTransform: 'none',
-                        fontWeight: 500,
-                    },
-                    containedPrimary: {
-                        '&:hover': {
-                            backgroundColor: mode === 'light'
-                                ? darken(safePrimaryColor, 0.1) // Darken primary color in light mode
-                                : lighten(darkModePrimaryColor, 0.1) // Lighten primary color in dark mode
-                        }
-                    },
-                    outlinedPrimary: {
-                        '&:hover': {
-                            backgroundColor: mode === 'light'
-                                ? alpha(safePrimaryColor, 0.08)
-                                : alpha(darkModePrimaryColor, 0.12),
-                            borderColor: mode === 'light' ? safePrimaryColor : darkModePrimaryColor
-                        }
-                    },
-                    textPrimary: {
-                        '&:hover': {
-                            backgroundColor: mode === 'light'
-                                ? alpha(safePrimaryColor, 0.08)
-                                : alpha(darkModePrimaryColor, 0.12)
-                        }
-                    }
-                },
-            },
-            MuiPaper: {
-                styleOverrides: {
-                    root: {
-                        borderRadius: 8,
-                        transition: 'box-shadow 0.3s ease, transform 0.2s ease',
-                    },
-                },
-            },
-            MuiCard: {
-                styleOverrides: {
-                    root: {
-                        borderRadius: 12,
-                        overflow: 'hidden',
-                    },
-                },
-            },
-            MuiCardContent: {
-                styleOverrides: {
-                    root: {
-                        padding: 16,
-                        '&:last-child': {
-                            paddingBottom: 16,
-                        },
-                    },
-                },
-            },
-            MuiIconButton: {
-                styleOverrides: {
-                    root: {
-                        '&:hover': {
-                            backgroundColor: mode === 'light'
-                                ? alpha(safePrimaryColor, 0.08)
-                                : alpha(darkModePrimaryColor, 0.12)
-                        }
-                    },
-                    colorPrimary: {
-                        '&:hover': {
-                            backgroundColor: mode === 'light'
-                                ? alpha(safePrimaryColor, 0.12)
-                                : alpha(darkModePrimaryColor, 0.16)
-                        }
-                    }
-                }
-            },
-            MuiCssBaseline: {
-                styleOverrides: {
-                    ':root': {
-                        '--primary': mode === 'light' ? safePrimaryColor : darkModePrimaryColor,
-                        '--primary-hover': mode === 'light'
-                            ? darken(safePrimaryColor, 0.1).toString()
-                            : lighten(darkModePrimaryColor, 0.1).toString(),
-                    },
-                    '@global': {
-                        'code, pre, .code-font': {
-                            fontFamily: 'var(--font-geist-mono), monospace',
-                        },
-                    },
-                },
-            },
-        },
-    });
+        // Force a re-render of the theme by creating a new theme object
+        const newTheme = createTheme({
+            ...theme,
+            typography: {
+                ...theme.typography,
+                fontFamily: font,
+                h1: { ...theme.typography.h1, fontFamily: font },
+                h2: { ...theme.typography.h2, fontFamily: font },
+                h3: { ...theme.typography.h3, fontFamily: font },
+                h4: { ...theme.typography.h4, fontFamily: font },
+                h5: { ...theme.typography.h5, fontFamily: font },
+                h6: { ...theme.typography.h6, fontFamily: font },
+                body1: { ...theme.typography.body1, fontFamily: font },
+                body2: { ...theme.typography.body2, fontFamily: font },
+                button: { ...theme.typography.button, fontFamily: font },
+                caption: { ...theme.typography.caption, fontFamily: font },
+            }
+        });
+
+        // Apply the new theme
+        setTheme(newTheme);
+    };
 
     const themeContextValue = {
         toggleColorMode,
