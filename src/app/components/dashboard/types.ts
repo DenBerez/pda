@@ -68,6 +68,8 @@ export interface CalendarConfig {
     showEvents?: boolean;
     maxEvents?: number;
     calendarRefreshToken?: string;
+    showCalendarGrid?: boolean;
+    showEventBox?: boolean;
 }
 
 export interface SocialConfig {

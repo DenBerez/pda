@@ -849,7 +849,6 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 </Select>
                             </FormControl>
 
-
                             <FormControlLabel
                                 sx={{ ml: 0.5 }}
                                 control={
@@ -863,7 +862,28 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
 
                             <FormControlLabel
                                 sx={{ ml: 0.5 }}
+                                control={
+                                    <Switch
+                                        checked={tempWidget?.config?.showCalendarGrid !== false}
+                                        onChange={(e) => handleConfigChange({ showCalendarGrid: e.target.checked })}
+                                    />
+                                }
+                                label="Show Calendar Grid"
+                            />
 
+                            <FormControlLabel
+                                sx={{ ml: 0.5 }}
+                                control={
+                                    <Switch
+                                        checked={tempWidget?.config?.showEventBox !== false}
+                                        onChange={(e) => handleConfigChange({ showEventBox: e.target.checked })}
+                                    />
+                                }
+                                label="Show Event Box"
+                            />
+
+                            <FormControlLabel
+                                sx={{ ml: 0.5 }}
                                 control={
                                     <Switch
                                         checked={tempWidget?.config?.showEvents !== false}

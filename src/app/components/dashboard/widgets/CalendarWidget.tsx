@@ -63,6 +63,8 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
     const refreshToken = widget.config?.calendarRefreshToken || '';
     const showEvents = widget.config?.showEvents !== false; // Default: true
     const maxEvents = widget.config?.maxEvents || 5;
+    const showCalendarGrid = widget.config?.showCalendarGrid !== false; // Default: true
+    const showEventBox = widget.config?.showEventBox !== false; // Default: true
 
     // Get current month and year
     const currentMonth = currentDate.getMonth();
@@ -320,85 +322,87 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
             </Box>
 
             {/* Calendar Grid */}
-            <TableContainer component={Paper} elevation={0} sx={{
-                flexGrow: 0,
-                bgcolor: 'background.default',
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1
-            }}>
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            {dayNames.map(day => (
-                                <TableCell key={day} align="center" sx={{ py: 1 }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
-                                        {day}
-                                    </Typography>
-                                </TableCell>
-                            ))}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {calendarGrid.map((week, weekIndex) => (
-                            <TableRow key={weekIndex}>
-                                {week.map((day, dayIndex) => (
-                                    <TableCell
-                                        key={dayIndex}
-                                        align="center"
-                                        onClick={() => day && handleDateSelect(day)}
-                                        sx={{
-                                            cursor: day ? 'pointer' : 'default',
-                                            position: 'relative',
-                                            bgcolor: day && isSelected(day)
-                                                ? theme.selected
-                                                : day && isToday(day)
-                                                    ? theme.today
-                                                    : isWeekend(dayIndex) && showWeekends
-                                                        ? theme.weekend
-                                                        : 'inherit',
-                                            color: day && isSelected(day)
-                                                ? theme.selectedText
-                                                : 'inherit',
-                                            borderRadius: '4px',
-                                            '&:hover': {
-                                                bgcolor: day && !isSelected(day) && !isToday(day)
-                                                    ? 'action.hover'
-                                                    : undefined
-                                            }
-                                        }}
-                                    >
-                                        {day && (
-                                            <>
-                                                <Typography variant="body2">
-                                                    {day}
-                                                </Typography>
-                                                {hasEvents(day) && (
-                                                    <Box
-                                                        sx={{
-                                                            position: 'absolute',
-                                                            bottom: 2,
-                                                            left: '50%',
-                                                            transform: 'translateX(-50%)',
-                                                            width: '4px',
-                                                            height: '4px',
-                                                            borderRadius: '50%',
-                                                            bgcolor: isSelected(day) ? theme.selectedText : theme.event
-                                                        }}
-                                                    />
-                                                )}
-                                            </>
-                                        )}
+            {showCalendarGrid && (
+                <TableContainer component={Paper} elevation={0} sx={{
+                    flexGrow: 0,
+                    bgcolor: 'background.default',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1
+                }}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                {dayNames.map(day => (
+                                    <TableCell key={day} align="center" sx={{ py: 1 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
+                                            {day}
+                                        </Typography>
                                     </TableCell>
                                 ))}
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                            {calendarGrid.map((week, weekIndex) => (
+                                <TableRow key={weekIndex}>
+                                    {week.map((day, dayIndex) => (
+                                        <TableCell
+                                            key={dayIndex}
+                                            align="center"
+                                            onClick={() => day && handleDateSelect(day)}
+                                            sx={{
+                                                cursor: day ? 'pointer' : 'default',
+                                                position: 'relative',
+                                                bgcolor: day && isSelected(day)
+                                                    ? theme.selected
+                                                    : day && isToday(day)
+                                                        ? theme.today
+                                                        : isWeekend(dayIndex) && showWeekends
+                                                            ? theme.weekend
+                                                            : 'inherit',
+                                                color: day && isSelected(day)
+                                                    ? theme.selectedText
+                                                    : 'inherit',
+                                                borderRadius: '4px',
+                                                '&:hover': {
+                                                    bgcolor: day && !isSelected(day) && !isToday(day)
+                                                        ? 'action.hover'
+                                                        : undefined
+                                                }
+                                            }}
+                                        >
+                                            {day && (
+                                                <>
+                                                    <Typography variant="body2">
+                                                        {day}
+                                                    </Typography>
+                                                    {hasEvents(day) && (
+                                                        <Box
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                bottom: 2,
+                                                                left: '50%',
+                                                                transform: 'translateX(-50%)',
+                                                                width: '4px',
+                                                                height: '4px',
+                                                                borderRadius: '50%',
+                                                                bgcolor: isSelected(day) ? theme.selectedText : theme.event
+                                                            }}
+                                                        />
+                                                    )}
+                                                </>
+                                            )}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
 
             {/* Events List */}
-            {showEvents && (
+            {showEvents && showEventBox && (
                 <Box sx={{
                     mt: 2,
                     flexGrow: 1,
