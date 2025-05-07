@@ -92,6 +92,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [controlsDisabled, setControlsDisabled] = useState(false);
+    const latestRequestRef = useRef<number>(0);
+    const [lastActionTime, setLastActionTime] = useState<number>(0);
 
     // Get config from widget
     const refreshToken = widget.config?.refreshToken || '';
@@ -106,6 +108,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     const fetchSpotifyData = async () => {
         // if (editMode) return;
 
+        const requestId = Date.now();
+        latestRequestRef.current = requestId;
+
         setLoading(true);
         setError(null);
 
@@ -118,6 +123,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 clientSecret
             });
 
+            console.log('Fetching Spotify data...');
             const response = await fetch(`/api/spotify?${params.toString()}`);
 
             if (!response.ok) {
@@ -125,6 +131,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             }
 
             const data = await response.json();
+            console.log('Spotify data received:', {
+                isPlaying: data.isPlaying,
+                hasCurrentTrack: !!data.currentTrack,
+                trackId: data.currentTrack?.item?.id
+            });
 
             if (data.error) {
                 // If we need authentication, redirect to auth URL if provided
@@ -135,10 +146,17 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 throw new Error(data.error);
             }
 
+            // Check if this is still the latest request
+            if (latestRequestRef.current !== requestId) {
+                console.log('Ignoring stale response');
+                return;
+            }
+
             setSpotifyData(data);
 
             // Update playing state based on data
             const newIsPlaying = data.isPlaying || false;
+            console.log('Setting isPlaying to:', newIsPlaying);
             setIsPlaying(newIsPlaying);
 
             // Update progress if currently playing
@@ -162,7 +180,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 setProgress(sampleSpotifyData.currentTrack.progress_ms);
             }
         } finally {
-            setLoading(false);
+            if (latestRequestRef.current === requestId) {
+                setLoading(false);
+            }
         }
     };
 
@@ -193,6 +213,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
         // Only set up the interval if the track is playing
         if (isPlaying && spotifyData?.currentTrack) {
+            console.log('Setting up progress interval - isPlaying:', isPlaying);
             progressIntervalRef.current = setInterval(() => {
                 setProgress(prev => {
                     // Reset progress when it exceeds duration
@@ -204,6 +225,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                     return prev + 1000;
                 });
             }, 1000);
+        } else {
+            console.log('Not setting up progress interval - isPlaying:', isPlaying);
         }
 
         return () => {
@@ -278,11 +301,17 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         }
     };
 
-    // Add this function to control Spotify playback
+    // Update the controlSpotifyPlayback function to remove status messages
     const controlSpotifyPlayback = async (action: 'play' | 'pause' | 'next' | 'previous' | 'shuffle' | 'repeat') => {
         if (!refreshToken || controlsDisabled) return;
 
-        // Disable controls temporarily to prevent rapid requests
+        const now = Date.now();
+        if (now - lastActionTime < 500) {
+            console.log('Ignoring rapid control request');
+            return;
+        }
+
+        setLastActionTime(now);
         setControlsDisabled(true);
         setTimeout(() => setControlsDisabled(false), 500);
 
@@ -317,19 +346,23 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                     setIsPlaying(true);
                 }
 
-                if (response.status === 404) {
-                    showStatus('No active Spotify device found. Please open Spotify on a device first.');
-                    return;
-                }
-                throw new Error(`Failed to ${action} Spotify playback`);
+                // Don't show status messages for errors
+                console.error(`Failed to ${action} Spotify playback:`, data.error || 'Unknown error');
+                return;
             }
 
-            // Refresh data after action
-            setTimeout(fetchSpotifyData, 500);
-            showStatus(`${action.charAt(0).toUpperCase() + action.slice(1)}ing...`);
+            // Log success for debugging
+            console.log(`Spotify ${action} successful:`, data);
+
+            // Refresh data after action with a slight delay to allow Spotify API to update
+            setTimeout(fetchSpotifyData, 1000);
+
+            // Remove status message
+            // showStatus(`${action.charAt(0).toUpperCase() + action.slice(1)}ing...`);
         } catch (err) {
             console.error(`Error controlling Spotify playback (${action}):`, err);
-            showStatus(`Failed to ${action}`);
+            // Remove status message
+            // showStatus(`Failed to ${action}`);
         }
     };
 
@@ -1092,7 +1125,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 )}
             </Box>
 
-            {statusMessage && <StatusMessage message={statusMessage} />}
+            {/* {statusMessage && <StatusMessage message={statusMessage} />} */}
         </Box>
     );
 };

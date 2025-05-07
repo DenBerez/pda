@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         // Determine which Spotify API endpoint to call based on the action
         let endpoint = '';
         let method = 'PUT';
-        let body = null;
+        let body = null; // Initialize body variable
 
         switch (action) {
             case 'play':
@@ -81,7 +81,8 @@ export async function POST(request: NextRequest) {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json'
             },
-            body: body
+            // Only include body if it's not null
+            ...(body ? { body: JSON.stringify(body) } : {})
         });
 
         if (!response.ok) {
