@@ -166,6 +166,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
 
     // Check if a date has events
     const hasEvents = (day: number) => {
+        // console.log(`Checking events for day ${day}`, events);
         const date = new Date(currentYear, currentMonth, day);
         return events.some(event => {
             const eventStart = event.start.dateTime
@@ -176,9 +177,12 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
 
             if (!eventStart) return false;
 
-            return eventStart.getDate() === day &&
+            const hasEvent = eventStart.getDate() === day &&
                 eventStart.getMonth() === currentMonth &&
                 eventStart.getFullYear() === currentYear;
+
+            // console.log(`Event ${event.summary} on ${eventStart.toDateString()} matches day ${day}: ${hasEvent}`);
+            return hasEvent;
         });
     };
 
