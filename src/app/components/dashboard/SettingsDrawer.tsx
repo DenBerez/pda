@@ -377,31 +377,10 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                         </MenuItem>
                                     ))}
                                 </Select>
-                                <FormHelperText>
-                                    Select the font used throughout the dashboard
-                                </FormHelperText>
+
                             </FormControl>
 
-                            {/* Font Preview */}
-                            <Paper
-                                elevation={0}
-                                sx={{
-                                    mt: 1,
-                                    p: 1.5,
-                                    borderRadius: 1,
-                                    bgcolor: 'background.paper',
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                    fontFamily: fontFamily
-                                }}
-                            >
-                                <Typography variant="body2" sx={{ fontFamily: 'inherit' }}>
-                                    The quick brown fox jumps over the lazy dog.
-                                </Typography>
-                                <Typography variant="caption" sx={{ fontFamily: 'inherit', display: 'block', mt: 0.5 }}>
-                                    ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789
-                                </Typography>
-                            </Paper>
+
                         </Box>
                     </Paper>
 
