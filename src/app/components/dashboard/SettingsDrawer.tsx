@@ -118,15 +118,9 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
     // Handle font family change
     const handleFontChange = (font: string) => {
-        // Update the font family
+        // Only call the parent's onChangeFontFamily function
+        // and let ThemeProvider handle everything else
         onChangeFontFamily(font);
-
-        // Apply the font to the document immediately for instant feedback
-        document.documentElement.style.setProperty('--font-current', font);
-
-        // Trigger a refresh event to update components
-        const refreshEvent = new CustomEvent('dashboard-refresh-theme');
-        window.dispatchEvent(refreshEvent);
     };
 
     return (
