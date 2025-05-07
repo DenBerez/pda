@@ -123,10 +123,16 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
         // Apply the font to the document immediately for instant feedback
         document.documentElement.style.setProperty('--font-current', font);
+        document.body.style.fontFamily = font;
 
         // Force a refresh of the entire app by triggering a custom event
         const refreshEvent = new CustomEvent('dashboard-refresh-theme');
         window.dispatchEvent(refreshEvent);
+
+        // Force a reflow/repaint
+        document.body.style.display = 'none';
+        document.body.offsetHeight; // Trigger a reflow
+        document.body.style.display = '';
     };
 
     return (
