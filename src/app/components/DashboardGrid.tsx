@@ -240,8 +240,7 @@ const DashboardGrid: React.FC = () => {
                 colorTheme: 'default',
                 showEvents: true,
                 maxEvents: 5,
-                showCalendarGrid: true,
-                showEventBox: true
+                showCalendarGrid: true
             };
         }
         // Add the new widget to the state

@@ -34,17 +34,15 @@ interface CalendarEvent {
     id: string;
     summary: string;
     description?: string;
+    location?: string;
     start: {
         dateTime?: string;
         date?: string;
-        timeZone?: string;
     };
     end: {
         dateTime?: string;
         date?: string;
-        timeZone?: string;
     };
-    location?: string;
 }
 
 const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => {
@@ -64,7 +62,6 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
     const showEvents = widget.config?.showEvents !== false; // Default: true
     const maxEvents = widget.config?.maxEvents || 5;
     const showCalendarGrid = widget.config?.showCalendarGrid !== false; // Default: true
-    const showEventBox = widget.config?.showEventBox !== false; // Default: true
 
     // Get current month and year
     const currentMonth = currentDate.getMonth();
@@ -85,8 +82,6 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
 
     // Fetch calendar events
     const fetchEvents = async () => {
-        // if (editMode) return;
-
         setLoading(true);
         setError(null);
 
@@ -177,7 +172,6 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
 
     // Check if a date has events
     const hasEvents = (day: number) => {
-        // console.log(`Checking events for day ${day}`, events);
         const date = new Date(currentYear, currentMonth, day);
         return events.some(event => {
             const eventStart = event.start.dateTime
@@ -192,7 +186,6 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
                 eventStart.getMonth() === currentMonth &&
                 eventStart.getFullYear() === currentYear;
 
-            // console.log(`Event ${event.summary} on ${eventStart.toDateString()} matches day ${day}: ${hasEvent}`);
             return hasEvent;
         });
     };
@@ -277,7 +270,6 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
         const primaryText = muiTheme.palette.primary.contrastText;
 
         switch (colorTheme) {
-
             default:
                 // Use the MUI theme's primary color
                 return {
@@ -294,117 +286,130 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
 
     const theme = getColorTheme();
 
+    // If calendar grid is hidden and we're not showing events, show a message
+    if (!showCalendarGrid && !showEvents) {
+        return (
+            <Box sx={{ p: 2, height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <Typography variant="body1" color="text.secondary">
+                    Calendar display is disabled. Enable calendar grid or events in widget settings.
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
         <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
-            {/* Calendar Header */}
-            <Box sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                mb: 2
-            }}>
-                <IconButton onClick={prevMonth} size="small">
-                    <ArrowBackIosNewIcon fontSize="small" />
-                </IconButton>
-
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
-                        {monthNames[currentMonth]} {currentYear}
-                    </Typography>
-                    <IconButton onClick={goToToday} size="small" sx={{ ml: 1 }}>
-                        <TodayIcon fontSize="small" />
-                    </IconButton>
-                </Box>
-
-                <IconButton onClick={nextMonth} size="small">
-                    <ArrowForwardIosIcon fontSize="small" />
-                </IconButton>
-            </Box>
-
-            {/* Calendar Grid */}
             {showCalendarGrid && (
-                <TableContainer component={Paper} elevation={0} sx={{
-                    flexGrow: 0,
-                    bgcolor: 'background.default',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 1
-                }}>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                {dayNames.map(day => (
-                                    <TableCell key={day} align="center" sx={{ py: 1 }}>
-                                        <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
-                                            {day}
-                                        </Typography>
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {calendarGrid.map((week, weekIndex) => (
-                                <TableRow key={weekIndex}>
-                                    {week.map((day, dayIndex) => (
-                                        <TableCell
-                                            key={dayIndex}
-                                            align="center"
-                                            onClick={() => day && handleDateSelect(day)}
-                                            sx={{
-                                                cursor: day ? 'pointer' : 'default',
-                                                position: 'relative',
-                                                bgcolor: day && isSelected(day)
-                                                    ? theme.selected
-                                                    : day && isToday(day)
-                                                        ? theme.today
-                                                        : isWeekend(dayIndex) && showWeekends
-                                                            ? theme.weekend
-                                                            : 'inherit',
-                                                color: day && isSelected(day)
-                                                    ? theme.selectedText
-                                                    : 'inherit',
-                                                borderRadius: '4px',
-                                                '&:hover': {
-                                                    bgcolor: day && !isSelected(day) && !isToday(day)
-                                                        ? 'action.hover'
-                                                        : undefined
-                                                }
-                                            }}
-                                        >
-                                            {day && (
-                                                <>
-                                                    <Typography variant="body2">
-                                                        {day}
-                                                    </Typography>
-                                                    {hasEvents(day) && (
-                                                        <Box
-                                                            sx={{
-                                                                position: 'absolute',
-                                                                bottom: 2,
-                                                                left: '50%',
-                                                                transform: 'translateX(-50%)',
-                                                                width: '4px',
-                                                                height: '4px',
-                                                                borderRadius: '50%',
-                                                                bgcolor: isSelected(day) ? theme.selectedText : theme.event
-                                                            }}
-                                                        />
-                                                    )}
-                                                </>
-                                            )}
+                <>
+                    {/* Calendar Header */}
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 2
+                    }}>
+                        <IconButton onClick={prevMonth} size="small">
+                            <ArrowBackIosNewIcon fontSize="small" />
+                        </IconButton>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 'medium' }}>
+                                {monthNames[currentMonth]} {currentYear}
+                            </Typography>
+                            <IconButton onClick={goToToday} size="small" sx={{ ml: 1 }}>
+                                <TodayIcon fontSize="small" />
+                            </IconButton>
+                        </Box>
+
+                        <IconButton onClick={nextMonth} size="small">
+                            <ArrowForwardIosIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+
+                    {/* Calendar Grid */}
+                    <TableContainer component={Paper} elevation={0} sx={{
+                        flexGrow: 0,
+                        bgcolor: 'background.default',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1
+                    }}>
+                        <Table size="small">
+                            <TableHead>
+                                <TableRow>
+                                    {dayNames.map(day => (
+                                        <TableCell key={day} align="center" sx={{ py: 1 }}>
+                                            <Typography variant="caption" sx={{ fontWeight: 'medium' }}>
+                                                {day}
+                                            </Typography>
                                         </TableCell>
                                     ))}
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                            </TableHead>
+                            <TableBody>
+                                {calendarGrid.map((week, weekIndex) => (
+                                    <TableRow key={weekIndex}>
+                                        {week.map((day, dayIndex) => (
+                                            <TableCell
+                                                key={dayIndex}
+                                                align="center"
+                                                onClick={() => day && handleDateSelect(day)}
+                                                sx={{
+                                                    cursor: day ? 'pointer' : 'default',
+                                                    position: 'relative',
+                                                    bgcolor: day && isSelected(day)
+                                                        ? theme.selected
+                                                        : day && isToday(day)
+                                                            ? theme.today
+                                                            : isWeekend(dayIndex) && showWeekends
+                                                                ? theme.weekend
+                                                                : 'inherit',
+                                                    color: day && isSelected(day)
+                                                        ? theme.selectedText
+                                                        : 'inherit',
+                                                    borderRadius: '4px',
+                                                    '&:hover': {
+                                                        bgcolor: day && !isSelected(day) && !isToday(day)
+                                                            ? 'action.hover'
+                                                            : undefined
+                                                    }
+                                                }}
+                                            >
+                                                {day && (
+                                                    <>
+                                                        <Typography variant="body2">
+                                                            {day}
+                                                        </Typography>
+                                                        {hasEvents(day) && (
+                                                            <Box
+                                                                sx={{
+                                                                    position: 'absolute',
+                                                                    bottom: 2,
+                                                                    left: '50%',
+                                                                    transform: 'translateX(-50%)',
+                                                                    width: '4px',
+                                                                    height: '4px',
+                                                                    borderRadius: '50%',
+                                                                    bgcolor: isSelected(day) ? theme.selectedText : theme.event
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </>
+                                                )}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </>
             )}
 
             {/* Events List */}
-            {showEvents && showEventBox && (
+            {showEvents && (
                 <Box sx={{
-                    mt: 2,
+                    mt: showCalendarGrid ? 2 : 0,
                     flexGrow: 1,
                     overflow: 'auto',
                     border: '1px solid',
@@ -423,7 +428,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
                         }}
                     >
                         <EventIcon fontSize="small" sx={{ mr: 1 }} />
-                        {selectedDate ? `Events for ${formatSelectedDate(selectedDate)}` : 'Upcoming Events'}
+                        {showCalendarGrid && selectedDate ? `Events for ${formatSelectedDate(selectedDate)}` : 'Upcoming Events'}
                     </Typography>
 
                     {loading ? (
@@ -434,7 +439,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
                         <Typography variant="body2" color="error" sx={{ p: 2 }}>
                             {error}
                         </Typography>
-                    ) : selectedDate ? (
+                    ) : showCalendarGrid && selectedDate ? (
                         <List disablePadding>
                             {getEventsForDate(selectedDate).length > 0 ? (
                                 getEventsForDate(selectedDate).map((event, index) => (
@@ -445,11 +450,11 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
                                                 primary={event.summary}
                                                 secondary={
                                                     <Box>
-                                                        {event.start.dateTime && (
+                                                        {event.start.dateTime ? (
                                                             <Typography variant="caption" display="block">
-                                                                {formatEventTime(event.start.dateTime)} - {formatEventTime(event.end.dateTime!)}
+                                                                {formatEventTime(event.start.dateTime)}
                                                             </Typography>
-                                                        )}
+                                                        ) : null}
                                                         {event.location && (
                                                             <Typography variant="caption" display="block">
                                                                 {event.location}
@@ -505,22 +510,6 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
                             )}
                         </List>
                     )}
-                </Box>
-            )}
-
-            {/* Selected Date Info (only show if events are not displayed) */}
-            {!showEvents && selectedDate && (
-                <Box sx={{
-                    mt: 2,
-                    p: 1,
-                    bgcolor: 'background.paper',
-                    borderRadius: 1,
-                    border: '1px solid',
-                    borderColor: 'divider'
-                }}>
-                    <Typography variant="subtitle2">
-                        Selected: {formatSelectedDate(selectedDate)}
-                    </Typography>
                 </Box>
             )}
         </Box>

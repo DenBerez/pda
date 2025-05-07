@@ -822,46 +822,12 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 </Typography>
                             </Box>
 
-                            <FormControl fullWidth margin="normal" size="small">
-                                <InputLabel id="first-day-label">First Day of Week</InputLabel>
-                                <Select
-                                    labelId="first-day-label"
-                                    value={tempWidget?.config?.firstDayOfWeek || 0}
-                                    label="First Day of Week"
-                                    onChange={(e) => handleConfigChange({ firstDayOfWeek: e.target.value })}
-                                >
-                                    <MenuItem value={0}>Sunday</MenuItem>
-                                    <MenuItem value={1}>Monday</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <FormControl fullWidth margin="normal" size="small">
-                                <InputLabel id="date-format-label">Date Format</InputLabel>
-                                <Select
-                                    labelId="date-format-label"
-                                    value={tempWidget?.config?.dateFormat || 'long'}
-                                    label="Date Format"
-                                    onChange={(e) => handleConfigChange({ dateFormat: e.target.value })}
-                                >
-                                    <MenuItem value="short">Short (e.g., 1/1/2023)</MenuItem>
-                                    <MenuItem value="medium">Medium (e.g., Jan 1, 2023)</MenuItem>
-                                    <MenuItem value="long">Long (e.g., January 1, 2023)</MenuItem>
-                                </Select>
-                            </FormControl>
+                            <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
+                                Display Options
+                            </Typography>
 
                             <FormControlLabel
-                                sx={{ ml: 0.5 }}
-                                control={
-                                    <Switch
-                                        checked={tempWidget?.config?.showWeekends !== false}
-                                        onChange={(e) => handleConfigChange({ showWeekends: e.target.checked })}
-                                    />
-                                }
-                                label="Highlight Weekends"
-                            />
-
-                            <FormControlLabel
-                                sx={{ ml: 0.5 }}
+                                sx={{ display: 'block', mt: 1 }}
                                 control={
                                     <Switch
                                         checked={tempWidget?.config?.showCalendarGrid !== false}
@@ -872,18 +838,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                             />
 
                             <FormControlLabel
-                                sx={{ ml: 0.5 }}
-                                control={
-                                    <Switch
-                                        checked={tempWidget?.config?.showEventBox !== false}
-                                        onChange={(e) => handleConfigChange({ showEventBox: e.target.checked })}
-                                    />
-                                }
-                                label="Show Event Box"
-                            />
-
-                            <FormControlLabel
-                                sx={{ ml: 0.5 }}
+                                sx={{ display: 'block', mt: 1 }}
                                 control={
                                     <Switch
                                         checked={tempWidget?.config?.showEvents !== false}
@@ -893,20 +848,72 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 label="Show Events"
                             />
 
+                            {tempWidget?.config?.showCalendarGrid !== false && (
+                                <>
+                                    <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
+                                        Calendar Grid Options
+                                    </Typography>
+
+                                    <FormControl fullWidth margin="normal" size="small">
+                                        <InputLabel id="first-day-label">First Day of Week</InputLabel>
+                                        <Select
+                                            labelId="first-day-label"
+                                            value={tempWidget?.config?.firstDayOfWeek || 0}
+                                            label="First Day of Week"
+                                            onChange={(e) => handleConfigChange({ firstDayOfWeek: e.target.value })}
+                                        >
+                                            <MenuItem value={0}>Sunday</MenuItem>
+                                            <MenuItem value={1}>Monday</MenuItem>
+                                        </Select>
+                                    </FormControl>
+
+                                    <FormControl fullWidth margin="normal" size="small">
+                                        <InputLabel id="date-format-label">Date Format</InputLabel>
+                                        <Select
+                                            labelId="date-format-label"
+                                            value={tempWidget?.config?.dateFormat || 'long'}
+                                            label="Date Format"
+                                            onChange={(e) => handleConfigChange({ dateFormat: e.target.value })}
+                                        >
+                                            <MenuItem value="short">Short (e.g., 1/1/2023)</MenuItem>
+                                            <MenuItem value="medium">Medium (e.g., Jan 1, 2023)</MenuItem>
+                                            <MenuItem value="long">Long (e.g., January 1, 2023)</MenuItem>
+                                        </Select>
+                                    </FormControl>
+
+                                    <FormControlLabel
+                                        sx={{ display: 'block', mt: 1 }}
+                                        control={
+                                            <Switch
+                                                checked={tempWidget?.config?.showWeekends !== false}
+                                                onChange={(e) => handleConfigChange({ showWeekends: e.target.checked })}
+                                            />
+                                        }
+                                        label="Highlight Weekends"
+                                    />
+                                </>
+                            )}
+
                             {tempWidget?.config?.showEvents !== false && (
-                                <FormControl fullWidth margin="normal" size="small">
-                                    <InputLabel id="max-events-label">Max Events</InputLabel>
-                                    <Select
-                                        labelId="max-events-label"
-                                        value={tempWidget?.config?.maxEvents || 5}
-                                        label="Max Events"
-                                        onChange={(e) => handleConfigChange({ maxEvents: e.target.value })}
-                                    >
-                                        <MenuItem value={5}>5 events</MenuItem>
-                                        <MenuItem value={10}>10 events</MenuItem>
-                                        <MenuItem value={20}>20 events</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                <>
+                                    <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
+                                        Events Options
+                                    </Typography>
+
+                                    <FormControl fullWidth margin="normal" size="small">
+                                        <InputLabel id="max-events-label">Max Events</InputLabel>
+                                        <Select
+                                            labelId="max-events-label"
+                                            value={tempWidget?.config?.maxEvents || 5}
+                                            label="Max Events"
+                                            onChange={(e) => handleConfigChange({ maxEvents: e.target.value })}
+                                        >
+                                            <MenuItem value={5}>5 events</MenuItem>
+                                            <MenuItem value={10}>10 events</MenuItem>
+                                            <MenuItem value={20}>20 events</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </>
                             )}
                         </Box>
                     )}

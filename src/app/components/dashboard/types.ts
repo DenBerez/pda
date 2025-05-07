@@ -69,7 +69,6 @@ export interface CalendarConfig {
     maxEvents?: number;
     calendarRefreshToken?: string;
     showCalendarGrid?: boolean;
-    showEventBox?: boolean;
 }
 
 export interface SocialConfig {
