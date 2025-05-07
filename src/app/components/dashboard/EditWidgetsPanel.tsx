@@ -584,6 +584,17 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 sx={{ ml: 0.5 }}
                             />
 
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={tempWidget?.config?.showControls !== false}
+                                        onChange={(e) => handleConfigChange({ showControls: e.target.checked })}
+                                    />
+                                }
+                                label="Show Controls"
+                                sx={{ ml: 0.5 }}
+                            />
+
                             <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
                                 Images
                             </Typography>

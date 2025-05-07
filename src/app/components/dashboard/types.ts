@@ -17,6 +17,7 @@ export interface Widget {
         images?: Array<{ url: string, caption?: string }>;
         interval?: number;
         showCaptions?: boolean;
+        showControls?: boolean;
         transition?: 'fade' | 'slide';
         refreshToken?: string;
         refreshInterval?: number;

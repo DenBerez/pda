@@ -81,6 +81,7 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
     const interval = widget.config?.interval || 5000; // Default: 5 seconds
     const showCaptions = widget.config?.showCaptions !== false; // Default: true
     const transition = widget.config?.transition || 'fade'; // Default: fade, options: fade, slide
+    const showControls = widget.config?.showControls !== false; // Default: true
 
     // Load images from widget config if available
     useEffect(() => {
@@ -109,17 +110,41 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
         };
     }, [isPlaying, images.length, interval]);
 
-    // Preload next image
+    // Preload all images
     useEffect(() => {
-        const nextIndex = (currentIndex + 1) % images.length;
-        if (nextIndex !== currentIndex && images[nextIndex]) {
-            const img = new Image();
-            img.src = images[nextIndex].url;
-        }
-
-        // Reset image loading state when changing slides
+        // Preload the current image first
         setImageLoading(true);
-    }, [currentIndex, images]);
+
+        // Then preload all other images
+        if (images.length > 0) {
+            const preloadImages = () => {
+                images.forEach((image, index) => {
+                    const img = new Image();
+                    img.src = image.url;
+
+                    // For the current image, update loading state when it loads
+                    if (index === currentIndex) {
+                        img.onload = () => {
+                            setImageLoading(false);
+                            setImageError(false);
+                        };
+                        img.onerror = () => {
+                            setImageError(true);
+                            setImageLoading(false);
+                            console.error(`Failed to load image: ${image.url}`);
+                        };
+                    }
+                });
+            };
+
+            preloadImages();
+        }
+    }, [images]);
+
+    // Reset image loading state when changing slides
+    useEffect(() => {
+        setImageLoading(true);
+    }, [currentIndex]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -317,106 +342,112 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
                     </Typography>
                 )}
 
-                {/* Navigation arrows */}
+                {/* Navigation arrows - only show if controls are enabled */}
+                {showControls && (
+                    <Box sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        px: 2,
+                        opacity: 0.7,
+                        '&:hover': { opacity: 1 },
+                        transition: 'opacity 0.3s ease'
+                    }}>
+                        <IconButton
+                            onClick={prevSlide}
+                            aria-label="Previous slide"
+                            sx={{
+                                bgcolor: 'rgba(0,0,0,0.3)',
+                                color: 'white',
+                                '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' }
+                            }}
+                        >
+                            <ArrowBackIosNewIcon />
+                        </IconButton>
+                        <IconButton
+                            onClick={nextSlide}
+                            aria-label="Next slide"
+                            sx={{
+                                bgcolor: 'rgba(0,0,0,0.3)',
+                                color: 'white',
+                                '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' }
+                            }}
+                        >
+                            <ArrowForwardIosIcon />
+                        </IconButton>
+                    </Box>
+                )}
+
+                {/* Slide indicators - only show if controls are enabled */}
+                {showControls && (
+                    <Box sx={{
+                        position: 'absolute',
+                        bottom: showCaptions ? 50 : 10,
+                        left: 0,
+                        right: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: 1,
+                        px: 2,
+                        zIndex: 2
+                    }}>
+                        {images.map((_, index) => (
+                            <Box
+                                key={index}
+                                onClick={() => setCurrentIndex(index)}
+                                sx={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    bgcolor: index === currentIndex ? 'primary.main' : 'rgba(255,255,255,0.5)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        transform: 'scale(1.2)',
+                                        bgcolor: index === currentIndex ? 'primary.main' : 'rgba(255,255,255,0.8)'
+                                    }
+                                }}
+                            />
+                        ))}
+                    </Box>
+                )}
+            </Box>
+
+            {/* Caption and controls - only show if controls are enabled */}
+            {showControls && (
                 <Box sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
+                    p: 1,
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    px: 2,
-                    opacity: 0.7,
-                    '&:hover': { opacity: 1 },
-                    transition: 'opacity 0.3s ease'
+                    borderTop: `1px solid ${theme.palette.divider}`
                 }}>
-                    <IconButton
-                        onClick={prevSlide}
-                        aria-label="Previous slide"
-                        sx={{
-                            bgcolor: 'rgba(0,0,0,0.3)',
-                            color: 'white',
-                            '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' }
-                        }}
-                    >
-                        <ArrowBackIosNewIcon />
-                    </IconButton>
-                    <IconButton
-                        onClick={nextSlide}
-                        aria-label="Next slide"
-                        sx={{
-                            bgcolor: 'rgba(0,0,0,0.3)',
-                            color: 'white',
-                            '&:hover': { bgcolor: 'rgba(0,0,0,0.5)' }
-                        }}
-                    >
-                        <ArrowForwardIosIcon />
-                    </IconButton>
-                </Box>
+                    {showCaptions && images[currentIndex]?.caption ? (
+                        <Typography variant="body2" sx={{ flexGrow: 1, mr: 2 }}>
+                            {images[currentIndex].caption}
+                        </Typography>
+                    ) : (
+                        <Box sx={{ flexGrow: 1 }} />
+                    )}
 
-                {/* Slide indicators */}
-                <Box sx={{
-                    position: 'absolute',
-                    bottom: showCaptions ? 50 : 10,
-                    left: 0,
-                    right: 0,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: 1,
-                    px: 2,
-                    zIndex: 2
-                }}>
-                    {images.map((_, index) => (
-                        <Box
-                            key={index}
-                            onClick={() => setCurrentIndex(index)}
-                            sx={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: '50%',
-                                bgcolor: index === currentIndex ? 'primary.main' : 'rgba(255,255,255,0.5)',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                '&:hover': {
-                                    transform: 'scale(1.2)',
-                                    bgcolor: index === currentIndex ? 'primary.main' : 'rgba(255,255,255,0.8)'
-                                }
-                            }}
-                        />
-                    ))}
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
+                            {currentIndex + 1} / {images.length}
+                        </Typography>
+                        <IconButton size="small" onClick={togglePlayPause}>
+                            {isPlaying ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
+                        </IconButton>
+                        <IconButton size="small" onClick={toggleFullscreen} sx={{ ml: 1 }}>
+                            {isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
+                        </IconButton>
+                    </Box>
                 </Box>
-            </Box>
-
-            {/* Caption and controls */}
-            <Box sx={{
-                p: 1,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderTop: `1px solid ${theme.palette.divider}`
-            }}>
-                {showCaptions && images[currentIndex]?.caption ? (
-                    <Typography variant="body2" sx={{ flexGrow: 1, mr: 2 }}>
-                        {images[currentIndex].caption}
-                    </Typography>
-                ) : (
-                    <Box sx={{ flexGrow: 1 }} />
-                )}
-
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>
-                        {currentIndex + 1} / {images.length}
-                    </Typography>
-                    <IconButton size="small" onClick={togglePlayPause}>
-                        {isPlaying ? <PauseIcon fontSize="small" /> : <PlayArrowIcon fontSize="small" />}
-                    </IconButton>
-                    <IconButton size="small" onClick={toggleFullscreen} sx={{ ml: 1 }}>
-                        {isFullscreen ? <FullscreenExitIcon fontSize="small" /> : <FullscreenIcon fontSize="small" />}
-                    </IconButton>
-                </Box>
-            </Box>
+            )}
         </Box>
     );
 };
