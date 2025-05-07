@@ -291,16 +291,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     );
 
     // Loading state
-    if (loading && !isConnected && !currentTrack && recentTracks.length === 0) {
-        return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexDirection: 'column' }}>
-                <CircularProgress size={40} sx={{ mb: 2 }} />
-                <Typography variant="body2" color="text.secondary">
-                    Loading Spotify data...
-                </Typography>
-            </Box>
-        );
-    }
+    // if (loading && !isConnected && !currentTrack && recentTracks.length === 0) {
+    //     return (
+    //         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexDirection: 'column' }}>
+    //             <CircularProgress size={40} sx={{ mb: 2 }} />
+    //             <Typography variant="body2" color="text.secondary">
+    //                 Loading Spotify data...
+    //             </Typography>
+    //         </Box>
+    //     );
+    // }
 
     // Error state
     if ((error || sdkError) && !isConnected && !currentTrack && recentTracks.length === 0) {
