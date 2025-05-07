@@ -106,6 +106,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
             }
 
             const data = await response.json();
+            console.log('Calendar events:', data.events);
             setEvents(data.events || []);
         } catch (err) {
             console.error('Error fetching calendar events:', err);
@@ -266,36 +267,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
         const primaryText = muiTheme.palette.primary.contrastText;
 
         switch (colorTheme) {
-            case 'blue':
-                return {
-                    primary: '#1976d2',
-                    secondary: '#bbdefb',
-                    today: '#e3f2fd',
-                    selected: '#1976d2',
-                    selectedText: '#ffffff',
-                    weekend: showWeekends ? '#f5f5f5' : 'inherit',
-                    event: '#1976d2'
-                };
-            case 'green':
-                return {
-                    primary: '#2e7d32',
-                    secondary: '#c8e6c9',
-                    today: '#e8f5e9',
-                    selected: '#2e7d32',
-                    selectedText: '#ffffff',
-                    weekend: showWeekends ? '#f5f5f5' : 'inherit',
-                    event: '#2e7d32'
-                };
-            case 'purple':
-                return {
-                    primary: '#7b1fa2',
-                    secondary: '#e1bee7',
-                    today: '#f3e5f5',
-                    selected: '#7b1fa2',
-                    selectedText: '#ffffff',
-                    weekend: showWeekends ? '#f5f5f5' : 'inherit',
-                    event: '#7b1fa2'
-                };
+
             default:
                 // Use the MUI theme's primary color
                 return {
