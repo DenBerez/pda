@@ -45,6 +45,7 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import LayoutStyleSelector from './LayoutStyle';
+import AccountConnectionBox from './AccountConnectionBox';
 
 interface WidgetEditPanelProps {
     open: boolean;
@@ -327,6 +328,21 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
         }
     }, [widget?.config?.fontSize]);
 
+    const openAuthPopup = (url: string, windowName: string) => {
+        // Calculate center position for the popup
+        const width = 600;
+        const height = 700;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+
+        // Open the auth window as a popup
+        window.open(
+            url,
+            windowName,
+            `width=${width},height=${height},left=${left},top=${top}`
+        );
+    };
+
     if (!widget) return null;
 
     return (
@@ -388,49 +404,15 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 Spotify Configuration
                             </Typography>
 
-                            <Box sx={{ textAlign: 'center', py: 2 }}>
-                                {tempWidget?.config?.refreshToken ? (
-                                    <>
-                                        <Typography variant="body2" color="success.main" sx={{ mb: 2 }}>
-                                            ✅ Your Spotify account is connected
-                                        </Typography>
-                                        <Button
-                                            variant="outlined"
-                                            color="error"
-                                            size="small"
-                                            onClick={() => handleConfigChange({ refreshToken: '' })}
-                                        >
-                                            Disconnect Account
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Typography variant="body2" sx={{ mb: 2 }}>
-                                            Connect your Spotify account to display your currently playing music and recently played tracks.
-                                        </Typography>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={() => {
-                                                // Calculate center position for the popup
-                                                const width = 600;
-                                                const height = 700;
-                                                const left = window.screenX + (window.outerWidth - width) / 2;
-                                                const top = window.screenY + (window.outerHeight - height) / 2;
-
-                                                // Open the auth window as a popup
-                                                window.open(
-                                                    `/api/spotify/auth`,
-                                                    'spotify-auth-window',
-                                                    `width=${width},height=${height},left=${left},top=${top}`
-                                                );
-                                            }}
-                                        >
-                                            Connect Spotify Account
-                                        </Button>
-                                    </>
-                                )}
-                            </Box>
+                            <AccountConnectionBox
+                                isConnected={!!tempWidget?.config?.refreshToken}
+                                serviceName="Spotify"
+                                onConnect={() => openAuthPopup('/api/spotify/auth', 'spotify-auth-window')}
+                                onDisconnect={() => handleConfigChange({ refreshToken: '' })}
+                                disconnectedMessage="Connect your Spotify account to display your currently playing music and recently played tracks."
+                                helperText={!tempWidget?.config?.refreshToken ?
+                                    "For demo purposes, you'll see mock data if no account is connected." : undefined}
+                            />
 
                             <FormControl fullWidth margin="normal" size="small">
                                 <InputLabel id="spotify-refresh-rate-label">Refresh Rate</InputLabel>
@@ -446,10 +428,6 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     <MenuItem value={300}>Every 5 minutes</MenuItem>
                                 </Select>
                             </FormControl>
-
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                After connecting your Spotify account, you'll need to copy the refresh token from the new window back into your widget settings.
-                            </Typography>
 
                             <Typography variant="subtitle2" sx={{ my: 2 }}>
                                 Layout Style
@@ -535,53 +513,38 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 </Select>
                             </FormControl>
 
+                            {tempWidget?.config?.provider === 'gmail' && (
+                                <AccountConnectionBox
+                                    isConnected={!!tempWidget?.config?.refreshToken}
+                                    serviceName="Gmail"
+                                    onConnect={() => openAuthPopup('/api/email/auth', 'gmail-auth-window')}
+                                    onDisconnect={() => handleEmailConfigChange({ refreshToken: '' })}
+                                    disconnectedMessage="Connect your Gmail account to display your emails."
+                                    helperText={!tempWidget?.config?.refreshToken ?
+                                        "For demo purposes, you'll see mock email data if no account is connected." : undefined}
+                                />
+                            )}
+
                             {tempWidget?.config?.provider === 'gmail' ? (
                                 <Box sx={{ mt: 2, mb: 2 }}>
-                                    {tempWidget?.config?.refreshToken ? (
-                                        <>
-                                            <Typography variant="body2" color="success.main" sx={{ mb: 1 }}>
-                                                ✅ Your Gmail account is connected
-                                            </Typography>
-                                            <Button
-                                                variant="outlined"
-                                                color="error"
-                                                size="small"
-                                                onClick={() => handleEmailConfigChange({ refreshToken: '' })}
-                                            >
-                                                Disconnect Account
-                                            </Button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Typography variant="body2" sx={{ mb: 2 }}>
-                                                Connect your Gmail account to display your emails.
-                                            </Typography>
-                                            <Button
-                                                variant="contained"
-                                                color="primary"
-                                                onClick={() => {
-                                                    // Calculate center position for the popup
-                                                    const width = 600;
-                                                    const height = 700;
-                                                    const left = window.screenX + (window.outerWidth - width) / 2;
-                                                    const top = window.screenY + (window.outerHeight - height) / 2;
-
-                                                    // Open the auth window as a popup
-                                                    window.open(
-                                                        `/api/email/auth`,
-                                                        'gmail-auth-window',
-                                                        `width=${width},height=${height},left=${left},top=${top}`
-                                                    );
-                                                }}
-                                            >
-                                                Connect Gmail Account
-                                            </Button>
-                                        </>
-                                    )}
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                        {!tempWidget?.config?.refreshToken &&
-                                            "For demo purposes, you'll see mock email data if no account is connected."}
-                                    </Typography>
+                                    <TextField
+                                        fullWidth
+                                        margin="normal"
+                                        label="Email Address"
+                                        size="small"
+                                        value={tempWidget?.config?.email || ''}
+                                        onChange={(e) => handleEmailConfigChange({ email: e.target.value })}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        margin="normal"
+                                        label="Password"
+                                        type="password"
+                                        size="small"
+                                        value={tempWidget?.config?.password || ''}
+                                        onChange={(e) => handleEmailConfigChange({ password: e.target.value })}
+                                        helperText="For demo purposes, leave empty to use mock data"
+                                    />
                                 </Box>
                             ) : (
                                 <>
@@ -774,60 +737,22 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 Calendar Configuration
                             </Typography>
 
-                            <Box sx={{ textAlign: 'center', py: 2, mb: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                                {tempWidget?.config?.calendarRefreshToken ? (
-                                    <>
-                                        <Typography variant="body2" color="success.main" sx={{ mb: 2 }}>
-                                            ✅ Your Google Calendar account is connected
-                                        </Typography>
-                                        <Button
-                                            variant="outlined"
-                                            color="error"
-                                            size="small"
-                                            onClick={() => handleConfigChange({ calendarRefreshToken: '' })}
-                                        >
-                                            Disconnect Account
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Typography variant="body2" sx={{ mb: 2 }}>
-                                            Connect your Google Calendar account to display your events.
-                                        </Typography>
-                                        <Button
-                                            variant="contained"
-                                            color="primary"
-                                            onClick={() => {
-                                                // Calculate center position for the popup
-                                                const width = 600;
-                                                const height = 700;
-                                                const left = window.screenX + (window.outerWidth - width) / 2;
-                                                const top = window.screenY + (window.outerHeight - height) / 2;
-
-                                                // Open the auth window as a popup
-                                                window.open(
-                                                    `/api/calendar/auth`,
-                                                    'google-calendar-auth-window',
-                                                    `width=${width},height=${height},left=${left},top=${top}`
-                                                );
-                                            }}
-                                        >
-                                            Connect Google Calendar
-                                        </Button>
-                                    </>
-                                )}
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                                    {!tempWidget?.config?.calendarRefreshToken &&
-                                        "For demo purposes, you'll see mock calendar data if no account is connected."}
-                                </Typography>
-                            </Box>
+                            <AccountConnectionBox
+                                isConnected={!!tempWidget?.config?.calendarRefreshToken}
+                                serviceName="Google Calendar"
+                                onConnect={() => openAuthPopup('/api/calendar/auth', 'google-calendar-auth-window')}
+                                onDisconnect={() => handleConfigChange({ calendarRefreshToken: '' })}
+                                disconnectedMessage="Connect your Google Calendar account to display your events."
+                                helperText={!tempWidget?.config?.calendarRefreshToken ?
+                                    "For demo purposes, you'll see mock calendar data if no account is connected." : undefined}
+                            />
 
                             <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
                                 Display Options
                             </Typography>
 
                             <FormControlLabel
-                                sx={{ display: 'block', mt: 1 }}
+                                sx={{ display: 'block', mt: 1, ml: 0.5 }}
                                 control={
                                     <Switch
                                         checked={tempWidget?.config?.showCalendarGrid !== false}
@@ -838,7 +763,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                             />
 
                             <FormControlLabel
-                                sx={{ display: 'block', mt: 1 }}
+                                sx={{ display: 'block', mt: 1, ml: 0.5 }}
                                 control={
                                     <Switch
                                         checked={tempWidget?.config?.showEvents !== false}
@@ -882,7 +807,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     </FormControl>
 
                                     <FormControlLabel
-                                        sx={{ display: 'block', mt: 1 }}
+                                        sx={{ display: 'block', mt: 1, ml: 0.5 }}
                                         control={
                                             <Switch
                                                 checked={tempWidget?.config?.showWeekends !== false}
