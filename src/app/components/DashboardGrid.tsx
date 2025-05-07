@@ -117,6 +117,8 @@ const DashboardGrid: React.FC = () => {
     const [primaryColor, setPrimaryColor] = useLocalStorage<string>('dashboardPrimaryColor', '#1976d2');
     const settingsButtonRef = useRef<HTMLDivElement>(null);
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+    const [forceRefresh, setForceRefresh] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Use a separate loading check
     const isLocalStorageLoading = false; // Remove or handle loading differently
@@ -404,6 +406,25 @@ const DashboardGrid: React.FC = () => {
         }),
         [mode, primaryColor]);
 
+    // Add this effect to listen for theme refresh events
+    useEffect(() => {
+        const handleThemeRefresh = () => {
+            setIsRefreshing(true);
+
+            // Small delay to allow the loading state to render
+            setTimeout(() => {
+                setForceRefresh(prev => !prev);
+                setIsRefreshing(false);
+            }, 50);
+        };
+
+        window.addEventListener('dashboard-refresh-theme', handleThemeRefresh);
+
+        return () => {
+            window.removeEventListener('dashboard-refresh-theme', handleThemeRefresh);
+        };
+    }, []);
+
     return (
         <ThemeProvider theme={customTheme}>
             {!initialLoadComplete && (
@@ -446,6 +467,21 @@ const DashboardGrid: React.FC = () => {
                         `}</style>
                     </Box>
                 </Box>
+            )}
+
+            {isRefreshing && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 9999,
+                        height: '3px',
+                        bgcolor: 'primary.main',
+                        animation: 'progress 1s infinite linear'
+                    }}
+                />
             )}
 
             <Box

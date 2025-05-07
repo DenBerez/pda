@@ -100,6 +100,10 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
 
         // Apply the font to the document immediately for instant feedback
         document.documentElement.style.setProperty('--font-current', font);
+
+        // Force a refresh of the entire app by triggering a custom event
+        const refreshEvent = new CustomEvent('dashboard-refresh-theme');
+        window.dispatchEvent(refreshEvent);
     };
 
     // Create a memoized theme that updates when dependencies change
