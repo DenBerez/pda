@@ -83,7 +83,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
 
     // Fetch calendar events
     const fetchEvents = async () => {
-        if (editMode) return;
+        // if (editMode) return;
 
         setLoading(true);
         setError(null);
@@ -99,6 +99,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
                 params.append('refreshToken', refreshToken);
             }
 
+            console.log('Fetching calendar events with params:', params.toString());
             const response = await fetch(`/api/calendar?${params.toString()}`);
 
             if (!response.ok) {
@@ -106,8 +107,15 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
             }
 
             const data = await response.json();
-            console.log('Calendar events:', data.events);
-            setEvents(data.events || []);
+            console.log('Calendar API response:', data);
+
+            if (data.events && Array.isArray(data.events)) {
+                setEvents(data.events);
+                console.log(`Loaded ${data.events.length} events`);
+            } else {
+                console.warn('No events array in response:', data);
+                setEvents([]);
+            }
         } catch (err) {
             console.error('Error fetching calendar events:', err);
             setError('Failed to load calendar events');
