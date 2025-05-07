@@ -103,15 +103,12 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         { name: 'System UI', value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
         { name: 'Serif', value: 'Georgia, "Times New Roman", serif' },
         { name: 'Monospace', value: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace' },
-        //add more fonts here
-        { name: 'Inter', value: 'Inter, sans-serif' },
-        { name: 'Roboto', value: 'Roboto, sans-serif' },
-        { name: 'Poppins', value: 'Poppins, sans-serif' },
-        { name: 'Lato', value: 'Lato, sans-serif' },
-        { name: 'Open Sans', value: 'Open Sans, sans-serif' },
-        { name: 'Montserrat', value: 'Montserrat, sans-serif' },
-
-
+        { name: 'Inter', value: 'var(--font-inter), sans-serif' },
+        { name: 'Roboto', value: 'var(--font-roboto), sans-serif' },
+        { name: 'Poppins', value: 'var(--font-poppins), sans-serif' },
+        { name: 'Lato', value: 'var(--font-lato), sans-serif' },
+        { name: 'Open Sans', value: 'var(--font-open-sans), sans-serif' },
+        { name: 'Montserrat', value: 'var(--font-montserrat), sans-serif' },
     ];
 
     // Handle template application
