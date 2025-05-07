@@ -302,7 +302,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             console.log('Control response data:', data);
 
             if (!response.ok) {
-                if (response.status === 404 || data.error === 'No active device found') {
+                if (response.status === 404) {
                     showStatus('No active Spotify device found. Please open Spotify on a device first.');
                     return;
                 }
@@ -463,6 +463,204 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         </List>
     );
 
+    // Add a new function to render the detailed layout
+    const renderDetailedLayout = () => (
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* Current track section - make it more compact */}
+            <Box sx={{ display: 'flex', mb: 2 }}>
+                {/* Album art - clickable */}
+                <Paper
+                    elevation={3}
+                    sx={{
+                        width: 100,
+                        height: 100,
+                        overflow: 'hidden',
+                        borderRadius: 2,
+                        position: 'relative',
+                        cursor: currentTrack?.external_urls?.spotify ? 'pointer' : 'default',
+                        mr: 2
+                    }}
+                    onClick={() => currentTrack?.external_urls?.spotify &&
+                        openInSpotify(currentTrack.external_urls.spotify)}
+                >
+                    <Box
+                        component="img"
+                        src={currentTrack?.album.images?.[0]?.url || ''}
+                        alt={currentTrack?.name}
+                        sx={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            display: 'block'
+                        }}
+                    />
+                    {spotifyData.isPlaying && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                bgcolor: 'primary.main',
+                                color: 'white',
+                                borderRadius: '50%',
+                                width: 30,
+                                height: 30,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                        >
+                            <PlayArrowIcon fontSize="small" />
+                        </Box>
+                    )}
+                </Paper>
+
+                {/* Track info */}
+                <Box sx={{ flexGrow: 1 }}>
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            fontWeight: 'bold',
+                            cursor: currentTrack?.external_urls?.spotify ? 'pointer' : 'default'
+                        }}
+                        onClick={() => currentTrack?.external_urls?.spotify &&
+                            openInSpotify(currentTrack.external_urls.spotify)}
+                    >
+                        {currentTrack?.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        {currentTrack?.artists.map((artist: any) => artist.name).join(', ')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {currentTrack?.album.name}
+                    </Typography>
+
+                    {/* Progress bar */}
+                    <Box sx={{ width: '100%', mt: 1 }}>
+                        <Box
+                            sx={{
+                                width: '100%',
+                                height: 4,
+                                bgcolor: 'grey.200',
+                                borderRadius: 2,
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    height: '100%',
+                                    bgcolor: 'primary.main',
+                                    width: `${(progress / (currentTrack?.duration_ms || 1)) * 100}%`,
+                                    transition: 'width 1s linear'
+                                }}
+                            />
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary">
+                                {formatDuration(progress)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                                {formatDuration(currentTrack?.duration_ms || 0)}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Box>
+            </Box>
+
+            {/* Playback controls */}
+            <Stack direction="row" spacing={1} sx={{ mb: 2, justifyContent: 'center' }}>
+                <IconButton
+                    size="small"
+                    sx={{ color: 'text.secondary' }}
+                    onClick={() => controlSpotifyPlayback('shuffle')}
+                >
+                    <ShuffleIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                    size="small"
+                    onClick={() => controlSpotifyPlayback('previous')}
+                >
+                    <SkipPreviousIcon />
+                </IconButton>
+                <IconButton
+                    size="medium"
+                    sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
+                    onClick={() => isPlaying ? controlSpotifyPlayback('pause') : controlSpotifyPlayback('play')}
+                >
+                    {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                </IconButton>
+                <IconButton
+                    size="small"
+                    onClick={() => controlSpotifyPlayback('next')}
+                >
+                    <SkipNextIcon />
+                </IconButton>
+                <IconButton
+                    size="small"
+                    sx={{ color: 'text.secondary' }}
+                    onClick={() => controlSpotifyPlayback('repeat')}
+                >
+                    <RepeatIcon fontSize="small" />
+                </IconButton>
+            </Stack>
+
+            {/* Recent tracks section */}
+            <Typography variant="subtitle2" gutterBottom>
+                Recently Played
+            </Typography>
+            <List dense sx={{ flexGrow: 1, overflow: 'auto', bgcolor: 'background.paper', borderRadius: 1 }}>
+                {spotifyData?.recentTracks?.slice(0, 5).map((item: any, index: number) => (
+                    <ListItem
+                        key={`${item.track.id}-${index}`}
+                        disablePadding
+                        sx={{
+                            py: 0.5,
+                            px: 1,
+                            borderRadius: 1,
+                            mb: 0.5,
+                            '&:hover': { bgcolor: 'action.hover' },
+                            cursor: item.track.external_urls?.spotify ? 'pointer' : 'default'
+                        }}
+                        onClick={() => item.track.external_urls?.spotify &&
+                            openInSpotify(item.track.external_urls.spotify)}
+                    >
+                        <ListItemAvatar sx={{ minWidth: 40 }}>
+                            <Avatar
+                                src={item.track.album.images?.[0]?.url}
+                                alt={item.track.name}
+                                sx={{ width: 30, height: 30 }}
+                            >
+                                <MusicNoteIcon fontSize="small" />
+                            </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                            primary={item.track.name}
+                            secondary={item.track.artists.map((artist: any) => artist.name).join(', ')}
+                            primaryTypographyProps={{ variant: 'body2', noWrap: true }}
+                            secondaryTypographyProps={{ variant: 'caption', noWrap: true }}
+                        />
+                        {item.track.preview_url && (
+                            <IconButton
+                                edge="end"
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    playPreview(item.track.preview_url);
+                                }}
+                            >
+                                <PlayArrowIcon fontSize="small" />
+                            </IconButton>
+                        )}
+                    </ListItem>
+                ))}
+            </List>
+        </Box>
+    );
+
     return (
         <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
             {/* Header with toggle button */}
@@ -471,13 +669,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                     {showRecent ? 'Recently Played' : 'Now Playing'}
                 </Typography>
                 <Box>
-                    <Button
-                        size="small"
-                        onClick={toggleView}
-                        variant="outlined"
-                    >
-                        {showRecent ? 'Current' : 'History'}
-                    </Button>
+                    {layoutOption !== 'detailed' && (
+                        <Button
+                            size="small"
+                            onClick={toggleView}
+                            variant="outlined"
+                        >
+                            {showRecent ? 'Current' : 'History'}
+                        </Button>
+                    )}
                     <IconButton size="small" onClick={fetchSpotifyData} sx={{ ml: 1 }}>
                         <RefreshIcon fontSize="small" />
                     </IconButton>
@@ -487,8 +687,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             {/* For compact layout, use simplified views */}
             {layoutOption === 'compact' ? (
                 showRecent ? renderCompactRecent() : renderCompactNowPlaying()
+            ) : layoutOption === 'detailed' ? (
+                // For detailed layout, use the new combined view
+                renderDetailedLayout()
             ) : (
-                // For normal and detailed layouts, use existing views
+                // For normal layout, use existing views with modifications
                 showRecent ? (
                     // Recent tracks list
                     <List sx={{ p: 0, overflowY: 'auto', flexGrow: 1 }}>
@@ -511,8 +714,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                     bgcolor: spotifyData.isPlaying &&
                                         spotifyData.currentTrack?.item?.id === item.track.id
                                         ? 'action.selected' : 'transparent',
-                                    position: 'relative'
+                                    position: 'relative',
+                                    cursor: item.track.external_urls?.spotify ? 'pointer' : 'default'
                                 }}
+                                onClick={() => item.track.external_urls?.spotify &&
+                                    openInSpotify(item.track.external_urls.spotify)}
                             >
                                 {/* Add indicator for currently playing */}
                                 {spotifyData.isPlaying &&
@@ -557,11 +763,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                         ))}
                     </List>
                 ) : (
-                    // Now playing view
+                    // Now playing view with modifications
                     <>
                         {currentTrack ? (
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexGrow: 1 }}>
-                                {/* Album art */}
+                                {/* Album art - now clickable */}
                                 <Paper
                                     elevation={3}
                                     sx={{
@@ -571,8 +777,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                         mb: 3,
                                         overflow: 'hidden',
                                         borderRadius: 2,
-                                        position: 'relative'
+                                        position: 'relative',
+                                        cursor: currentTrack.external_urls?.spotify ? 'pointer' : 'default'
                                     }}
+                                    onClick={() => currentTrack.external_urls?.spotify &&
+                                        openInSpotify(currentTrack.external_urls.spotify)}
                                 >
                                     <Box
                                         component="img"
@@ -606,9 +815,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                     )}
                                 </Paper>
 
-                                {/* Track info */}
+                                {/* Track info - title now clickable */}
                                 <Box sx={{ textAlign: 'center', mb: 2, width: '100%' }}>
-                                    <Typography variant="h6" noWrap sx={{ fontWeight: 'bold' }}>
+                                    <Typography
+                                        variant="h6"
+                                        noWrap
+                                        sx={{
+                                            fontWeight: 'bold',
+                                            cursor: currentTrack.external_urls?.spotify ? 'pointer' : 'default'
+                                        }}
+                                        onClick={() => currentTrack.external_urls?.spotify &&
+                                            openInSpotify(currentTrack.external_urls.spotify)}
+                                    >
                                         {currentTrack.name}
                                     </Typography>
                                     <Typography variant="body1" color="text.secondary" noWrap>
@@ -690,32 +908,26 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                     </IconButton>
                                 </Stack>
 
-                                {/* {!currentTrack.preview_url && (
-                                    <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
-                                        Preview not available
-                                    </Typography>
-                                )} */}
-
-                                {!spotifyData.isPlaying && (
-                                    <Chip
-                                        label="Last played track"
-                                        size="small"
-                                        color="default"
-                                        variant="outlined"
-                                        icon={<AccessTimeIcon fontSize="small" />}
-                                    />
-                                )}
-
-                                {/* Add Open in Spotify button */}
-                                {currentTrack.external_urls?.spotify && (
-                                    <Button
-                                        size="small"
-                                        startIcon={<LaunchIcon fontSize="small" />}
-                                        onClick={() => openInSpotify(currentTrack.external_urls.spotify)}
-                                        sx={{ mt: 1, mb: 2 }}
-                                    >
-                                        Open in Spotify
-                                    </Button>
+                                {/* Preview controls if available */}
+                                {currentTrack.preview_url && (
+                                    <Box sx={{ mt: 1, mb: 2 }}>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            startIcon={<PlayArrowIcon fontSize="small" />}
+                                            onClick={() => playPreview(currentTrack.preview_url)}
+                                            sx={{ mr: 1 }}
+                                        >
+                                            Preview
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            onClick={stopPreview}
+                                        >
+                                            Stop
+                                        </Button>
+                                    </Box>
                                 )}
                             </Box>
                         ) : (
@@ -726,75 +938,6 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                         )}
                     </>
                 )
-            )}
-
-            {/* Detailed information section for detailed layout */}
-            {layoutOption === 'detailed' && currentTrack && !showRecent && (
-                <>
-                    <Divider sx={{ my: 2 }} />
-                    <Box sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2" gutterBottom>
-                            Track Details
-                        </Typography>
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                p: 2,
-                                bgcolor: 'background.default',
-                                borderRadius: 2,
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                                gap: 2
-                            }}
-                        >
-                            {/* Album info */}
-                            <Box>
-                                <Typography variant="caption" color="text.secondary">
-                                    Album
-                                </Typography>
-                                <Typography variant="body2" noWrap>
-                                    {currentTrack.album.name}
-                                </Typography>
-                            </Box>
-
-                            {/* Duration */}
-                            <Box>
-                                <Typography variant="caption" color="text.secondary">
-                                    Duration
-                                </Typography>
-                                <Typography variant="body2">
-                                    {formatDuration(currentTrack.duration_ms)}
-                                </Typography>
-                            </Box>
-
-                            {/* Playback controls - for detailed layout only */}
-                            {currentTrack.preview_url && (
-                                <Box sx={{ gridColumn: '1 / -1', mt: 1 }}>
-                                    <Typography variant="caption" color="text.secondary">
-                                        Preview
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                                        <Button
-                                            size="small"
-                                            variant="outlined"
-                                            startIcon={<PlayArrowIcon />}
-                                            onClick={() => playPreview(currentTrack.preview_url)}
-                                        >
-                                            Play Preview
-                                        </Button>
-                                        <Button
-                                            size="small"
-                                            variant="outlined"
-                                            onClick={stopPreview}
-                                        >
-                                            Stop
-                                        </Button>
-                                    </Box>
-                                </Box>
-                            )}
-                        </Paper>
-                    </Box>
-                </>
             )}
 
             {statusMessage && <StatusMessage message={statusMessage} />}
