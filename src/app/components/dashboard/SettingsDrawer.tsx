@@ -15,7 +15,8 @@ import {
     Paper,
     Grid,
     Tooltip,
-    Chip
+    Chip,
+    FormHelperText
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { DarkMode, LightMode } from '@mui/icons-material';
@@ -46,6 +47,8 @@ interface SettingsDrawerProps {
     restartTour: () => void;
     primaryColor?: string;
     onChangePrimaryColor?: (color: string) => void;
+    fontFamily?: string;
+    onChangeFontFamily?: (font: string) => void;
 }
 
 const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
@@ -64,7 +67,9 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     onApplyTemplate,
     restartTour,
     primaryColor = '#1976d2',
-    onChangePrimaryColor = () => { }
+    onChangePrimaryColor = () => { },
+    fontFamily = 'Geist Sans',
+    onChangeFontFamily = () => { }
 }) => {
     // Add state for template selection
     const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
@@ -91,6 +96,15 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         { name: 'Teal', color: '#009688' }
     ];
 
+    // Available fonts
+    const fontOptions = [
+        { name: 'Geist Sans', value: 'var(--font-geist-sans), system-ui, sans-serif' },
+        { name: 'Geist Mono', value: 'var(--font-geist-mono), monospace' },
+        { name: 'System UI', value: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
+        { name: 'Serif', value: 'Georgia, "Times New Roman", serif' },
+        { name: 'Monospace', value: 'SFMono-Regular, Menlo, Monaco, Consolas, monospace' }
+    ];
+
     // Handle template application
     const handleApplyTemplate = () => {
         onApplyTemplate(selectedTemplate);
@@ -100,6 +114,11 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     // Handle color theme change
     const handleColorChange = (color: string) => {
         onChangePrimaryColor(color);
+    };
+
+    // Handle font family change
+    const handleFontChange = (font: string) => {
+        onChangeFontFamily(font);
     };
 
     return (
@@ -327,6 +346,62 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                     </Box>
                                 </Box>
                             )}
+                        </Box>
+
+                        {/* Font Selection */}
+                        <Box sx={{ mt: 3 }}>
+                            <Typography variant="body2" gutterBottom>
+                                Font Family
+                            </Typography>
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={fontFamily}
+                                    onChange={(e) => handleFontChange(e.target.value)}
+                                    displayEmpty
+                                    sx={{
+                                        fontFamily: fontOptions.find(font => font.value === fontFamily)?.value || fontFamily
+                                    }}
+                                >
+                                    {fontOptions.map((font) => (
+                                        <MenuItem
+                                            key={font.value}
+                                            value={font.value}
+                                            sx={{
+                                                fontFamily: font.value,
+                                                '&.Mui-selected': {
+                                                    backgroundColor: 'action.selected'
+                                                }
+                                            }}
+                                        >
+                                            {font.name}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                <FormHelperText>
+                                    Select the font used throughout the dashboard
+                                </FormHelperText>
+                            </FormControl>
+
+                            {/* Font Preview */}
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    mt: 1,
+                                    p: 1.5,
+                                    borderRadius: 1,
+                                    bgcolor: 'background.paper',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    fontFamily: fontFamily
+                                }}
+                            >
+                                <Typography variant="body2" sx={{ fontFamily: 'inherit' }}>
+                                    The quick brown fox jumps over the lazy dog.
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontFamily: 'inherit', display: 'block', mt: 0.5 }}>
+                                    ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789
+                                </Typography>
+                            </Paper>
                         </Box>
                     </Paper>
 

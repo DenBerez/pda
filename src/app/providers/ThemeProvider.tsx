@@ -6,20 +6,21 @@ import { useEffect, useState, createContext, useContext } from 'react';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { lighten, darken, alpha } from '@mui/material/styles';
+import { PaletteMode } from '@mui/material';
 
 // Create a context for theme toggling
 interface ThemeContextType {
+    mode: PaletteMode;
     toggleColorMode: () => void;
-    mode: 'light' | 'dark';
-    primaryColor: string;
-    setPrimaryColor: (color: string) => void;
+    fontFamily: string;
+    setFontFamily: (font: string) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType>({
     toggleColorMode: () => { },
     mode: 'light',
-    primaryColor: '#1976d2',
-    setPrimaryColor: () => { },
+    fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
+    setFontFamily: () => { },
 });
 
 export function useThemeContext() {
@@ -44,6 +45,7 @@ export function ThemeToggleButton() {
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [mode, setMode] = useState<'light' | 'dark'>('light');
     const [primaryColor, setPrimaryColor] = useState<string>('#1976d2');
+    const [fontFamily, setFontFamily] = useState('var(--font-geist-sans), system-ui, sans-serif');
 
     useEffect(() => {
         // Check system preference and saved preference
@@ -108,7 +110,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
             },
         },
         typography: {
-            fontFamily: 'var(--font-geist-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            fontFamily: fontFamily,
             fontSize: 16,
             fontWeightLight: 300,
             fontWeightRegular: 400,
@@ -287,8 +289,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const themeContextValue = {
         toggleColorMode,
         mode,
-        primaryColor,
-        setPrimaryColor: handleSetPrimaryColor,
+        fontFamily,
+        setFontFamily,
     };
 
     return (
