@@ -131,7 +131,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
         document.documentElement.style.setProperty('--font-current', font);
 
         // Apply font directly to all elements that might be using MUI typography
-        const elements = document.querySelectorAll('body, h1, h2, h3, h4, h5, h6, p, span, div, button');
+        const elements = document.querySelectorAll('body, h1, h2, h3, h4, h5, h6, p, span, div, button, input, textarea, select, option, label, table, th, td, tr, form, input, textarea, select, option, label, table, th, td, tr, form, iconbutton');
         elements.forEach(el => {
             (el as HTMLElement).style.fontFamily = font;
         });
