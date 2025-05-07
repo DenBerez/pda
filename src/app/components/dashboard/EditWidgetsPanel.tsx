@@ -231,18 +231,6 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
         onClose();
     };
 
-    const handleCityChange = (city: string) => {
-        if (tempWidget) {
-            setTempWidget({
-                ...tempWidget,
-                config: {
-                    ...tempWidget.config,
-                    city
-                }
-            });
-        }
-    };
-
     const handleWeatherConfigChange = (config: any) => {
         if (tempWidget) {
             setTempWidget({
@@ -299,6 +287,15 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                     console.log('Google Calendar connected successfully!');
                 }
             }
+
+            // Handle Gmail auth
+            if (event.data?.type === 'GMAIL_AUTH_SUCCESS' && event.data?.refreshToken) {
+                // Update the widget config with the received token
+                if (tempWidget && tempWidget.type === 'email') {
+                    handleEmailConfigChange({ refreshToken: event.data.refreshToken });
+                    console.log('Gmail connected successfully!');
+                }
+            }
         };
 
         // Add event listener
@@ -308,7 +305,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
         return () => {
             window.removeEventListener('message', handleMessage);
         };
-    }, [tempWidget, handleConfigChange]);
+    }, [tempWidget, handleConfigChange, handleEmailConfigChange]);
 
     useEffect(() => {
         // When widget content changes externally, reinitialize the editor state
@@ -474,8 +471,8 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 fullWidth
                                 label="City"
                                 variant="outlined"
-                                value={tempWidget?.config?.city || 'London'}
-                                onChange={(e) => handleCityChange(e.target.value)}
+                                value={tempWidget?.config?.city || ''}
+                                onChange={(e) => handleWeatherConfigChange({ city: e.target.value })}
                                 helperText="Enter a city name for weather information"
                                 size="small"
                                 margin="normal"
@@ -539,16 +536,53 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                             </FormControl>
 
                             {tempWidget?.config?.provider === 'gmail' ? (
-                                <TextField
-                                    fullWidth
-                                    margin="normal"
-                                    label="OAuth Refresh Token"
-                                    type="password"
-                                    size="small"
-                                    value={tempWidget?.config?.refreshToken || ''}
-                                    onChange={(e) => handleEmailConfigChange({ refreshToken: e.target.value })}
-                                    helperText="For demo purposes, leave empty to use mock data"
-                                />
+                                <Box sx={{ mt: 2, mb: 2 }}>
+                                    {tempWidget?.config?.refreshToken ? (
+                                        <>
+                                            <Typography variant="body2" color="success.main" sx={{ mb: 1 }}>
+                                                ✅ Your Gmail account is connected
+                                            </Typography>
+                                            <Button
+                                                variant="outlined"
+                                                color="error"
+                                                size="small"
+                                                onClick={() => handleEmailConfigChange({ refreshToken: '' })}
+                                            >
+                                                Disconnect Account
+                                            </Button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Typography variant="body2" sx={{ mb: 2 }}>
+                                                Connect your Gmail account to display your emails.
+                                            </Typography>
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                onClick={() => {
+                                                    // Calculate center position for the popup
+                                                    const width = 600;
+                                                    const height = 700;
+                                                    const left = window.screenX + (window.outerWidth - width) / 2;
+                                                    const top = window.screenY + (window.outerHeight - height) / 2;
+
+                                                    // Open the auth window as a popup
+                                                    window.open(
+                                                        `/api/email/auth`,
+                                                        'gmail-auth-window',
+                                                        `width=${width},height=${height},left=${left},top=${top}`
+                                                    );
+                                                }}
+                                            >
+                                                Connect Gmail Account
+                                            </Button>
+                                        </>
+                                    )}
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                        {!tempWidget?.config?.refreshToken &&
+                                            "For demo purposes, you'll see mock email data if no account is connected."}
+                                    </Typography>
+                                </Box>
                             ) : (
                                 <>
                                     <TextField
