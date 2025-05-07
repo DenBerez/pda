@@ -21,6 +21,7 @@ import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import MarkEmailUnreadIcon from '@mui/icons-material/MarkEmailUnread';
 import { Widget } from '../types';
 import Settings from '@mui/icons-material/Settings';
+import LayoutStyleSelector from '../LayoutStyle';
 
 interface Email {
     id: string;
@@ -47,6 +48,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     const [password, setPassword] = useState(widget.config?.password || '');
     const [configuring, setConfiguring] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState(widget.config?.refreshInterval || 5);
+    const [layoutOption, setLayoutOption] = useState(widget.config?.layoutOption || 'normal');
 
     // Function to fetch emails
     const fetchEmails = async () => {
@@ -115,7 +117,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     });
                 }
 
-                console.log('Gmail connected successfully!');
+                // console.log('Gmail connected successfully!');
             }
         };
 
@@ -166,7 +168,8 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     email: emailAddress,
                     refreshToken,
                     password,
-                    refreshInterval
+                    refreshInterval,
+                    layoutOption
                 }
             });
         }
@@ -294,6 +297,15 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     />
                 </>
             )}
+
+            <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>
+                Layout Style
+            </Typography>
+            <LayoutStyleSelector
+                value={layoutOption}
+                onChange={(newValue) => setLayoutOption(newValue)}
+                helperText="Select how much email information to display"
+            />
 
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
@@ -468,6 +480,270 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         </>
     );
 
+    // Render compact email layout
+    const renderCompactLayout = () => (
+        <>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                p: 1.5,
+                borderBottom: '1px solid',
+                borderColor: 'divider'
+            }}>
+                <Typography variant="body1" fontWeight="medium" sx={{
+                    maxWidth: '80%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                }}>
+                    {emailAddress || (provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
+                </Typography>
+                <IconButton
+                    size="small"
+                    onClick={fetchEmails}
+                    disabled={loading}
+                >
+                    <RefreshIcon fontSize="small" />
+                </IconButton>
+            </Box>
+
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                    <CircularProgress size={20} />
+                </Box>
+            ) : error ? (
+                <Box sx={{ p: 1.5, textAlign: 'center' }}>
+                    <Typography color="error" variant="caption">
+                        {error}
+                    </Typography>
+                </Box>
+            ) : emails.length === 0 ? (
+                <Box sx={{ p: 1.5, textAlign: 'center' }}>
+                    <Typography variant="caption">
+                        No emails found
+                    </Typography>
+                </Box>
+            ) : (
+                <List dense sx={{ p: 0 }}>
+                    {emails.slice(0, 3).map((email, index) => (
+                        <ListItem
+                            key={email.id}
+                            sx={{
+                                px: 1.5,
+                                py: 0.75,
+                                bgcolor: email.unread ? 'action.hover' : 'transparent'
+                            }}
+                        >
+                            <ListItemText
+                                primary={
+                                    <Typography
+                                        variant="body2"
+                                        fontWeight={email.unread ? 'bold' : 'regular'}
+                                        sx={{
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {email.subject}
+                                    </Typography>
+                                }
+                                secondary={
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {extractSenderName(email.from)}
+                                    </Typography>
+                                }
+                            />
+                            {email.unread && (
+                                <Badge color="primary" variant="dot" />
+                            )}
+                        </ListItem>
+                    ))}
+                </List>
+            )}
+
+            <Box sx={{
+                p: 1,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'center'
+            }}>
+                <Button
+                    size="small"
+                    onClick={toggleConfiguration}
+                    startIcon={<Settings />}
+                    sx={{ fontSize: '0.75rem' }}
+                >
+                    Configure
+                </Button>
+            </Box>
+        </>
+    );
+
+    // Render detailed email layout
+    const renderDetailedLayout = () => (
+        <>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                p: 2,
+                borderBottom: '1px solid',
+                borderColor: 'divider'
+            }}>
+                <Typography variant="subtitle1" fontWeight="medium" sx={{
+                    maxWidth: '80%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                }}>
+                    {emailAddress || (provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
+                </Typography>
+                <Box>
+                    <IconButton
+                        size="small"
+                        onClick={fetchEmails}
+                        disabled={loading}
+                    >
+                        <RefreshIcon fontSize="small" />
+                    </IconButton>
+                </Box>
+            </Box>
+
+            {loading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                    <CircularProgress size={24} />
+                </Box>
+            ) : error ? (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography color="error" variant="body2">
+                        {error}
+                    </Typography>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={toggleConfiguration}
+                        sx={{ mt: 1 }}
+                    >
+                        Configure
+                    </Button>
+                </Box>
+            ) : emails.length === 0 ? (
+                <Box sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="body2">
+                        No emails found
+                    </Typography>
+                </Box>
+            ) : (
+                <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'auto' }}>
+                    <List sx={{ p: 0, flexGrow: 1 }}>
+                        {emails.map((email, index) => (
+                            <React.Fragment key={email.id}>
+                                <ListItem
+                                    alignItems="flex-start"
+                                    sx={{
+                                        px: 2,
+                                        py: 2,
+                                        bgcolor: email.unread ? 'action.hover' : 'transparent',
+                                        '&:hover': {
+                                            bgcolor: 'action.selected'
+                                        }
+                                    }}
+                                >
+                                    <ListItemText
+                                        primary={
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                                <Typography
+                                                    variant="body1"
+                                                    fontWeight={email.unread ? 'bold' : 'medium'}
+                                                    sx={{
+                                                        maxWidth: '70%',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}
+                                                >
+                                                    {email.subject}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {formatDate(email.date)}
+                                                </Typography>
+                                            </Box>
+                                        }
+                                        secondary={
+                                            <>
+                                                <Typography
+                                                    component="span"
+                                                    variant="body2"
+                                                    color="text.primary"
+                                                    sx={{ display: 'block', fontWeight: email.unread ? 'medium' : 'regular', mb: 0.5 }}
+                                                >
+                                                    {extractSenderName(email.from)}
+                                                </Typography>
+                                                <Typography
+                                                    component="span"
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{
+                                                        display: 'block',
+                                                        mb: 1
+                                                    }}
+                                                >
+                                                    {email.snippet}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                                    <Button
+                                                        size="small"
+                                                        variant="outlined"
+                                                        onClick={() => toggleReadStatus(email.id)}
+                                                        startIcon={email.unread ? <MarkEmailReadIcon /> : <MarkEmailUnreadIcon />}
+                                                    >
+                                                        Mark as {email.unread ? 'read' : 'unread'}
+                                                    </Button>
+                                                </Box>
+                                            </>
+                                        }
+                                    />
+                                    {email.unread && (
+                                        <Box sx={{ ml: 1, display: 'flex', alignItems: 'flex-start', pt: 1 }}>
+                                            <Badge color="primary" variant="dot" sx={{ transform: 'scale(1.2)' }} />
+                                        </Box>
+                                    )}
+                                </ListItem>
+                                {index < emails.length - 1 && <Divider component="li" />}
+                            </React.Fragment>
+                        ))}
+                    </List>
+                </Box>
+            )}
+
+            <Box sx={{
+                p: 2,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'center'
+            }}>
+                <Button
+                    onClick={toggleConfiguration}
+                    startIcon={<Settings />}
+                >
+                    Configure Email
+                </Button>
+            </Box>
+        </>
+    );
+
     return (
         <Box sx={{
             height: '100%',
@@ -477,7 +753,11 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             bgcolor: 'background.paper',
             borderRadius: 1
         }}>
-            {configuring ? renderConfigurationForm() : renderEmailList()}
+            {configuring ? renderConfigurationForm() : (
+                layoutOption === 'compact' ? renderCompactLayout() :
+                    layoutOption === 'detailed' ? renderDetailedLayout() :
+                        renderEmailList()
+            )}
         </Box>
     );
 };

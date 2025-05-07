@@ -120,7 +120,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             const response = await fetch(`/api/spotify?${params.toString()}`);
 
 
-            console.log('response', response);
+            // console.log('response', response);
 
             if (!response.ok) {
                 throw new Error('Failed to fetch Spotify data');
@@ -128,7 +128,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
             const data = await response.json();
 
-            console.log('data', data);
+            // console.log('data', data);
 
             if (data.error) {
                 // If we need authentication, redirect to auth URL if provided
@@ -283,7 +283,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         if (!refreshToken) return;
 
         try {
-            console.log(`Sending control request: ${action}`);
+            // console.log(`Sending control request: ${action}`);
             const response = await fetch(`/api/spotify/control`, {
                 method: 'POST',
                 headers: {
@@ -297,9 +297,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 })
             });
 
-            console.log(`Control response status: ${response.status}`);
+            // console.log(`Control response status: ${response.status}`);
             const data = await response.json();
-            console.log('Control response data:', data);
+            // console.log('Control response data:', data);
 
             if (!response.ok) {
                 if (response.status === 404) {

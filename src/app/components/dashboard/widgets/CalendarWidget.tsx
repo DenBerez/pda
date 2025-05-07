@@ -96,7 +96,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
                 params.append('refreshToken', refreshToken);
             }
 
-            console.log('Fetching calendar events with params:', params.toString());
+            // console.log('Fetching calendar events with params:', params.toString());
             const response = await fetch(`/api/calendar?${params.toString()}`);
 
             if (!response.ok) {
@@ -104,11 +104,11 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
             }
 
             const data = await response.json();
-            console.log('Calendar API response:', data);
+            // console.log('Calendar API response:', data);
 
             if (data.events && Array.isArray(data.events)) {
                 setEvents(data.events);
-                console.log(`Loaded ${data.events.length} events`);
+                // console.log(`Loaded ${data.events.length} events`);
             } else {
                 console.warn('No events array in response:', data);
                 setEvents([]);
