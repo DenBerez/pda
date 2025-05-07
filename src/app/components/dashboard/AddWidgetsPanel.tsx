@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Typography,
     Button,
@@ -22,6 +22,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import SlideshowIcon from '@mui/icons-material/Slideshow';
 import { WidgetType } from './types';
+import { useThemeContext } from '../../providers/ThemeProvider';
 
 interface AddWidgetsPanelProps {
     addWidget: (type: WidgetType) => void;
@@ -38,6 +39,22 @@ interface WidgetInfo {
 const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
     const [activeTab, setActiveTab] = useState(0);
     const [searchQuery, setSearchQuery] = useState('');
+    const { fontFamily } = useThemeContext(); // Get current font family from context
+    const [forceUpdate, setForceUpdate] = useState(0);
+
+    // Add effect to listen for dashboard-refresh-theme event
+    useEffect(() => {
+        const handleThemeRefresh = () => {
+            // Force component to re-render when theme changes
+            setForceUpdate(prev => prev + 1);
+        };
+
+        window.addEventListener('dashboard-refresh-theme', handleThemeRefresh);
+
+        return () => {
+            window.removeEventListener('dashboard-refresh-theme', handleThemeRefresh);
+        };
+    }, []);
 
     // Define all available widgets with their metadata
     const allWidgets: WidgetInfo[] = [
@@ -89,13 +106,22 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
             startIcon={widget.icon}
             onClick={() => addWidget(widget.type)}
             color="primary"
+            sx={{ fontFamily: fontFamily }} // Apply current font family
         >
             {widget.label}
         </Button>
     );
 
     return (
-        <Paper elevation={1} sx={{ p: 2, mb: 3 }} className="add-widgets-panel">
+        <Paper
+            elevation={1}
+            sx={{
+                p: 2,
+                mb: 3,
+                fontFamily: fontFamily // Apply font family to container
+            }}
+            className="add-widgets-panel"
+        >
             <TextField
                 fullWidth
                 placeholder="Search widgets..."
@@ -116,15 +142,20 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
                             </IconButton>
                         </InputAdornment>
                     ) : null,
+                    sx: { fontFamily: fontFamily } // Apply font to input
                 }}
-                sx={{ mb: 2 }}
+                sx={{ mb: 2, fontFamily: fontFamily }}
             />
 
-            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 2 }}>
-                <Tab label="All" />
-                <Tab label="Information" />
-                <Tab label="Productivity" />
-                <Tab label="Media" />
+            <Tabs
+                value={activeTab}
+                onChange={(e, newValue) => setActiveTab(newValue)}
+                sx={{ mb: 2, fontFamily: fontFamily }}
+            >
+                <Tab label="All" sx={{ fontFamily: fontFamily }} />
+                <Tab label="Information" sx={{ fontFamily: fontFamily }} />
+                <Tab label="Productivity" sx={{ fontFamily: fontFamily }} />
+                <Tab label="Media" sx={{ fontFamily: fontFamily }} />
             </Tabs>
 
             {filteredWidgets.length > 0 ? (
@@ -134,7 +165,7 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
                     ))}
                 </Stack>
             ) : (
-                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2, fontFamily: fontFamily }}>
                     No widgets found matching "{searchQuery}"
                 </Typography>
             )}
