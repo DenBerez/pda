@@ -292,7 +292,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 body: JSON.stringify({ action })
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
+                if (response.status === 404 || data.error === 'No active device found') {
+                    showStatus('No active Spotify device found. Please open Spotify on a device first.');
+                    return;
+                }
                 throw new Error(`Failed to ${action} Spotify playback`);
             }
 
@@ -641,7 +647,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                 </Box>
 
                                 {/* Playback controls */}
-                                {/* <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                                <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                                     <IconButton
                                         size="small"
                                         sx={{ color: 'text.secondary' }}
@@ -675,7 +681,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                     >
                                         <RepeatIcon fontSize="small" />
                                     </IconButton>
-                                </Stack> */}
+                                </Stack>
 
                                 {/* {!currentTrack.preview_url && (
                                     <Typography variant="caption" color="text.secondary" sx={{ mb: 2 }}>
