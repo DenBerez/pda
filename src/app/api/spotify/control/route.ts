@@ -63,12 +63,49 @@ export async function POST(request: NextRequest) {
                 method = 'POST';
                 break;
             case 'shuffle':
-                // Toggle shuffle state - you may want to get current state first
-                endpoint = 'https://api.spotify.com/v1/me/player/shuffle?state=true';
+                // First get the current player state to check shuffle status
+                const playerStateResponse = await fetch('https://api.spotify.com/v1/me/player', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (playerStateResponse.ok) {
+                    const playerState = await playerStateResponse.json();
+                    const currentShuffleState = playerState.shuffle_state;
+                    // Toggle the shuffle state
+                    endpoint = `https://api.spotify.com/v1/me/player/shuffle?state=${!currentShuffleState}`;
+                } else {
+                    // Default to enabling shuffle if we can't get the current state
+                    endpoint = 'https://api.spotify.com/v1/me/player/shuffle?state=true';
+                }
                 break;
             case 'repeat':
-                // Cycle through repeat states - you may want to get current state first
-                endpoint = 'https://api.spotify.com/v1/me/player/repeat?state=track';
+                // First get the current player state to check repeat status
+                const repeatStateResponse = await fetch('https://api.spotify.com/v1/me/player', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (repeatStateResponse.ok) {
+                    const playerState = await repeatStateResponse.json();
+                    const currentRepeatState = playerState.repeat_state;
+
+                    // Cycle through repeat states: off → track → context → off
+                    let nextRepeatState;
+                    switch (currentRepeatState) {
+                        case 'off': nextRepeatState = 'track'; break;
+                        case 'track': nextRepeatState = 'context'; break;
+                        case 'context': nextRepeatState = 'off'; break;
+                        default: nextRepeatState = 'track'; break;
+                    }
+
+                    endpoint = `https://api.spotify.com/v1/me/player/repeat?state=${nextRepeatState}`;
+                } else {
+                    // Default to track repeat if we can't get the current state
+                    endpoint = 'https://api.spotify.com/v1/me/player/repeat?state=track';
+                }
                 break;
             default:
                 return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
