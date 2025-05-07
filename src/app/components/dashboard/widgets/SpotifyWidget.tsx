@@ -91,6 +91,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const [controlsDisabled, setControlsDisabled] = useState(false);
 
     // Get config from widget
     const refreshToken = widget.config?.refreshToken || '';
@@ -119,16 +120,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
             const response = await fetch(`/api/spotify?${params.toString()}`);
 
-
-            // console.log('response', response);
-
             if (!response.ok) {
                 throw new Error('Failed to fetch Spotify data');
             }
 
             const data = await response.json();
-
-            // console.log('data', data);
 
             if (data.error) {
                 // If we need authentication, redirect to auth URL if provided
@@ -142,11 +138,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             setSpotifyData(data);
 
             // Update playing state based on data
-            setIsPlaying(data.isPlaying || false);
+            const newIsPlaying = data.isPlaying || false;
+            setIsPlaying(newIsPlaying);
 
             // Update progress if currently playing
-            if (data.isPlaying && data.currentTrack) {
+            if (data.currentTrack) {
+                // Always update progress to stay in sync with Spotify
                 setProgress(data.currentTrack.progress_ms || 0);
+
+                // If we were previously playing a different track, reset audio preview
+                if (audioRef.current && spotifyData?.currentTrack?.item?.id !== data.currentTrack.item?.id) {
+                    stopPreview();
+                }
             }
         } catch (err) {
             console.error('Error fetching Spotify data:', err);
@@ -180,31 +183,28 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         };
     }, [refreshInterval, showRecent, refreshToken, editMode]);
 
-    // Progress update interval for currently playing track
+    // Update the progress update effect to respond to isPlaying changes
     useEffect(() => {
-        if (!isPlaying || !spotifyData?.currentTrack) {
-            if (progressIntervalRef.current) {
-                clearInterval(progressIntervalRef.current);
-                progressIntervalRef.current = null;
-            }
-            return;
-        }
-
+        // Clear any existing interval when isPlaying changes
         if (progressIntervalRef.current) {
             clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
         }
 
-        progressIntervalRef.current = setInterval(() => {
-            setProgress(prev => {
-                // Reset progress when it exceeds duration
-                const duration = spotifyData?.currentTrack?.item?.duration_ms || 0;
-                if (prev >= duration) {
-                    fetchSpotifyData();
-                    return 0;
-                }
-                return prev + 1000;
-            });
-        }, 1000);
+        // Only set up the interval if the track is playing
+        if (isPlaying && spotifyData?.currentTrack) {
+            progressIntervalRef.current = setInterval(() => {
+                setProgress(prev => {
+                    // Reset progress when it exceeds duration
+                    const duration = spotifyData?.currentTrack?.item?.duration_ms || 0;
+                    if (prev >= duration) {
+                        fetchSpotifyData();
+                        return 0;
+                    }
+                    return prev + 1000;
+                });
+            }, 1000);
+        }
 
         return () => {
             if (progressIntervalRef.current) {
@@ -280,10 +280,20 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
     // Add this function to control Spotify playback
     const controlSpotifyPlayback = async (action: 'play' | 'pause' | 'next' | 'previous' | 'shuffle' | 'repeat') => {
-        if (!refreshToken) return;
+        if (!refreshToken || controlsDisabled) return;
+
+        // Disable controls temporarily to prevent rapid requests
+        setControlsDisabled(true);
+        setTimeout(() => setControlsDisabled(false), 500);
 
         try {
-            // console.log(`Sending control request: ${action}`);
+            // Immediately update local state for better UX
+            if (action === 'play') {
+                setIsPlaying(true);
+            } else if (action === 'pause') {
+                setIsPlaying(false);
+            }
+
             const response = await fetch(`/api/spotify/control`, {
                 method: 'POST',
                 headers: {
@@ -297,11 +307,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 })
             });
 
-            // console.log(`Control response status: ${response.status}`);
             const data = await response.json();
-            // console.log('Control response data:', data);
 
             if (!response.ok) {
+                // Revert state change if request failed
+                if (action === 'play') {
+                    setIsPlaying(false);
+                } else if (action === 'pause') {
+                    setIsPlaying(true);
+                }
+
                 if (response.status === 404) {
                     showStatus('No active Spotify device found. Please open Spotify on a device first.');
                     return;
@@ -649,13 +664,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 </IconButton>
                 <IconButton
                     size="small"
+                    disabled={controlsDisabled}
                     sx={{
                         bgcolor: 'primary.main',
                         color: 'white',
                         '&:hover': { bgcolor: 'primary.dark' },
-                        width: { xs: 36, sm: 40 },  // Responsive width
-                        height: { xs: 36, sm: 40 }, // Responsive height
-                        borderRadius: '50%' // Ensure perfect circle
+                        width: { xs: 36, sm: 40 },
+                        height: { xs: 36, sm: 40 },
+                        borderRadius: '50%',
+                        '&.Mui-disabled': {
+                            bgcolor: 'action.disabledBackground',
+                            color: 'action.disabled'
+                        }
                     }}
                     onClick={() => isPlaying ? controlSpotifyPlayback('pause') : controlSpotifyPlayback('play')}
                 >
@@ -1036,7 +1056,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                                 height: 48, // Maintain perfect circle
                                                 borderRadius: '50%' // Ensure perfect circle
                                             }}
-                                            onClick={() => isPlaying ? controlSpotifyPlayback('pause') : controlSpotifyPlayback('play')}
+                                            onClick={() => {
+                                                if (isPlaying) {
+                                                    controlSpotifyPlayback('pause');
+                                                } else {
+                                                    controlSpotifyPlayback('play');
+                                                }
+                                            }}
                                         >
                                             {isPlaying ? <PauseIcon fontSize="medium" /> : <PlayArrowIcon fontSize="medium" />}
                                         </IconButton>
