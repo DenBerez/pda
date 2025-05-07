@@ -69,6 +69,8 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
     const [imageError, setImageError] = useState(false);
     const [imageLoading, setImageLoading] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [allImagesLoaded, setAllImagesLoaded] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
     const theme = useTheme();
 
     // Refs for touch events and fullscreen
@@ -112,39 +114,47 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
 
     // Preload all images
     useEffect(() => {
-        // Preload the current image first
-        setImageLoading(true);
+        // Only run the preloading once when images are available
+        if (images.length === 0) return;
 
-        // Then preload all other images
-        if (images.length > 0) {
-            const preloadImages = () => {
-                images.forEach((image, index) => {
-                    const img = new Image();
-                    img.src = image.url;
+        setInitialLoading(true);
 
-                    // For the current image, update loading state when it loads
-                    if (index === currentIndex) {
-                        img.onload = () => {
-                            setImageLoading(false);
-                            setImageError(false);
-                        };
-                        img.onerror = () => {
-                            setImageError(true);
-                            setImageLoading(false);
-                            console.error(`Failed to load image: ${image.url}`);
-                        };
-                    }
-                });
+        let loadedCount = 0;
+        const totalImages = images.length;
+
+        // Preload all images at once
+        images.forEach((image) => {
+            const img = new Image();
+            img.src = image.url;
+
+            img.onload = () => {
+                loadedCount++;
+
+                // When all images are loaded, set the state
+                if (loadedCount === totalImages) {
+                    setAllImagesLoaded(true);
+                    setInitialLoading(false);
+                    setImageError(false);
+                }
             };
 
-            preloadImages();
-        }
-    }, [images]);
+            img.onerror = () => {
+                loadedCount++;
+                console.error(`Failed to load image: ${image.url}`);
 
-    // Reset image loading state when changing slides
-    useEffect(() => {
-        setImageLoading(true);
-    }, [currentIndex]);
+                // Still continue even if some images fail
+                if (loadedCount === totalImages) {
+                    setAllImagesLoaded(true);
+                    setInitialLoading(false);
+                }
+            };
+        });
+
+        // Cleanup function
+        return () => {
+            // Cancel any pending operations if needed
+        };
+    }, [images]); // Only depend on images array
 
     // Keyboard navigation
     useEffect(() => {
@@ -249,7 +259,7 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
         setImageError(false);
     };
 
-    if (isLoading) {
+    if (initialLoading) {
         return (
             <Box sx={{
                 display: 'flex',
@@ -257,7 +267,7 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
                 alignItems: 'center',
                 height: '100%'
             }}>
-                <CircularProgress size={40} />
+                <CircularProgress />
             </Box>
         );
     }
@@ -295,21 +305,6 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
             >
                 {images.length > 0 ? (
                     <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-                        {imageLoading && (
-                            <Box sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: 'rgba(0,0,0,0.1)'
-                            }}>
-                                <CircularProgress size={40} />
-                            </Box>
-                        )}
                         <Box
                             component="img"
                             src={images[currentIndex].url}
