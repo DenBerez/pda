@@ -359,7 +359,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                     onChange={(e) => handleFontChange(e.target.value)}
                                     displayEmpty
                                     sx={{
-                                        fontFamily: fontOptions.find(font => font.value === fontFamily)?.value || fontFamily
+                                        fontFamily: fontFamily
                                     }}
                                 >
                                     {fontOptions.map((font) => (

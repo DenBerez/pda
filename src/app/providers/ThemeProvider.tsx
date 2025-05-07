@@ -52,12 +52,18 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         const savedMode = localStorage.getItem('theme-mode');
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const savedPrimaryColor = localStorage.getItem('dashboardPrimaryColor');
+        const savedFontFamily = localStorage.getItem('dashboardFontFamily');
 
         setMode(savedMode === 'dark' || (!savedMode && prefersDark) ? 'dark' : 'light');
 
         // Use saved primary color if available
         if (savedPrimaryColor) {
             setPrimaryColor(savedPrimaryColor);
+        }
+
+        // Use saved font family if available
+        if (savedFontFamily) {
+            setFontFamily(savedFontFamily);
         }
     }, []);
 
@@ -85,6 +91,12 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     // Calculate dark mode primary color (lighter version of the primary color)
     const safePrimaryColor = safeColor(primaryColor);
     const darkModePrimaryColor = lighten(safePrimaryColor, 0.2);
+
+    // Add this function to handle font family changes
+    const handleSetFontFamily = (font: string) => {
+        setFontFamily(font);
+        localStorage.setItem('dashboardFontFamily', font);
+    };
 
     const theme = createTheme({
         palette: {
@@ -290,7 +302,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         toggleColorMode,
         mode,
         fontFamily,
-        setFontFamily,
+        setFontFamily: handleSetFontFamily,
     };
 
     return (

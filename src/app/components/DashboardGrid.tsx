@@ -594,7 +594,7 @@ const DashboardGrid: React.FC = () => {
                     primaryColor={primaryColor}
                     onChangePrimaryColor={handleChangePrimaryColor}
                     fontFamily={fontFamily}
-                    onChangeFontFamily={setFontFamily}
+                    onChangeFontFamily={(font) => setFontFamily(font)}
                 />
 
                 {/* Widget Edit Panel */}
