@@ -485,24 +485,24 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             height: '100%',
             overflow: 'hidden' // Prevent overflow
         }}>
-            {/* Current track section - make it more compact */}
+            {/* Current track section - make it more compact and responsive */}
             <Box sx={{
                 display: 'flex',
-                mb: 2,
+                mb: 1.5, // Reduced margin
                 minHeight: 0 // Allow shrinking below default min-height
             }}>
-                {/* Album art - make it responsive */}
+                {/* Album art - fixed size */}
                 <Paper
                     elevation={3}
                     sx={{
-                        width: { xs: 80, sm: 100 }, // Responsive width
-                        height: { xs: 80, sm: 100 }, // Responsive height
-                        minWidth: { xs: 80, sm: 100 }, // Prevent shrinking too much
+                        width: { xs: 70, sm: 90, md: 100 }, // More responsive sizing
+                        height: { xs: 70, sm: 90, md: 100 }, // More responsive sizing
+                        minWidth: { xs: 70, sm: 90, md: 100 }, // Prevent shrinking too much
                         overflow: 'hidden',
                         borderRadius: 2,
                         position: 'relative',
                         cursor: currentTrack?.external_urls?.spotify ? 'pointer' : 'default',
-                        mr: 2
+                        mr: 1.5 // Reduced margin
                     }}
                     onClick={() => currentTrack?.external_urls?.spotify &&
                         openInSpotify(currentTrack.external_urls.spotify)}
@@ -522,19 +522,19 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                         <Box
                             sx={{
                                 position: 'absolute',
-                                top: 8,
-                                right: 8,
+                                top: 5,
+                                right: 5,
                                 bgcolor: 'primary.main',
                                 color: 'white',
                                 borderRadius: '50%',
-                                width: 30,
-                                height: 30,
+                                width: { xs: 20, sm: 25 }, // Responsive size
+                                height: { xs: 20, sm: 25 }, // Responsive size
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center'
                             }}
                         >
-                            <PlayArrowIcon fontSize="small" />
+                            <PlayArrowIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />
                         </Box>
                     )}
                 </Paper>
@@ -543,32 +543,51 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 <Box sx={{
                     flexGrow: 1,
                     overflow: 'hidden', // Prevent text overflow
-                    minWidth: 0 // Allow shrinking below default min-width
+                    minWidth: 0, // Allow shrinking below default min-width
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
                 }}>
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            fontWeight: 'bold',
-                            cursor: currentTrack?.external_urls?.spotify ? 'pointer' : 'default'
-                        }}
-                        onClick={() => currentTrack?.external_urls?.spotify &&
-                            openInSpotify(currentTrack.external_urls.spotify)}
-                    >
-                        {currentTrack?.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {currentTrack?.artists.map((artist: any) => artist.name).join(', ')}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        {currentTrack?.album.name}
-                    </Typography>
+                    <Box>
+                        <Typography
+                            variant="subtitle1" // Smaller variant
+                            sx={{
+                                fontWeight: 'bold',
+                                cursor: currentTrack?.external_urls?.spotify ? 'pointer' : 'default',
+                                lineHeight: 1.2, // Tighter line height
+                                mb: 0.5, // Add some space below
+                                fontSize: { xs: '0.9rem', sm: '1rem' } // Responsive font size
+                            }}
+                            noWrap
+                            onClick={() => currentTrack?.external_urls?.spotify &&
+                                openInSpotify(currentTrack.external_urls.spotify)}
+                        >
+                            {currentTrack?.name}
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            noWrap
+                            sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }} // Responsive font size
+                        >
+                            {currentTrack?.artists.map((artist: any) => artist.name).join(', ')}
+                        </Typography>
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            noWrap
+                            sx={{ display: { xs: 'none', sm: 'block' } }} // Hide on very small screens
+                        >
+                            {currentTrack?.album.name}
+                        </Typography>
+                    </Box>
 
-                    {/* Progress bar */}
-                    <Box sx={{ width: '100%', mt: 1 }}>
+                    {/* Progress bar - always visible but simplified on small screens */}
+                    <Box sx={{ width: '100%', mt: { xs: 0.5, sm: 1 } }}>
                         <Box
                             sx={{
                                 width: '100%',
-                                height: 4,
+                                height: 3, // Slightly smaller
                                 bgcolor: 'grey.200',
                                 borderRadius: 2,
                                 position: 'relative',
@@ -587,11 +606,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                 }}
                             />
                         </Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary">
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            mt: 0.5,
+                            fontSize: { xs: '0.65rem', sm: '0.75rem' } // Smaller on xs screens
+                        }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 'inherit' }}>
                                 {formatDuration(progress)}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 'inherit' }}>
                                 {formatDuration(currentTrack?.duration_ms || 0)}
                             </Typography>
                         </Box>
@@ -599,57 +623,72 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 </Box>
             </Box>
 
-            {/* Playback controls */}
-            <Stack direction="row" spacing={1} sx={{ mb: 2, justifyContent: 'center' }}>
+            {/* Playback controls - more compact */}
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} sx={{ mb: 1.5, justifyContent: 'center' }}>
                 <IconButton
                     size="small"
                     sx={{
                         color: 'text.secondary',
-                        width: 32,  // Fixed width
-                        height: 32, // Fixed height
+                        width: { xs: 28, sm: 32 },  // Responsive width
+                        height: { xs: 28, sm: 32 }, // Responsive height
                         borderRadius: '50%' // Ensure perfect circle
                     }}
                     onClick={() => controlSpotifyPlayback('shuffle')}
                 >
-                    <ShuffleIcon fontSize="small" />
+                    <ShuffleIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
                 </IconButton>
                 <IconButton
                     size="small"
+                    sx={{
+                        width: { xs: 28, sm: 32 },  // Responsive width
+                        height: { xs: 28, sm: 32 }, // Responsive height
+                    }}
                     onClick={() => controlSpotifyPlayback('previous')}
                 >
-                    <SkipPreviousIcon />
+                    <SkipPreviousIcon sx={{ fontSize: { xs: 18, sm: 22 } }} />
                 </IconButton>
                 <IconButton
-                    size="medium"
+                    size="small"
                     sx={{
                         bgcolor: 'primary.main',
                         color: 'white',
                         '&:hover': { bgcolor: 'primary.dark' },
-                        width: 40,  // Fixed width
-                        height: 40, // Fixed height
+                        width: { xs: 36, sm: 40 },  // Responsive width
+                        height: { xs: 36, sm: 40 }, // Responsive height
                         borderRadius: '50%' // Ensure perfect circle
                     }}
                     onClick={() => isPlaying ? controlSpotifyPlayback('pause') : controlSpotifyPlayback('play')}
                 >
-                    {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                    {isPlaying ?
+                        <PauseIcon sx={{ fontSize: { xs: 18, sm: 22 } }} /> :
+                        <PlayArrowIcon sx={{ fontSize: { xs: 18, sm: 22 } }} />
+                    }
                 </IconButton>
                 <IconButton
                     size="small"
+                    sx={{
+                        width: { xs: 28, sm: 32 },  // Responsive width
+                        height: { xs: 28, sm: 32 }, // Responsive height
+                    }}
                     onClick={() => controlSpotifyPlayback('next')}
                 >
-                    <SkipNextIcon />
+                    <SkipNextIcon sx={{ fontSize: { xs: 18, sm: 22 } }} />
                 </IconButton>
                 <IconButton
                     size="small"
-                    sx={{ color: 'text.secondary' }}
+                    sx={{
+                        color: 'text.secondary',
+                        width: { xs: 28, sm: 32 },  // Responsive width
+                        height: { xs: 28, sm: 32 }, // Responsive height
+                    }}
                     onClick={() => controlSpotifyPlayback('repeat')}
                 >
-                    <RepeatIcon fontSize="small" />
+                    <RepeatIcon sx={{ fontSize: { xs: 16, sm: 20 } }} />
                 </IconButton>
             </Stack>
 
-            {/* Recent tracks section - make it scrollable */}
-            <Typography variant="subtitle2" gutterBottom>
+            {/* Recent tracks section - make it scrollable with adaptive height */}
+            <Typography variant="subtitle2" gutterBottom sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
                 Recently Played
             </Typography>
             <List dense sx={{
@@ -657,28 +696,31 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 overflow: 'auto',
                 bgcolor: 'background.paper',
                 borderRadius: 1,
-                minHeight: 0 // Allow shrinking below default min-height
+                minHeight: 0, // Allow shrinking below default min-height
+                '& .MuiListItem-root': {
+                    py: { xs: 0.25, sm: 0.5 } // Smaller padding on xs screens
+                }
             }}>
                 {spotifyData?.recentTracks?.slice(0, 5).map((item: any, index: number) => (
                     <ListItem
                         key={`${item.track.id}-${index}`}
                         disablePadding
                         sx={{
-                            py: 0.5,
+                            py: 0.25, // Smaller padding
                             px: 1,
                             borderRadius: 1,
-                            mb: 0.5,
+                            mb: 0.25, // Smaller margin
                             '&:hover': { bgcolor: 'action.hover' },
                             cursor: item.track.external_urls?.spotify ? 'pointer' : 'default'
                         }}
                         onClick={() => item.track.external_urls?.spotify &&
                             openInSpotify(item.track.external_urls.spotify)}
                     >
-                        <ListItemAvatar sx={{ minWidth: 40 }}>
+                        <ListItemAvatar sx={{ minWidth: { xs: 32, sm: 40 } }}>
                             <Avatar
                                 src={item.track.album.images?.[0]?.url}
                                 alt={item.track.name}
-                                sx={{ width: 30, height: 30 }}
+                                sx={{ width: { xs: 24, sm: 30 }, height: { xs: 24, sm: 30 } }}
                             >
                                 <MusicNoteIcon fontSize="small" />
                             </Avatar>
@@ -686,19 +728,31 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                         <ListItemText
                             primary={item.track.name}
                             secondary={item.track.artists.map((artist: any) => artist.name).join(', ')}
-                            primaryTypographyProps={{ variant: 'body2', noWrap: true }}
-                            secondaryTypographyProps={{ variant: 'caption', noWrap: true }}
+                            primaryTypographyProps={{
+                                variant: 'body2',
+                                noWrap: true,
+                                fontSize: { xs: '0.75rem', sm: '0.875rem' } // Responsive font size
+                            }}
+                            secondaryTypographyProps={{
+                                variant: 'caption',
+                                noWrap: true,
+                                fontSize: { xs: '0.65rem', sm: '0.75rem' } // Responsive font size
+                            }}
                         />
                         {item.track.preview_url && (
                             <IconButton
                                 edge="end"
                                 size="small"
+                                sx={{
+                                    width: { xs: 24, sm: 30 },
+                                    height: { xs: 24, sm: 30 }
+                                }}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     playPreview(item.track.preview_url);
                                 }}
                             >
-                                <PlayArrowIcon fontSize="small" />
+                                <PlayArrowIcon sx={{ fontSize: { xs: 14, sm: 18 } }} />
                             </IconButton>
                         )}
                     </ListItem>
@@ -844,9 +898,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                                     <Paper
                                         elevation={3}
                                         sx={{
-                                            width: '100%',
-                                            maxWidth: { xs: 120, sm: 150 }, // Responsive max width
-                                            height: { xs: 120, sm: 150 }, // Responsive height
+                                            width: { xs: 120, sm: 150 }, // Fixed width instead of 100%
+                                            height: { xs: 120, sm: 150 }, // Matching height
                                             mb: 2,
                                             overflow: 'hidden',
                                             borderRadius: 2,
