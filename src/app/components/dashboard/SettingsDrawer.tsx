@@ -123,16 +123,19 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
         // Apply the font to the document immediately for instant feedback
         document.documentElement.style.setProperty('--font-current', font);
-        document.body.style.fontFamily = font;
+
+        // Apply font directly to all elements that might be using MUI typography
+        const elements = document.querySelectorAll('body, h1, h2, h3, h4, h5, h6, p, span, div, button');
+        elements.forEach(el => {
+            (el as HTMLElement).style.fontFamily = font;
+        });
 
         // Force a refresh of the entire app by triggering a custom event
         const refreshEvent = new CustomEvent('dashboard-refresh-theme');
         window.dispatchEvent(refreshEvent);
 
-        // Force a reflow/repaint
-        document.body.style.display = 'none';
-        document.body.offsetHeight; // Trigger a reflow
-        document.body.style.display = '';
+        // Force a reflow by accessing offsetHeight
+        document.body.offsetHeight;
     };
 
     return (
