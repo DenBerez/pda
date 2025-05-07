@@ -283,16 +283,23 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         if (!refreshToken) return;
 
         try {
+            console.log(`Sending control request: ${action}`);
             const response = await fetch(`/api/spotify/control`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${refreshToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ action })
+                body: JSON.stringify({
+                    action,
+                    refreshToken,
+                    clientId,
+                    clientSecret
+                })
             });
 
+            console.log(`Control response status: ${response.status}`);
             const data = await response.json();
+            console.log('Control response data:', data);
 
             if (!response.ok) {
                 if (response.status === 404 || data.error === 'No active device found') {

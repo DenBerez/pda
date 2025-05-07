@@ -275,7 +275,7 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
         <Box sx={{
             display: 'flex',
             flexDirection: isCompact ? 'column' : 'row',
-            alignItems: isCompact ? 'center' : 'flex-start',
+            alignItems: isCompact ? 'center' : 'stretch',
             justifyContent: 'space-between',
             mb: 3,
             backgroundColor: theme.card,
@@ -289,7 +289,10 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
             <Box sx={{
                 textAlign: isCompact ? 'center' : 'left',
                 flex: '1',
-                mb: isCompact ? 2 : 0
+                mb: isCompact ? 2 : 0,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
             }}>
                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: theme.primary }}>
                     {weatherData.location.name}
@@ -310,14 +313,16 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                 </Typography>
             </Box>
 
-            {/* Current weather - make this section larger */}
+            {/* Current weather - make this section larger and centered */}
             <Box sx={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flex: '1.5',
                 mb: isCompact ? 2 : 0,
-                py: 2
+                py: 2,
+                height: '100%',
+                alignSelf: 'center'
             }}>
                 {weatherData && (
                     <Box sx={{ mr: 2 }}>
@@ -337,7 +342,10 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
             {/* Feels like */}
             <Box sx={{
                 textAlign: isCompact ? 'center' : 'right',
-                flex: '1'
+                flex: '1',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
             }}>
                 <Typography variant="body2" sx={{ color: theme.text, fontWeight: 'medium' }}>
                     Feels like

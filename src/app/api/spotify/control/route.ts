@@ -3,25 +3,20 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
     let action: string = 'unknown';  // Initialize with default value
     try {
-        // Get the action from the request body
+        // Get the action and tokens from the request body
         const data = await request.json();
-        action = data.action;  // Assign inside try block
+        action = data.action;
+        const refreshToken = data.refreshToken;
+        const clientId = data.clientId || process.env.SPOTIFY_CLIENT_ID;
+        const clientSecret = data.clientSecret || process.env.SPOTIFY_CLIENT_SECRET;
 
         if (!action) {
             return NextResponse.json({ error: 'Missing action parameter' }, { status: 400 });
         }
 
-        // Get authorization header which contains the refresh token
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return NextResponse.json({ error: 'Missing or invalid authorization' }, { status: 401 });
+        if (!refreshToken) {
+            return NextResponse.json({ error: 'Missing refresh token' }, { status: 401 });
         }
-
-        const refreshToken = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-        // Get Spotify API credentials
-        const clientId = process.env.SPOTIFY_CLIENT_ID;
-        const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
             return NextResponse.json({ error: 'Spotify API credentials not configured' }, { status: 500 });

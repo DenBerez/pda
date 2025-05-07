@@ -324,8 +324,13 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 borderBottom: '1px solid',
                 borderColor: 'divider'
             }}>
-                <Typography variant="subtitle1" fontWeight="medium">
-                    Inbox
+                <Typography variant="subtitle1" fontWeight="medium" sx={{
+                    maxWidth: '80%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap'
+                }}>
+                    {emailAddress || (provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
                 </Typography>
                 <IconButton
                     size="small"
