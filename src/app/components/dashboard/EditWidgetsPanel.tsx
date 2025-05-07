@@ -509,65 +509,33 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     onChange={(e) => handleEmailConfigChange({ provider: e.target.value })}
                                 >
                                     <MenuItem value="gmail">Gmail</MenuItem>
-                                    <MenuItem value="aol">AOL</MenuItem>
                                 </Select>
                             </FormControl>
 
-                            {tempWidget?.config?.provider === 'gmail' && (
-                                <AccountConnectionBox
-                                    isConnected={!!tempWidget?.config?.refreshToken}
-                                    serviceName="Gmail"
-                                    onConnect={() => openAuthPopup('/api/email/auth', 'gmail-auth-window')}
-                                    onDisconnect={() => handleEmailConfigChange({ refreshToken: '' })}
-                                    disconnectedMessage="Connect your Gmail account to display your emails."
-                                    helperText={!tempWidget?.config?.refreshToken ?
-                                        "For demo purposes, you'll see mock email data if no account is connected." : undefined}
-                                />
-                            )}
+                            <AccountConnectionBox
+                                isConnected={!!tempWidget?.config?.refreshToken}
+                                serviceName="Gmail"
+                                onConnect={() => openAuthPopup('/api/email/auth', 'gmail-auth-window')}
+                                onDisconnect={() => handleEmailConfigChange({ refreshToken: '' })}
+                                disconnectedMessage="Connect your Gmail account to display your emails."
+                                helperText={!tempWidget?.config?.refreshToken ?
+                                    "For demo purposes, you'll see mock email data if no account is connected." : undefined}
+                            />
 
-                            {tempWidget?.config?.provider === 'gmail' ? (
-                                <Box sx={{ mt: 2, mb: 2 }}>
-                                    <TextField
-                                        fullWidth
-                                        margin="normal"
-                                        label="Email Address"
-                                        size="small"
-                                        value={tempWidget?.config?.email || ''}
-                                        onChange={(e) => handleEmailConfigChange({ email: e.target.value })}
-                                    />
-                                    <TextField
-                                        fullWidth
-                                        margin="normal"
-                                        label="Password"
-                                        type="password"
-                                        size="small"
-                                        value={tempWidget?.config?.password || ''}
-                                        onChange={(e) => handleEmailConfigChange({ password: e.target.value })}
-                                        helperText="For demo purposes, leave empty to use mock data"
-                                    />
-                                </Box>
-                            ) : (
-                                <>
-                                    <TextField
-                                        fullWidth
-                                        margin="normal"
-                                        label="Email Address"
-                                        size="small"
-                                        value={tempWidget?.config?.email || ''}
-                                        onChange={(e) => handleEmailConfigChange({ email: e.target.value })}
-                                    />
-                                    <TextField
-                                        fullWidth
-                                        margin="normal"
-                                        label="Password"
-                                        type="password"
-                                        size="small"
-                                        value={tempWidget?.config?.password || ''}
-                                        onChange={(e) => handleEmailConfigChange({ password: e.target.value })}
-                                        helperText="For demo purposes, leave empty to use mock data"
-                                    />
-                                </>
-                            )}
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="refresh-interval-label">Refresh Interval</InputLabel>
+                                <Select
+                                    labelId="refresh-interval-label"
+                                    value={tempWidget?.config?.refreshInterval || 5}
+                                    label="Refresh Interval"
+                                    onChange={(e) => handleEmailConfigChange({ refreshInterval: Number(e.target.value) })}
+                                >
+                                    <MenuItem value={1}>Every minute</MenuItem>
+                                    <MenuItem value={5}>Every 5 minutes</MenuItem>
+                                    <MenuItem value={15}>Every 15 minutes</MenuItem>
+                                    <MenuItem value={30}>Every 30 minutes</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                     )}
 

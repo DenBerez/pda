@@ -251,7 +251,9 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            py: 2
+            py: 2,
+            height: '100%',
+            flexGrow: 1
         }}>
             {weatherData && (
                 <Box sx={{ mr: 2 }}>
@@ -278,8 +280,10 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
             mb: 3,
             backgroundColor: theme.card,
             borderRadius: 2,
-            p: 2,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+            p: 3,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            flexGrow: 1,
+            height: layoutOption === 'detailed' ? 'auto' : '100%'
         }}>
             {/* Location info */}
             <Box sx={{
@@ -306,13 +310,14 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                 </Typography>
             </Box>
 
-            {/* Current weather */}
+            {/* Current weather - make this section larger */}
             <Box sx={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                flex: '1',
-                mb: isCompact ? 2 : 0
+                flex: '1.5',
+                mb: isCompact ? 2 : 0,
+                py: 2
             }}>
                 {weatherData && (
                     <Box sx={{ mr: 2 }}>
@@ -358,10 +363,12 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: `repeat(auto-fill, minmax(${isCompact ? '120px' : '200px'}, 1fr))`,
+                    gridTemplateColumns: `repeat(auto-fill, minmax(${isCompact ? '120px' : '150px'}, 1fr))`,
                     gap: 2,
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    alignItems: 'stretch',
+                    justifyContent: 'center',
+                    flexGrow: 1,
+                    overflow: 'auto'
                 }}
             >
                 {[
@@ -405,7 +412,8 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
                             alignItems: 'center',
                             backgroundColor: theme.card,
                             borderRadius: 2,
-                            color: theme.text
+                            color: theme.text,
+                            height: '100%'
                         }}
                     >
                         {detail.icon}
@@ -425,7 +433,13 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
 
     if (loading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                width: '100%'
+            }}>
                 <CircularProgress size={40} />
             </Box>
         );
@@ -433,14 +447,22 @@ const WeatherWidget: React.FC<WeatherWidgetProps> = ({ widget, editMode, colorSc
 
     if (!weatherData) {
         return (
-            <Box sx={{ p: 2, textAlign: 'center' }}>
+            <Box sx={{
+                p: 2,
+                textAlign: 'center',
+                height: '100%',
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center'
+            }}>
                 <Typography>No weather data available</Typography>
             </Box>
         );
     }
 
     return (
-        <Box sx={{ p: 2 }} ref={setContainerRef}>
+        <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }} ref={setContainerRef}>
             {/* Render the appropriate layout based on layoutOption */}
             {layoutOption === 'compact' ? (
                 renderCompactLayout()

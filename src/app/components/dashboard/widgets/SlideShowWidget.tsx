@@ -96,7 +96,7 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
 
     // Handle auto-play
     useEffect(() => {
-        if (isPlaying && !editMode) {
+        if (isPlaying) {
             timerRef.current = setInterval(() => {
                 setCurrentIndex(prevIndex => (prevIndex + 1) % images.length);
             }, interval);
@@ -107,7 +107,7 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
                 clearInterval(timerRef.current);
             }
         };
-    }, [isPlaying, images.length, interval, editMode]);
+    }, [isPlaying, images.length, interval]);
 
     // Preload next image
     useEffect(() => {
@@ -124,7 +124,7 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // if (editMode) return;
+            if (editMode) return;
 
             switch (e.key) {
                 case 'ArrowLeft':
