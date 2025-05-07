@@ -124,7 +124,7 @@ const SlideShowWidget: React.FC<SlideShowWidgetProps> = ({ widget, editMode }) =
     // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (editMode) return;
+            // if (editMode) return;
 
             switch (e.key) {
                 case 'ArrowLeft':

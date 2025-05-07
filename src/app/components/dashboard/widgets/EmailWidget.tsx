@@ -86,14 +86,14 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
 
     // Fetch emails on component mount and when configuration changes
     useEffect(() => {
-        if (!editMode) {
-            fetchEmails();
 
-            // Set up refresh interval based on configuration
-            const intervalId = setInterval(fetchEmails, refreshInterval * 60 * 1000);
+        fetchEmails();
 
-            return () => clearInterval(intervalId);
-        }
+        // Set up refresh interval based on configuration
+        const intervalId = setInterval(fetchEmails, refreshInterval * 60 * 1000);
+
+        return () => clearInterval(intervalId);
+
     }, [editMode, provider, refreshToken, emailAddress, password, refreshInterval]);
 
     // Listen for Gmail auth success message
