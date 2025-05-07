@@ -367,12 +367,46 @@ const Tour: React.FC<TourProps> = ({
                 opacity: 1 !important;
             }
             
-            /* Highlight for settings button */
-            .tour-highlight-settings {
-                box-shadow: 0 0 0 6px ${theme.palette.primary.main}80, 
-                           0 0 0 12px ${theme.palette.background.paper}40,
-                           0 0 25px 8px ${theme.palette.primary.main}40 !important;
+            /* Define the pulsing animation for all tour highlights */
+            @keyframes tour-spotlight-pulse {
+                0% {
+                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}70, 
+                               0 0 0 8px ${theme.palette.primary.main}40,
+                               0 0 0 12px ${theme.palette.primary.main}20,
+                               0 0 15px 5px ${theme.palette.primary.main}30,
+                               0 0 30px 10px ${theme.palette.primary.main}20,
+                               0 0 45px 15px ${theme.palette.primary.main}10;
+                }
+                50% {
+                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}80, 
+                               0 0 0 8px ${theme.palette.primary.main}50,
+                               0 0 0 12px ${theme.palette.primary.main}30,
+                               0 0 20px 8px ${theme.palette.primary.main}40,
+                               0 0 35px 12px ${theme.palette.primary.main}30,
+                               0 0 50px 18px ${theme.palette.primary.main}20;
+                }
+                100% {
+                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}70, 
+                               0 0 0 8px ${theme.palette.primary.main}40,
+                               0 0 0 12px ${theme.palette.primary.main}20,
+                               0 0 15px 5px ${theme.palette.primary.main}30,
+                               0 0 30px 10px ${theme.palette.primary.main}20,
+                               0 0 45px 15px ${theme.palette.primary.main}10;
+                }
+            }
+            
+            /* Generic tour highlight class that can be applied to any element */
+            .tour-highlight {
+                animation: tour-spotlight-pulse 2s infinite ease-in-out;
                 z-index: 10001 !important;
+                position: relative !important;
+            }
+            
+            /* Highlight for settings button - now inherits from tour-highlight */
+            .tour-highlight-settings {
+                animation: tour-spotlight-pulse 2s infinite ease-in-out;
+                z-index: 10001 !important;
+                transition: box-shadow 0.3s ease-in-out !important;
             }
             
             /* Arrow styling */
@@ -404,15 +438,29 @@ const Tour: React.FC<TourProps> = ({
         document.head.appendChild(style);
 
         // Add this function after the handleTourComplete function (around line 81)
-        const handleStepChange = () => {
-            // Remove highlight from settings button when changing steps
-            const settingsButton = document.querySelector('.settings-button');
-            if (settingsButton) {
-                settingsButton.classList.remove('tour-highlight-settings');
+        const handleStepChange = (event: any) => {
+            // Remove highlight from all previously highlighted elements
+            document.querySelectorAll('.tour-highlight, .tour-highlight-settings').forEach(el => {
+                el.classList.remove('tour-highlight');
+                el.classList.remove('tour-highlight-settings');
+            });
+
+            // Add highlight to the current step's target element if it exists
+            if (event && event.step && event.step.options && event.step.options.attachTo) {
+                const targetSelector = event.step.options.attachTo.element;
+                const targetElement = document.querySelector(targetSelector);
+                if (targetElement) {
+                    // Use the specific class for settings button, generic class for others
+                    if (targetSelector === '.settings-button') {
+                        targetElement.classList.add('tour-highlight-settings');
+                    } else {
+                        targetElement.classList.add('tour-highlight');
+                    }
+                }
             }
         };
 
-        // Add this event listener after the existing ones (around line 85)
+        // Add this event listener after the existing ones
         tourRef.current.on('show', handleStepChange);
 
         // Start the tour
@@ -437,10 +485,10 @@ const Tour: React.FC<TourProps> = ({
             }
 
             // Remove any highlight classes
-            const settingsButton = document.querySelector('.settings-button');
-            if (settingsButton) {
-                settingsButton.classList.remove('tour-highlight-settings');
-            }
+            document.querySelectorAll('.tour-highlight, .tour-highlight-settings').forEach(el => {
+                el.classList.remove('tour-highlight');
+                el.classList.remove('tour-highlight-settings');
+            });
         };
     }, [isOpen, theme.palette.mode, onRequestClose]);
 
