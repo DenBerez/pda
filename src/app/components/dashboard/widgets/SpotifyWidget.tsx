@@ -94,6 +94,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     const [controlsDisabled, setControlsDisabled] = useState(false);
     const latestRequestRef = useRef<number>(0);
     const [lastActionTime, setLastActionTime] = useState<number>(0);
+    const [manualControlTime, setManualControlTime] = useState(0);
 
     // Get config from widget
     const refreshToken = widget.config?.refreshToken || '';
@@ -154,10 +155,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
             setSpotifyData(data);
 
-            // Update playing state based on data
-            const newIsPlaying = data.isPlaying || false;
-            console.log('Setting isPlaying to:', newIsPlaying);
-            setIsPlaying(newIsPlaying);
+            // Only update isPlaying if it's been more than 3 seconds since manual control
+            const timeSinceManualControl = Date.now() - manualControlTime;
+            if (timeSinceManualControl > 3000) {
+                // Update playing state based on data
+                const newIsPlaying = data.isPlaying || false;
+                console.log('Setting isPlaying to:', newIsPlaying);
+                setIsPlaying(newIsPlaying);
+            } else {
+                console.log('Skipping isPlaying update due to recent manual control');
+            }
 
             // Update progress if currently playing
             if (data.currentTrack) {
@@ -319,8 +326,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             // Immediately update local state for better UX
             if (action === 'play') {
                 setIsPlaying(true);
+                setManualControlTime(Date.now()); // Track when we manually set playing state
             } else if (action === 'pause') {
                 setIsPlaying(false);
+                setManualControlTime(Date.now()); // Track when we manually set playing state
             }
 
             const response = await fetch(`/api/spotify/control`, {
@@ -356,13 +365,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
             // Refresh data after action with a slight delay to allow Spotify API to update
             setTimeout(fetchSpotifyData, 1000);
-
-            // Remove status message
-            // showStatus(`${action.charAt(0).toUpperCase() + action.slice(1)}ing...`);
         } catch (err) {
             console.error(`Error controlling Spotify playback (${action}):`, err);
-            // Remove status message
-            // showStatus(`Failed to ${action}`);
         }
     };
 
@@ -696,26 +700,24 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                     <SkipPreviousIcon sx={{ fontSize: { xs: 18, sm: 22 } }} />
                 </IconButton>
                 <IconButton
-                    size="small"
-                    disabled={controlsDisabled}
+                    size="large"
                     sx={{
                         bgcolor: 'primary.main',
                         color: 'white',
                         '&:hover': { bgcolor: 'primary.dark' },
-                        width: { xs: 36, sm: 40 },
-                        height: { xs: 36, sm: 40 },
-                        borderRadius: '50%',
-                        '&.Mui-disabled': {
-                            bgcolor: 'action.disabledBackground',
-                            color: 'action.disabled'
+                        width: 48,  // Slightly larger for "large" size
+                        height: 48, // Maintain perfect circle
+                        borderRadius: '50%' // Ensure perfect circle
+                    }}
+                    onClick={() => {
+                        if (isPlaying) {
+                            controlSpotifyPlayback('pause');
+                        } else {
+                            controlSpotifyPlayback('play');
                         }
                     }}
-                    onClick={() => isPlaying ? controlSpotifyPlayback('pause') : controlSpotifyPlayback('play')}
                 >
-                    {isPlaying ?
-                        <PauseIcon sx={{ fontSize: { xs: 18, sm: 22 } }} /> :
-                        <PlayArrowIcon sx={{ fontSize: { xs: 18, sm: 22 } }} />
-                    }
+                    {isPlaying ? <PauseIcon fontSize="medium" /> : <PlayArrowIcon fontSize="medium" />}
                 </IconButton>
                 <IconButton
                     size="small"
