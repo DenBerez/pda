@@ -3,10 +3,18 @@ import { google, calendar_v3 } from 'googleapis';
 
 // Google Calendar OAuth2 setup
 const setupCalendarAuth = async (refreshToken: string) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+
+    if (!clientId || !clientSecret || !redirectUri) {
+        throw new Error('Google API credentials not properly configured');
+    }
+
     const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URI
+        clientId,
+        clientSecret,
+        redirectUri
     );
 
     oauth2Client.setCredentials({
@@ -40,6 +48,13 @@ const fetchGoogleCalendarEvents = async (refreshToken: string, maxResults = 10, 
         return response.data.items || [];
     } catch (error) {
         console.error('Error fetching Google Calendar events:', error);
+        // Check for token-related errors
+        if (error instanceof Error &&
+            (error.message.includes('invalid_grant') ||
+                error.message.includes('token') ||
+                error.message.includes('auth'))) {
+            throw new Error('Authentication failed. Please reconnect your Google Calendar.');
+        }
         throw error;
     }
 };

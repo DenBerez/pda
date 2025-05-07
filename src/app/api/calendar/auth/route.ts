@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
                 `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}` :
                 'http://localhost:3000');
 
-        const redirectUri = `${baseUrl}/api/calendar/auth/callback`;
+        // Use the same route for the redirect URI
+        const redirectUri = `${baseUrl}/api/calendar/auth`;
 
         const oauth2Client = new google.auth.OAuth2(
             clientId,
