@@ -123,26 +123,6 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
         // Apply the font to the document immediately for instant feedback
         document.documentElement.style.setProperty('--font-current', font);
-
-        // // Optional: Add a visual confirmation that the change was applied
-        // const tempFeedback = document.createElement('div');
-        // tempFeedback.textContent = 'Font updated!';
-        // tempFeedback.style.position = 'fixed';
-        // tempFeedback.style.bottom = '20px';
-        // tempFeedback.style.left = '50%';
-        // tempFeedback.style.transform = 'translateX(-50%)';
-        // tempFeedback.style.padding = '8px 16px';
-        // tempFeedback.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-        // tempFeedback.style.color = 'white';
-        // tempFeedback.style.borderRadius = '4px';
-        // tempFeedback.style.zIndex = '9999';
-        // tempFeedback.style.fontFamily = font;
-        // document.body.appendChild(tempFeedback);
-
-        // Remove the feedback after 2 seconds
-        // setTimeout(() => {
-        //     document.body.removeChild(tempFeedback);
-        // }, 2000);
     };
 
     return (

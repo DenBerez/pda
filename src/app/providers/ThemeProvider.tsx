@@ -7,6 +7,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { lighten, darken, alpha } from '@mui/material/styles';
 import { PaletteMode } from '@mui/material';
+import React from 'react';
 
 // Create a context for theme toggling
 interface ThemeContextType {
@@ -96,9 +97,13 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const handleSetFontFamily = (font: string) => {
         setFontFamily(font);
         localStorage.setItem('dashboardFontFamily', font);
+
+        // Apply the font to the document immediately for instant feedback
+        document.documentElement.style.setProperty('--font-current', font);
     };
 
-    const theme = createTheme({
+    // Create a memoized theme that updates when dependencies change
+    const theme = React.useMemo(() => createTheme({
         palette: {
             mode,
             primary: {
@@ -296,7 +301,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                 },
             },
         },
-    });
+    }), [mode, safePrimaryColor, darkModePrimaryColor, fontFamily]);
 
     const themeContextValue = {
         toggleColorMode,
