@@ -22,6 +22,7 @@ import MarkEmailUnreadIcon from '@mui/icons-material/MarkEmailUnread';
 import { Widget } from '../types';
 import Settings from '@mui/icons-material/Settings';
 import LayoutStyleSelector from '../LayoutStyle';
+import { useOAuth2Connection } from '../../../hooks/useOAuth2Connection';
 
 interface Email {
     id: string;
@@ -44,11 +45,17 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     const [error, setError] = useState<string | null>(null);
     const [provider, setProvider] = useState(widget.config?.provider || 'gmail');
     const [emailAddress, setEmailAddress] = useState(widget.config?.email || '');
-    const [refreshToken, setRefreshToken] = useState(widget.config?.refreshToken || '');
-    const [password, setPassword] = useState(widget.config?.password || '');
+    const [password, setPassword] = useState('');
     const [configuring, setConfiguring] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState(widget.config?.refreshInterval || 5);
     const [layoutOption, setLayoutOption] = useState(widget.config?.layoutOption || 'normal');
+
+    const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
+        widget,
+        messageType: 'GMAIL_AUTH_SUCCESS',
+        authEndpoint: '/api/email/auth',
+        onUpdateWidget
+    });
 
     // Function to fetch emails
     const fetchEmails = async () => {
@@ -98,33 +105,6 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
 
     }, [editMode, provider, refreshToken, emailAddress, password, refreshInterval]);
 
-    // Listen for Gmail auth success message
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            if (event.data?.type === 'GMAIL_AUTH_SUCCESS' && event.data?.refreshToken) {
-                // Update the refresh token
-                setRefreshToken(event.data.refreshToken);
-
-                // Update the widget configuration if onUpdateWidget is provided
-                if (onUpdateWidget) {
-                    onUpdateWidget({
-                        ...widget,
-                        config: {
-                            ...widget.config,
-                            provider: 'gmail',
-                            refreshToken: event.data.refreshToken
-                        }
-                    });
-                }
-
-                // console.log('Gmail connected successfully!');
-            }
-        };
-
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
-    }, [widget, onUpdateWidget]);
-
     // Format date to a more readable format
     const formatDate = (dateString: string) => {
         try {
@@ -167,7 +147,6 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     provider,
                     email: emailAddress,
                     refreshToken,
-                    password,
                     refreshInterval,
                     layoutOption
                 }
@@ -176,22 +155,6 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
 
         setConfiguring(false);
         fetchEmails();
-    };
-
-    // Connect Gmail account
-    const connectGmailAccount = () => {
-        // Calculate center position for the popup
-        const width = 600;
-        const height = 700;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-
-        // Open the auth window as a popup
-        window.open(
-            `/api/email/auth`,
-            'gmail-auth-window',
-            `width=${width},height=${height},left=${left},top=${top}`
-        );
     };
 
     // Toggle email read status
@@ -226,7 +189,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             {provider === 'gmail' ? (
                 <>
                     <Box sx={{ mt: 2, mb: 2 }}>
-                        {refreshToken ? (
+                        {isConnected ? (
                             <>
                                 <Typography variant="body2" color="success.main" sx={{ mb: 1 }}>
                                     ✅ Your Gmail account is connected
@@ -235,7 +198,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                                     variant="outlined"
                                     color="error"
                                     size="small"
-                                    onClick={() => setRefreshToken('')}
+                                    onClick={disconnect}
                                 >
                                     Disconnect Account
                                 </Button>
@@ -248,14 +211,14 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                                 <Button
                                     variant="contained"
                                     color="primary"
-                                    onClick={connectGmailAccount}
+                                    onClick={connect}
                                 >
                                     Connect Gmail Account
                                 </Button>
                             </>
                         )}
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                            {!refreshToken &&
+                            {!isConnected &&
                                 "For demo purposes, you'll see mock email data if no account is connected."}
                         </Typography>
                     </Box>
