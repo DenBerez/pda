@@ -93,8 +93,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
     // Get config from widget
     const refreshToken = widget.config?.refreshToken || '';
-    const clientId = widget.config?.clientId || process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
-    const clientSecret = widget.config?.clientSecret || process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET || '';
+    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
+    const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET || '';
     const refreshInterval = widget.config?.refreshInterval || 30; // seconds
 
     // Get layout option from widget config or default to 'normal'

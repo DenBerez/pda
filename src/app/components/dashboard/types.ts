@@ -91,8 +91,6 @@ export interface WidgetConfig {
 
 export interface SpotifyConfig {
     refreshToken?: string;
-    clientId?: string;
-    clientSecret?: string;
     refreshInterval?: number;
     layoutOption?: 'compact' | 'normal' | 'detailed';
 }

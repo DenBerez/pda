@@ -4,8 +4,8 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const code = searchParams.get('code');
-        const clientId = searchParams.get('clientId') || process.env.SPOTIFY_CLIENT_ID;
-        const clientSecret = searchParams.get('clientSecret') || process.env.SPOTIFY_CLIENT_SECRET;
+        const clientId = process.env.SPOTIFY_CLIENT_ID;
+        const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
             return NextResponse.json({ error: 'Missing client ID or secret' }, { status: 400 });
