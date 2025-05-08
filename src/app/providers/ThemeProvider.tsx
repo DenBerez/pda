@@ -322,7 +322,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                         backgroundAttachment: 'fixed',
-                        '&::after': {
+                        '&::before': {
                             content: '""',
                             position: 'fixed',
                             top: 0,
@@ -332,7 +332,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                             backgroundColor: mode === 'light'
                                 ? 'rgba(255, 255, 255, 0.85)'
                                 : 'rgba(18, 18, 18, 0.9)',
-                            zIndex: -1,
+                            zIndex: 0,
                             pointerEvents: 'none'
                         }
                     }

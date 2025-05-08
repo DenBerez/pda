@@ -490,11 +490,10 @@ const DashboardGrid: React.FC = () => {
                     width: '100%',
                     overflow: 'hidden',
                     position: 'relative',
-                    bgcolor: 'background.default',
+                    bgcolor: 'transparent',
                     color: 'text.primary',
                     transition: 'background-color 0.3s ease, opacity 0.5s ease',
                     opacity: initialLoadComplete ? 1 : 0,
-                    zIndex: 1,
                     '& > *': {
                         position: 'relative',
                         zIndex: 2
