@@ -441,9 +441,9 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {[
                                     { url: '', name: 'None' },
-                                    { url: 'https://images.unsplash.com/photo-1616088410192-d1b123712994?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', name: 'Minimal Pattern' },
-                                    { url: 'https://source.unsplash.com/featured/1920x1080/?gradient,abstract', name: 'Gradient' },
-                                    { url: 'https://source.unsplash.com/featured/1920x1080/?waves,soft', name: 'Soft Waves' }
+                                    { url: 'https://images.unsplash.com/photo-1493514789931-586cb221d7a7?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', name: 'City' },
+                                    { url: 'https://images.unsplash.com/photo-1619441207978-3d326c46e2c9?q=80&w=2069&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', name: 'Trees' },
+                                    { url: 'https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', name: 'Mountains' }
                                 ].map((bg) => (
                                     <Tooltip key={bg.name} title={bg.name}>
                                         <Box
