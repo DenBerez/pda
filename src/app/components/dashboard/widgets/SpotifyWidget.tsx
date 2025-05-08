@@ -129,9 +129,17 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     // Fetch initial access token
     useEffect(() => {
         const getInitialToken = async () => {
-            if (!refreshToken || !clientId || !clientSecret) return;
+            if (!refreshToken || !clientId || !clientSecret) {
+                console.log('Missing credentials:', {
+                    hasRefreshToken: !!refreshToken,
+                    hasClientId: !!clientId,
+                    hasClientSecret: !!clientSecret
+                });
+                return;
+            }
 
             try {
+                console.log('Attempting to get initial token...');
                 const response = await fetch('/api/spotify/token', {
                     method: 'POST',
                     headers: {
@@ -145,10 +153,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                 });
 
                 if (!response.ok) {
-                    throw new Error('Failed to get access token');
+                    const errorData = await response.json();
+                    console.error('Token response not OK:', response.status, errorData);
+                    throw new Error(`Failed to get access token: ${response.status}`);
                 }
 
                 const data = await response.json();
+                console.log('Got access token, expires in:', data.expires_in);
                 setAccessToken(data.access_token);
             } catch (err) {
                 console.error('Error getting initial token:', err);
