@@ -441,7 +441,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {[
                                     { url: '', name: 'None' },
-                                    { url: 'https://source.unsplash.com/featured/1920x1080/?minimal,pattern', name: 'Minimal Pattern' },
+                                    { url: 'https://images.unsplash.com/photo-1616088410192-d1b123712994?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', name: 'Minimal Pattern' },
                                     { url: 'https://source.unsplash.com/featured/1920x1080/?gradient,abstract', name: 'Gradient' },
                                     { url: 'https://source.unsplash.com/featured/1920x1080/?waves,soft', name: 'Soft Waves' }
                                 ].map((bg) => (
