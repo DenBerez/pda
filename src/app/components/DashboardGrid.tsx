@@ -553,8 +553,8 @@ const DashboardGrid: React.FC = () => {
                             bottom: 20,
                             right: 20,
                             zIndex: 1000,
-                            opacity: showSettingsButton ? 1 : 0,
-                            visibility: showSettingsButton ? 'visible' : 'hidden',
+                            opacity: showSettingsButton && !settingsOpen ? 1 : 0,
+                            visibility: showSettingsButton && !settingsOpen ? 'visible' : 'hidden',
                             transition: 'opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, transform 0.2s ease',
                             animation: initialLoadComplete && !settingsOpen && showSettingsButton ? 'pulse 2s infinite' : 'none',
                             '@keyframes pulse': {
@@ -568,7 +568,6 @@ const DashboardGrid: React.FC = () => {
                                     transform: 'scale(1)'
                                 }
                             },
-                            // Stop animation after 10 seconds
                             animationIterationCount: '3'
                         }}
                     >
