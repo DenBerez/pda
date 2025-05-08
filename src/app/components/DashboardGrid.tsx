@@ -555,20 +555,13 @@ const DashboardGrid: React.FC = () => {
                             zIndex: 1000,
                             opacity: showSettingsButton && !settingsOpen ? 1 : 0,
                             visibility: showSettingsButton && !settingsOpen ? 'visible' : 'hidden',
-                            transition: 'opacity 0.3s ease-in-out, visibility 0.3s ease-in-out, transform 0.2s ease',
-                            animation: initialLoadComplete && !settingsOpen && showSettingsButton ? 'pulse 2s infinite' : 'none',
-                            '@keyframes pulse': {
-                                '0%': {
-                                    transform: 'scale(1)'
-                                },
-                                '50%': {
-                                    transform: 'scale(1.05)'
-                                },
-                                '100%': {
-                                    transform: 'scale(1)'
-                                }
-                            },
-                            animationIterationCount: '3'
+                            transition: 'opacity 0.3s ease-in-out',
+                            pointerEvents: showSettingsButton && !settingsOpen ? 'auto' : 'none',
+                            transform: 'translateZ(0)',
+                            willChange: 'opacity',
+                            '& > *': {
+                                transform: 'translateZ(0)'
+                            }
                         }}
                     >
                         <Fab
