@@ -93,8 +93,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
     // Get config from widget
     const refreshToken = widget.config?.refreshToken || '';
-    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '';
-    const clientSecret = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET || '';
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
     const refreshInterval = widget.config?.refreshInterval || 30; // seconds
 
     // Get layout option from widget config or default to 'normal'
@@ -121,8 +121,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     } = useSpotifyWebPlayback({
         accessToken,
         refreshToken,
-        clientId,
-        clientSecret,
+        clientId: process.env.SPOTIFY_CLIENT_ID || '',
+        clientSecret: process.env.SPOTIFY_CLIENT_SECRET || '',
         playerName: 'Dashboard Player'
     });
 
@@ -316,8 +316,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
             clientId,
             clientSecret,
             hasRefreshToken: !!refreshToken,
-            envClientId: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID,
-            envClientSecret: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET
+            envClientId: process.env.SPOTIFY_CLIENT_ID,
+            envClientSecret: process.env.SPOTIFY_CLIENT_SECRET
         });
     }, [clientId, clientSecret, refreshToken]);
 
@@ -368,7 +368,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                     <Button
                         variant="contained"
                         color="primary"
-                        href={`/api/spotify/auth?clientId=${encodeURIComponent(clientId)}&clientSecret=${encodeURIComponent(clientSecret)}`}
+                        href="/api/spotify/auth"
                         target="_blank"
                         rel="noopener noreferrer"
                     >

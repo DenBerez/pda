@@ -482,8 +482,8 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                         type="range"
                                         min="0"
                                         max="100"
-                                        value={((1 - backgroundOpacity) * 100).toFixed(0)}
-                                        onChange={(e) => onChangeBackgroundOpacity(1 - (parseInt(e.target.value) / 100))}
+                                        value={(backgroundOpacity * 100).toFixed(0)}
+                                        onChange={(e) => onChangeBackgroundOpacity(parseInt(e.target.value) / 100)}
                                         style={{
                                             width: '100%',
                                             height: '8px',
@@ -491,7 +491,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                         }}
                                     />
                                     <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right' }}>
-                                        {((1 - backgroundOpacity) * 100).toFixed(0)}%
+                                        {(backgroundOpacity * 100).toFixed(0)}%
                                     </Typography>
                                 </Box>
                             </Box>
