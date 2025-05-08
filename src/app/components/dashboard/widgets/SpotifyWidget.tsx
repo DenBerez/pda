@@ -313,6 +313,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         });
     }, [accessToken, refreshToken, isConnected, deviceId, currentTrack, sdkError]);
 
+    useEffect(() => {
+        console.log('Spotify credentials check:', {
+            clientId,
+            clientSecret,
+            hasRefreshToken: !!refreshToken,
+            envClientId: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID,
+            envClientSecret: process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET
+        });
+    }, [clientId, clientSecret, refreshToken]);
+
     // Uncomment this loading state check
     if (loading && !isConnected && !currentTrack && recentTracks.length === 0) {
         return (
