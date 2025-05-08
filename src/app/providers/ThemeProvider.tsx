@@ -318,22 +318,23 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                         },
                     },
                     body: {
-                        ...(backgroundImage && {
-                            '&::before': {
-                                content: '""',
-                                position: 'fixed',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                backgroundImage: `url(${backgroundImage})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                backgroundAttachment: 'fixed',
-                                opacity: mode === 'light' ? 0.15 : 0.1,
-                                zIndex: -1,
-                            }
-                        })
+                        backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundAttachment: 'fixed',
+                        '&::after': {
+                            content: '""',
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            backgroundColor: mode === 'light'
+                                ? 'rgba(255, 255, 255, 0.85)'
+                                : 'rgba(18, 18, 18, 0.9)',
+                            zIndex: -1,
+                            pointerEvents: 'none'
+                        }
                     }
                 },
             },
