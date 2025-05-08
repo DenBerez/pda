@@ -104,7 +104,7 @@ const DashboardGrid: React.FC = () => {
     const [widgetToDelete, setWidgetToDelete] = useState<string | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editMode, setEditMode] = useLocalStorage<boolean>('dashboardEditMode', true);
-    const { toggleColorMode, mode, fontFamily, setFontFamily } = useThemeContext();
+    const { toggleColorMode, mode, fontFamily, setFontFamily, backgroundImage, setBackgroundImage } = useThemeContext();
     const [editPanelOpen, setEditPanelOpen] = useState(false);
     const [activeWidget, setActiveWidget] = useState<Widget | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -631,6 +631,8 @@ const DashboardGrid: React.FC = () => {
                     onChangePrimaryColor={handleChangePrimaryColor}
                     fontFamily={fontFamily}
                     onChangeFontFamily={(font) => setFontFamily(font)}
+                    backgroundImage={backgroundImage}
+                    onChangeBackgroundImage={setBackgroundImage}
                 />
 
                 {/* Widget Edit Panel */}

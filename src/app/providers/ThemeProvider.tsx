@@ -15,6 +15,8 @@ interface ThemeContextType {
     toggleColorMode: () => void;
     fontFamily: string;
     setFontFamily: (font: string) => void;
+    backgroundImage: string;
+    setBackgroundImage: (image: string) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType>({
@@ -22,6 +24,8 @@ export const ThemeContext = createContext<ThemeContextType>({
     mode: 'light',
     fontFamily: 'var(--font-geist-sans), system-ui, sans-serif',
     setFontFamily: () => { },
+    backgroundImage: '',
+    setBackgroundImage: () => { },
 });
 
 export function useThemeContext() {
@@ -47,6 +51,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const [mode, setMode] = useState<'light' | 'dark'>('light');
     const [primaryColor, setPrimaryColor] = useState<string>('#1976d2');
     const [fontFamily, setFontFamily] = useState('var(--font-geist-sans), system-ui, sans-serif');
+    const [backgroundImage, setBackgroundImage] = useState('');
 
     useEffect(() => {
         // Check system preference and saved preference
@@ -54,6 +59,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const savedPrimaryColor = localStorage.getItem('dashboardPrimaryColor');
         const savedFontFamily = localStorage.getItem('dashboardFontFamily');
+        const savedBackground = localStorage.getItem('dashboardBackground');
 
         setMode(savedMode === 'dark' || (!savedMode && prefersDark) ? 'dark' : 'light');
 
@@ -65,6 +71,10 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         // Use saved font family if available
         if (savedFontFamily) {
             setFontFamily(savedFontFamily);
+        }
+
+        if (savedBackground) {
+            setBackgroundImage(savedBackground);
         }
     }, []);
 
@@ -104,6 +114,11 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         // Force a refresh of the entire app by triggering a custom event
         const refreshEvent = new CustomEvent('dashboard-refresh-theme');
         window.dispatchEvent(refreshEvent);
+    };
+
+    const handleSetBackgroundImage = (image: string) => {
+        setBackgroundImage(image);
+        localStorage.setItem('dashboardBackground', image);
     };
 
     // Create a memoized theme that updates when dependencies change
@@ -302,16 +317,36 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                             fontFamily: 'var(--font-geist-mono), monospace',
                         },
                     },
+                    body: {
+                        ...(backgroundImage && {
+                            '&::before': {
+                                content: '""',
+                                position: 'fixed',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                backgroundImage: `url(${backgroundImage})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                backgroundAttachment: 'fixed',
+                                opacity: mode === 'light' ? 0.15 : 0.1,
+                                zIndex: -1,
+                            }
+                        })
+                    }
                 },
             },
         },
-    }), [mode, safePrimaryColor, darkModePrimaryColor, fontFamily]);
+    }), [mode, safePrimaryColor, darkModePrimaryColor, fontFamily, backgroundImage]);
 
     const themeContextValue = {
         toggleColorMode,
         mode,
         fontFamily,
         setFontFamily: handleSetFontFamily,
+        backgroundImage,
+        setBackgroundImage: handleSetBackgroundImage,
     };
 
     return (

@@ -49,6 +49,8 @@ interface SettingsDrawerProps {
     onChangePrimaryColor?: (color: string) => void;
     fontFamily?: string;
     onChangeFontFamily?: (font: string) => void;
+    backgroundImage?: string;
+    onChangeBackgroundImage?: (image: string) => void;
 }
 
 const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
@@ -69,7 +71,9 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     primaryColor = '#1976d2',
     onChangePrimaryColor = () => { },
     fontFamily = 'Geist Sans',
-    onChangeFontFamily = () => { }
+    onChangeFontFamily = () => { },
+    backgroundImage = '',
+    onChangeBackgroundImage = () => { }
 }) => {
     // Add state for template selection
     const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
@@ -198,8 +202,6 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     </IconButton>
                 </Box>
 
-
-
                 {/* Settings Content */}
                 <Box sx={{ p: 2, flexGrow: 1 }}>
 
@@ -259,7 +261,6 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             }
                         />
                     </Paper>
-
 
                     {/* Appearance Section */}
                     <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
@@ -407,7 +408,72 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         </Box>
                     </Paper>
 
+                    {/* Background Image Section */}
+                    <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
+                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
+                            Background Image
+                        </Typography>
 
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="body2" gutterBottom>
+                                Enter image URL or choose preset
+                            </Typography>
+
+                            {/* Custom URL input */}
+                            <Box sx={{ mb: 2 }}>
+                                <input
+                                    type="url"
+                                    value={backgroundImage}
+                                    onChange={(e) => onChangeBackgroundImage(e.target.value)}
+                                    placeholder="Enter image URL"
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px',
+                                        borderRadius: '4px',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        marginBottom: '8px'
+                                    }}
+                                />
+                            </Box>
+
+                            {/* Preset backgrounds */}
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {[
+                                    { url: '', name: 'None' },
+                                    { url: 'https://source.unsplash.com/random/1920x1080/?nature', name: 'Nature' },
+                                    { url: 'https://source.unsplash.com/random/1920x1080/?abstract', name: 'Abstract' },
+                                    { url: 'https://source.unsplash.com/random/1920x1080/?geometric', name: 'Geometric' }
+                                ].map((bg) => (
+                                    <Tooltip key={bg.name} title={bg.name}>
+                                        <Box
+                                            onClick={() => onChangeBackgroundImage(bg.url)}
+                                            sx={{
+                                                width: 60,
+                                                height: 40,
+                                                borderRadius: 1,
+                                                cursor: 'pointer',
+                                                border: '2px solid',
+                                                borderColor: backgroundImage === bg.url ? 'primary.main' : 'divider',
+                                                bgcolor: !bg.url ? 'background.default' : undefined,
+                                                backgroundImage: bg.url ? `url(${bg.url})` : 'none',
+                                                backgroundSize: 'cover',
+                                                backgroundPosition: 'center',
+                                                transition: 'transform 0.2s',
+                                                '&:hover': {
+                                                    transform: 'scale(1.05)'
+                                                }
+                                            }}
+                                        />
+                                    </Tooltip>
+                                ))}
+                            </Box>
+
+                            <FormHelperText>
+                                Background image will be applied with a subtle overlay to maintain readability
+                            </FormHelperText>
+                        </Box>
+                    </Paper>
 
                     {/* Dashboard Actions Section */}
                     <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
