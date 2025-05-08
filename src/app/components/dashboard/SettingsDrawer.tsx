@@ -441,9 +441,9 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {[
                                     { url: '', name: 'None' },
-                                    { url: 'https://source.unsplash.com/random/1920x1080/?nature', name: 'Nature' },
-                                    { url: 'https://source.unsplash.com/random/1920x1080/?abstract', name: 'Abstract' },
-                                    { url: 'https://source.unsplash.com/random/1920x1080/?geometric', name: 'Geometric' }
+                                    { url: 'https://source.unsplash.com/featured/1920x1080/?minimal,pattern', name: 'Minimal Pattern' },
+                                    { url: 'https://source.unsplash.com/featured/1920x1080/?gradient,abstract', name: 'Gradient' },
+                                    { url: 'https://source.unsplash.com/featured/1920x1080/?waves,soft', name: 'Soft Waves' }
                                 ].map((bg) => (
                                     <Tooltip key={bg.name} title={bg.name}>
                                         <Box
