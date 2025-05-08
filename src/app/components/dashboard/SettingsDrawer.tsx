@@ -51,6 +51,8 @@ interface SettingsDrawerProps {
     onChangeFontFamily?: (font: string) => void;
     backgroundImage?: string;
     onChangeBackgroundImage?: (image: string) => void;
+    backgroundOpacity?: number;
+    onChangeBackgroundOpacity?: (opacity: number) => void;
 }
 
 const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
@@ -73,7 +75,9 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     fontFamily = 'Geist Sans',
     onChangeFontFamily = () => { },
     backgroundImage = '',
-    onChangeBackgroundImage = () => { }
+    onChangeBackgroundImage = () => { },
+    backgroundOpacity = 0.15,
+    onChangeBackgroundOpacity = () => { }
 }) => {
     // Add state for template selection
     const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
@@ -467,6 +471,29 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                         />
                                     </Tooltip>
                                 ))}
+                            </Box>
+
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="body2" gutterBottom>
+                                    Background Opacity
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="100"
+                                        value={((1 - backgroundOpacity) * 100).toFixed(0)}
+                                        onChange={(e) => onChangeBackgroundOpacity(1 - (parseInt(e.target.value) / 100))}
+                                        style={{
+                                            width: '100%',
+                                            height: '8px',
+                                            borderRadius: '4px',
+                                        }}
+                                    />
+                                    <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right' }}>
+                                        {((1 - backgroundOpacity) * 100).toFixed(0)}%
+                                    </Typography>
+                                </Box>
                             </Box>
 
                             <FormHelperText>

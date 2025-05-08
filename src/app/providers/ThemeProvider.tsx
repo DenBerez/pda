@@ -17,6 +17,8 @@ interface ThemeContextType {
     setFontFamily: (font: string) => void;
     backgroundImage: string;
     setBackgroundImage: (image: string) => void;
+    backgroundOpacity: number;
+    setBackgroundOpacity: (opacity: number) => void;
 }
 
 export const ThemeContext = createContext<ThemeContextType>({
@@ -26,6 +28,8 @@ export const ThemeContext = createContext<ThemeContextType>({
     setFontFamily: () => { },
     backgroundImage: '',
     setBackgroundImage: () => { },
+    backgroundOpacity: 0.15,
+    setBackgroundOpacity: () => { },
 });
 
 export function useThemeContext() {
@@ -52,6 +56,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     const [primaryColor, setPrimaryColor] = useState<string>('#1976d2');
     const [fontFamily, setFontFamily] = useState('var(--font-geist-sans), system-ui, sans-serif');
     const [backgroundImage, setBackgroundImage] = useState('');
+    const [backgroundOpacity, setBackgroundOpacity] = useState(0.15);
 
     useEffect(() => {
         // Check system preference and saved preference
@@ -330,8 +335,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                             width: '100%',
                             height: '100%',
                             backgroundColor: mode === 'light'
-                                ? 'rgba(255, 255, 255, 0.85)'
-                                : 'rgba(18, 18, 18, 0.9)',
+                                ? `rgba(255, 255, 255, ${1 - backgroundOpacity})`
+                                : `rgba(18, 18, 18, ${1 - backgroundOpacity})`,
                             zIndex: 0,
                             pointerEvents: 'none'
                         }
@@ -339,7 +344,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                 },
             },
         },
-    }), [mode, safePrimaryColor, darkModePrimaryColor, fontFamily, backgroundImage]);
+    }), [mode, safePrimaryColor, darkModePrimaryColor, fontFamily, backgroundImage, backgroundOpacity]);
 
     const themeContextValue = {
         toggleColorMode,
@@ -348,6 +353,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
         setFontFamily: handleSetFontFamily,
         backgroundImage,
         setBackgroundImage: handleSetBackgroundImage,
+        backgroundOpacity,
+        setBackgroundOpacity,
     };
 
     return (
