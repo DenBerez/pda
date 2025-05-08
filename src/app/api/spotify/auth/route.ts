@@ -21,7 +21,15 @@ export async function GET(request: NextRequest) {
 
         if (!code) {
             // Redirect to Spotify authorization
-            const scope = 'user-read-currently-playing user-read-recently-played';
+            const scope = [
+                'streaming',
+                'user-read-email',
+                'user-read-private',
+                'user-read-currently-playing',
+                'user-read-playback-state',
+                'user-modify-playback-state',
+                'user-read-recently-played'
+            ].join(' ');
 
             const authUrl = new URL('https://accounts.spotify.com/authorize');
             authUrl.searchParams.append('client_id', clientId);

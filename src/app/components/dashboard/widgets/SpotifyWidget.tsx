@@ -216,8 +216,6 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
     // Handle transfer playback to this device
     const handleTransferPlayback = async () => {
-        if (!deviceId) return;
-
         setIsTransferringPlayback(true);
         try {
             await transferPlayback();
@@ -269,10 +267,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     };
 
     // Show messages when actions are performed
-    const showStatus = (message: string) => {
+    const showStatus = useCallback((message: string) => {
         setStatusMessage(message);
         setTimeout(() => setStatusMessage(null), 3000);
-    };
+    }, []);
 
     // Handle seek change
     const handleSeekChange = (_event: Event, newValue: number | number[]) => {

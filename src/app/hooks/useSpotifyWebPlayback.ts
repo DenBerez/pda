@@ -74,6 +74,16 @@ declare namespace Spotify {
     }
 }
 
+const REQUIRED_SPOTIFY_SCOPES = [
+    'streaming',
+    'user-read-email',
+    'user-read-private',
+    'user-read-currently-playing',
+    'user-read-playback-state',
+    'user-modify-playback-state',
+    'user-read-recently-played'
+];
+
 export const useSpotifyWebPlayback = ({
     accessToken: initialAccessToken,
     refreshToken,
