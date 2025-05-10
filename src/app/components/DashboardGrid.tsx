@@ -119,6 +119,7 @@ const DashboardGrid: React.FC = () => {
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const [forceRefresh, setForceRefresh] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [backgroundOpacity, setBackgroundOpacity] = useState(0.15);
 
     // Use a separate loading check
     const isLocalStorageLoading = false; // Remove or handle loading differently
@@ -550,15 +551,15 @@ const DashboardGrid: React.FC = () => {
                         ref={settingsButtonRef}
                         sx={{
                             position: 'fixed',
-                            bottom: 20,
-                            right: 20,
-                            zIndex: 1000,
+                            bottom: { xs: 16, sm: 20 },
+                            right: { xs: 16, sm: 20 },
+                            zIndex: 1200,
                             opacity: showSettingsButton && !settingsOpen ? 1 : 0,
                             visibility: showSettingsButton && !settingsOpen ? 'visible' : 'hidden',
-                            transition: 'opacity 0.3s ease-in-out',
+                            transition: 'opacity 0.3s ease-in-out, visibility 0.3s ease-in-out',
                             pointerEvents: showSettingsButton && !settingsOpen ? 'auto' : 'none',
                             transform: 'translateZ(0)',
-                            willChange: 'opacity',
+                            willChange: 'opacity, visibility',
                             '& > *': {
                                 transform: 'translateZ(0)'
                             }
@@ -574,11 +575,6 @@ const DashboardGrid: React.FC = () => {
                                 transition: 'box-shadow 0.3s ease-in-out, transform 0.2s ease',
                                 boxShadow: showSettingsButton ? '0 0 15px rgba(25, 118, 210, 0.6), 0 4px 10px rgba(0,0,0,0.3)' : '0 4px 10px rgba(0,0,0,0.2)',
                                 transform: showSettingsButton ? 'scale(1.1)' : 'scale(1)',
-                                '&.tour-highlight-settings': {
-                                    boxShadow: `0 0 0 6px ${customTheme.palette.primary.main}, 
-                                               0 0 0 12px rgba(255, 255, 255, 0.4),
-                                               0 0 25px 8px rgba(255, 255, 255, 0.6) !important`
-                                },
                                 '&:hover': {
                                     transform: 'scale(1.15)',
                                     boxShadow: '0 0 20px rgba(25, 118, 210, 0.8), 0 6px 14px rgba(0,0,0,0.25)'
@@ -629,6 +625,8 @@ const DashboardGrid: React.FC = () => {
                     onChangeFontFamily={(font) => setFontFamily(font)}
                     backgroundImage={backgroundImage}
                     onChangeBackgroundImage={setBackgroundImage}
+                    backgroundOpacity={backgroundOpacity}
+                    onChangeBackgroundOpacity={setBackgroundOpacity}
                 />
 
                 {/* Widget Edit Panel */}
