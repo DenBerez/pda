@@ -5,11 +5,6 @@ import {
     IconButton,
     Tooltip,
     Paper,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    Chip
 } from '@mui/material';
 import { Widget } from '../types';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -59,14 +54,6 @@ const QuoteWidget: React.FC<QuoteWidgetProps> = ({ widget, editMode }) => {
 
     return (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                <Tooltip title="Get new quote">
-                    <IconButton onClick={getRandomQuote} size="small">
-                        <RefreshIcon />
-                    </IconButton>
-                </Tooltip>
-            </Box>
-
             <Paper
                 elevation={0}
                 sx={{
@@ -99,16 +86,24 @@ const QuoteWidget: React.FC<QuoteWidgetProps> = ({ widget, editMode }) => {
                 >
                     {currentQuote.text}
                 </Typography>
-                <Typography
-                    variant="subtitle1"
-                    color="text.secondary"
-                    sx={{
-                        textAlign: 'right',
-                        mt: 'auto'
-                    }}
-                >
-                    — {currentQuote.author}
-                </Typography>
+                <Box sx={{
+                    mt: 'auto',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <Tooltip title="Get new quote">
+                        <IconButton onClick={getRandomQuote} size="small">
+                            <RefreshIcon />
+                        </IconButton>
+                    </Tooltip>
+                    <Typography
+                        variant="subtitle1"
+                        color="text.secondary"
+                    >
+                        — {currentQuote.author}
+                    </Typography>
+                </Box>
             </Paper>
         </Box>
     );
