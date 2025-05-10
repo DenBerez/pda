@@ -28,6 +28,7 @@ import Settings from '@mui/icons-material/Settings';
 import LayoutStyleSelector from '../LayoutStyle';
 import { useOAuth2Connection } from '../../../hooks/useOAuth2Connection';
 import CloseIcon from '@mui/icons-material/Close';
+import ReplyIcon from '@mui/icons-material/Reply';
 
 interface Email {
     id: string;
@@ -165,12 +166,53 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     };
 
     // Toggle email read status
-    const toggleReadStatus = (emailId: string) => {
-        setEmails(emails.map(email =>
-            email.id === emailId
-                ? { ...email, unread: !email.unread }
-                : email
-        ));
+    const toggleReadStatus = async (emailId: string) => {
+        try {
+            // Update local state immediately for responsive UI
+            setEmails(emails.map(email =>
+                email.id === emailId
+                    ? { ...email, unread: !email.unread }
+                    : email
+            ));
+
+            // Get the current email to determine new status
+            const email = emails.find(e => e.id === emailId);
+            if (!email) return;
+
+            const newStatus = !email.unread;
+
+            // Build the query parameters
+            const params = new URLSearchParams({
+                provider,
+                emailId,
+                markAs: newStatus ? 'unread' : 'read'
+            });
+
+            // Add provider-specific parameters
+            if (provider === 'gmail' && refreshToken) {
+                params.append('refreshToken', refreshToken);
+            } else if (provider === 'aol' && emailAddress && password) {
+                params.append('email', emailAddress);
+                params.append('password', password);
+            }
+
+            // Make API call to update status
+            const response = await fetch(`/api/email/update-status?${params.toString()}`, {
+                method: 'POST'
+            });
+
+            if (!response.ok) {
+                // If server update fails, revert the local state
+                setEmails(emails.map(e =>
+                    e.id === emailId
+                        ? { ...e, unread: email.unread }
+                        : e
+                ));
+                console.error('Failed to update email status:', response.statusText);
+            }
+        } catch (err) {
+            console.error('Error updating email status:', err);
+        }
     };
 
     // Open email dialog and mark as read if unread
@@ -770,30 +812,43 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     borderColor: 'divider',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    py: 2
                 }}>
                     <Typography variant="h6" sx={{
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                        maxWidth: '90%'
+                        maxWidth: '90%',
+                        fontWeight: 'medium'
                     }}>
                         {selectedEmail.subject}
                     </Typography>
-                    <IconButton size="small" onClick={closeEmailDialog}>
+                    <IconButton size="small" onClick={closeEmailDialog} aria-label="close">
                         <CloseIcon />
                     </IconButton>
                 </DialogTitle>
                 <DialogContent sx={{ p: 3 }}>
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{
+                        mb: 3,
+                        pb: 2,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider'
+                    }}>
                         <Typography variant="subtitle1" fontWeight="medium">
                             {selectedEmail.from}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
+                            To: you@example.com
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                             {formatDate(selectedEmail.date)}
                         </Typography>
                     </Box>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+                    <Typography variant="body1" sx={{
+                        whiteSpace: 'pre-line',
+                        lineHeight: 1.6
+                    }}>
                         {selectedEmail.snippet}
                         {/* In a real implementation, this would show the full email body */}
                         {Array(3).fill(null).map((_, i) => (
@@ -809,7 +864,8 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 <DialogActions sx={{
                     borderTop: '1px solid',
                     borderColor: 'divider',
-                    p: 2
+                    p: 2,
+                    justifyContent: 'space-between'
                 }}>
                     <Button
                         startIcon={<MarkEmailUnreadIcon />}
@@ -817,15 +873,26 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                             toggleReadStatus(selectedEmail.id);
                             closeEmailDialog();
                         }}
+                        color="primary"
+                        variant="outlined"
                     >
                         Mark as unread
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={closeEmailDialog}
-                    >
-                        Close
-                    </Button>
+                    <Box>
+                        <Button
+                            onClick={closeEmailDialog}
+                            sx={{ mr: 1 }}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={<ReplyIcon />}
+                            onClick={closeEmailDialog}
+                        >
+                            Reply
+                        </Button>
+                    </Box>
                 </DialogActions>
             </Dialog>
         );

@@ -393,104 +393,6 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         }
     }, [accessToken, fetchUserProfile]);
 
-    // Create a reusable header component within the SpotifyWidget component
-    const SpotifyHeader = ({
-        showRecent,
-        username,
-        toggleView,
-        layoutOption,
-        isPlayerConnected,
-        handleTransferPlayback,
-        isTransferringPlayback
-    }: {
-        showRecent: boolean;
-        username: string | null;
-        toggleView: () => void;
-        layoutOption: LayoutOptionType;
-        isPlayerConnected: boolean;
-        handleTransferPlayback: () => void;
-        isTransferringPlayback: boolean;
-    }) => {
-        // Base styles that apply to all layouts
-        const baseStyles = {
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-        };
-
-        // Layout-specific styles
-        const layoutStyles = {
-            compact: {
-                p: 1,
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText'
-            },
-            detailed: {
-                p: 2,
-                bgcolor: 'primary.dark',
-                color: 'primary.contrastText'
-            },
-            normal: {
-                p: 2,
-                bgcolor: 'background.paper',
-                color: 'text.primary'
-            }
-        };
-
-        // Title variants based on layout
-        const titleVariants: Record<LayoutOptionType, 'subtitle1' | 'h6'> = {
-            compact: 'subtitle1',
-            detailed: 'h6',
-            normal: 'h6'
-        };
-
-        // Title styles based on layout
-        const titleStyles = {
-            compact: { fontWeight: 'medium' },
-            detailed: { fontWeight: 'bold' },
-            normal: {}
-        };
-
-        // Icon button styles based on layout
-        const iconButtonStyles = {
-            compact: { color: 'primary.contrastText' },
-            detailed: { color: 'primary.contrastText' },
-            normal: {}
-        };
-
-        return (
-            <Box sx={{
-                ...baseStyles,
-                ...layoutStyles[layoutOption],
-                borderBottom: layoutOption === 'normal' ? 1 : 0,
-                borderColor: 'divider'
-            }}>
-                <Typography
-                    variant={titleVariants[layoutOption]}
-                    sx={titleStyles[layoutOption]}
-                >
-                    {showRecent
-                        ? (layoutOption === 'detailed' ? 'Spotify History' : 'Recently Played')
-                        : (username ? `${username}` : 'Spotify')}
-                </Typography>
-
-                <Box>
-                    <Tooltip title={showRecent ? "Show Player" : "Show History"}>
-                        <IconButton
-                            onClick={toggleView}
-                            size={layoutOption === 'compact' ? 'small' : 'medium'}
-                            sx={iconButtonStyles[layoutOption]}
-                        >
-                            {showRecent ? <MusicNoteIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> : <AccessTimeIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />}
-                        </IconButton>
-                    </Tooltip>
-
-
-                </Box>
-            </Box>
-        );
-    };
-
     // Loading state
     if (loading) {
         return (
@@ -537,21 +439,65 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     return (
         <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Content */}
-            <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2, position: 'relative' }}>
-                {/* Toggle button in top-right corner */}
-                <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}>
+            <Box sx={{
+                flexGrow: 1,
+                overflow: 'auto',
+                position: 'relative',
+                // Apply different padding based on layout option
+                p: layoutOption === 'compact' ? 1 : 2
+            }}>
+                {/* Toggle button with styling based on layout option */}
+                <Box sx={{
+                    position: 'absolute',
+                    top: layoutOption === 'compact' ? 4 : 8,
+                    right: layoutOption === 'compact' ? 4 : 8,
+                    zIndex: 2,
+                    // For detailed layout, add a background
+                    ...(layoutOption === 'detailed' ? {
+                        bgcolor: 'primary.dark',
+                        borderRadius: '50%',
+                        p: 0.5
+                    } : {})
+                }}>
                     <Tooltip title={showRecent ? "Show Player" : "Show History"}>
                         <IconButton
                             onClick={toggleView}
-                            size="small"
+                            size={layoutOption === 'compact' ? 'small' : 'medium'}
+                            sx={layoutOption === 'detailed' ? { color: 'primary.contrastText' } : {}}
                         >
-                            {showRecent ? <MusicNoteIcon /> : <AccessTimeIcon />}
+                            {showRecent ?
+                                <MusicNoteIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> :
+                                <AccessTimeIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                            }
                         </IconButton>
                     </Tooltip>
                 </Box>
 
+                {/* Title based on layout option */}
+                {layoutOption === 'detailed' && (
+                    <Box sx={{
+                        mb: 2,
+                        pb: 1,
+                        borderBottom: '1px solid',
+                        borderColor: 'divider'
+                    }}>
+                        <Typography
+                            variant="h6"
+                            sx={{ fontWeight: 'bold' }}
+                        >
+                            {showRecent ? 'Spotify History' : (username ? `${username}'s Spotify` : 'Spotify')}
+                        </Typography>
+                    </Box>
+                )}
+
                 {showRecent ? (
-                    <List sx={{ mt: 2 }}>
+                    <List sx={{
+                        mt: layoutOption === 'compact' ? 0 : 2,
+                        // Adjust spacing for compact layout
+                        '& .MuiListItem-root': layoutOption === 'compact' ? {
+                            py: 0.5
+                        } : {}
+                    }}>
                         {recentTracks.length > 0 ? (
                             recentTracks.map((item: any, index: number) => (
                                 <ListItem
@@ -563,15 +509,17 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     edge="end"
                                                     onClick={() => playPreview(item.track.preview_url)}
                                                     sx={{ mr: 1 }}
+                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
                                                 >
-                                                    <PlayArrowIcon />
+                                                    <PlayArrowIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
                                                 </IconButton>
                                             )}
                                             <IconButton
                                                 edge="end"
                                                 onClick={() => openInSpotify(item.track.uri)}
+                                                size={layoutOption === 'compact' ? 'small' : 'medium'}
                                             >
-                                                <LaunchIcon />
+                                                <LaunchIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
                                             </IconButton>
                                         </Box>
                                     }
@@ -581,6 +529,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                             src={item.track.album.images?.[0]?.url}
                                             alt={item.track.name}
                                             variant="rounded"
+                                            sx={layoutOption === 'compact' ? { width: 32, height: 32 } : {}}
                                         >
                                             <MusicNoteIcon />
                                         </Avatar>
@@ -590,44 +539,76 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         secondary={
                                             <>
                                                 {item.track.artists.map((artist: any) => artist.name).join(', ')}
-                                                <br />
-                                                {item.track.album.name}
-                                                <br />
-                                                <Typography variant="caption" color="text.secondary">
-                                                    {new Date(item.played_at).toLocaleString()}
-                                                </Typography>
+                                                {layoutOption !== 'compact' && (
+                                                    <>
+                                                        <br />
+                                                        {item.track.album.name}
+                                                        <br />
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {new Date(item.played_at).toLocaleString()}
+                                                        </Typography>
+                                                    </>
+                                                )}
                                             </>
                                         }
+                                        primaryTypographyProps={{
+                                            variant: layoutOption === 'compact' ? 'body2' : 'body1'
+                                        }}
+                                        secondaryTypographyProps={{
+                                            variant: layoutOption === 'compact' ? 'caption' : 'body2'
+                                        }}
                                     />
                                 </ListItem>
                             ))
                         ) : (
-                            <Typography variant="body1" sx={{ p: 2 }}>No recent tracks found</Typography>
+                            <Typography variant={layoutOption === 'compact' ? 'body2' : 'body1'} sx={{ p: 2 }}>
+                                No recent tracks found
+                            </Typography>
                         )}
                     </List>
                 ) : (
                     <>
                         {currentTrack ? (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', pt: 2 }}>
-                                <Box sx={{ display: 'flex', mb: 3 }}>
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                height: '100%',
+                                pt: layoutOption === 'compact' ? 0 : 2
+                            }}>
+                                <Box sx={{
+                                    display: 'flex',
+                                    mb: layoutOption === 'compact' ? 1 : 3,
+                                    alignItems: 'center'
+                                }}>
                                     <Avatar
                                         src={currentTrack.album.images?.[0]?.url}
                                         alt={currentTrack.name}
                                         variant="rounded"
-                                        sx={{ width: 120, height: 120, mr: 3 }}
+                                        sx={{
+                                            width: layoutOption === 'compact' ? 60 : layoutOption === 'detailed' ? 150 : 120,
+                                            height: layoutOption === 'compact' ? 60 : layoutOption === 'detailed' ? 150 : 120,
+                                            mr: layoutOption === 'compact' ? 1 : 3
+                                        }}
                                     >
-                                        <MusicNoteIcon sx={{ fontSize: 40 }} />
+                                        <MusicNoteIcon sx={{ fontSize: layoutOption === 'compact' ? 24 : 40 }} />
                                     </Avatar>
                                     <Box>
-                                        <Typography variant="h6" gutterBottom>
+                                        <Typography
+                                            variant={layoutOption === 'compact' ? 'subtitle1' : 'h6'}
+                                            gutterBottom
+                                        >
                                             {currentTrack.name}
                                         </Typography>
-                                        <Typography variant="body1">
+                                        <Typography
+                                            variant={layoutOption === 'compact' ? 'body2' : 'body1'}
+                                        >
                                             {currentTrack.artists.map((artist: any) => artist.name).join(', ')}
                                         </Typography>
-                                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                                            {currentTrack.album.name}
-                                        </Typography>
+                                        {layoutOption !== 'compact' && (
+                                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                                                {currentTrack.album.name}
+                                            </Typography>
+                                        )}
                                         <Chip
                                             label={isPlaying ? "Playing" : "Paused"}
                                             color={isPlaying ? "primary" : "default"}
@@ -652,32 +633,40 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         max={duration}
                                         onChange={handleSeekChange}
                                         aria-labelledby="continuous-slider"
+                                        size={layoutOption === 'compact' ? 'small' : 'medium'}
                                     />
 
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, width: '100%' }}>
-                                        <IconButton>
-                                            {getVolumeIcon()}
-                                        </IconButton>
-                                        <Slider
-                                            value={volume}
-                                            onChange={handleVolumeChange}
-                                            aria-labelledby="volume-slider"
-                                            sx={{ ml: 2, flexGrow: 1 }}
-                                        />
-                                    </Box>
+                                    {layoutOption !== 'compact' && (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, width: '100%' }}>
+                                            <IconButton>
+                                                {getVolumeIcon()}
+                                            </IconButton>
+                                            <Slider
+                                                value={volume}
+                                                onChange={handleVolumeChange}
+                                                aria-labelledby="volume-slider"
+                                                sx={{ ml: 2, flexGrow: 1 }}
+                                                size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                            />
+                                        </Box>
+                                    )}
 
                                     <Stack
                                         direction="row"
                                         spacing={1}
                                         justifyContent="center"
                                         alignItems="center"
-                                        sx={{ mt: 2 }}
+                                        sx={{ mt: layoutOption === 'compact' ? 1 : 2 }}
                                     >
-                                        <IconButton onClick={previousTrack}>
-                                            <SkipPreviousIcon />
+                                        <IconButton
+                                            onClick={previousTrack}
+                                            size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                        >
+                                            <SkipPreviousIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
                                         </IconButton>
                                         <IconButton
                                             onClick={togglePlay}
+                                            size={layoutOption === 'compact' ? 'small' : 'medium'}
                                             sx={{
                                                 bgcolor: 'primary.main',
                                                 color: 'primary.contrastText',
@@ -686,18 +675,31 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 }
                                             }}
                                         >
-                                            {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                                            {isPlaying ?
+                                                <PauseIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> :
+                                                <PlayArrowIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                            }
                                         </IconButton>
-                                        <IconButton onClick={nextTrack}>
-                                            <SkipNextIcon />
+                                        <IconButton
+                                            onClick={nextTrack}
+                                            size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                        >
+                                            <SkipNextIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
                                         </IconButton>
                                     </Stack>
                                 </Box>
                             </Box>
                         ) : (
                             <Box sx={{ p: 2, textAlign: 'center' }}>
-                                <MusicNoteIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                                <Typography variant="h6" gutterBottom>
+                                <MusicNoteIcon sx={{
+                                    fontSize: layoutOption === 'compact' ? 40 : 60,
+                                    color: 'text.secondary',
+                                    mb: 2
+                                }} />
+                                <Typography
+                                    variant={layoutOption === 'compact' ? 'subtitle1' : 'h6'}
+                                    gutterBottom
+                                >
                                     {isPlayerConnected ? 'No track playing' : 'Connect to start playing'}
                                 </Typography>
                                 {isPlayerConnected ? (
@@ -706,11 +708,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         onClick={handleTransferPlayback}
                                         disabled={isTransferringPlayback}
                                         sx={{ mt: 2 }}
+                                        size={layoutOption === 'compact' ? 'small' : 'medium'}
                                     >
                                         Transfer Playback to This Device
                                     </Button>
                                 ) : (
-                                    <Typography variant="body2" color="text.secondary">
+                                    <Typography
+                                        variant={layoutOption === 'compact' ? 'caption' : 'body2'}
+                                        color="text.secondary"
+                                    >
                                         Waiting for Spotify connection...
                                     </Typography>
                                 )}
