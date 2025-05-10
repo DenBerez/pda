@@ -36,6 +36,7 @@ interface Email {
     from: string;
     date: string;
     snippet: string;
+    body?: string;
     unread: boolean;
 }
 
@@ -74,7 +75,8 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             // Build the query parameters
             const params = new URLSearchParams({
                 provider,
-                maxResults: '5'
+                maxResults: '5',
+                fullContent: 'true' // Request full email content
             });
 
             // Add provider-specific parameters
@@ -168,18 +170,18 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     // Toggle email read status
     const toggleReadStatus = async (emailId: string) => {
         try {
-            // Update local state immediately for responsive UI
-            setEmails(emails.map(email =>
-                email.id === emailId
-                    ? { ...email, unread: !email.unread }
-                    : email
-            ));
-
             // Get the current email to determine new status
             const email = emails.find(e => e.id === emailId);
             if (!email) return;
 
             const newStatus = !email.unread;
+
+            // Update local state immediately for responsive UI
+            setEmails(emails.map(e =>
+                e.id === emailId
+                    ? { ...e, unread: newStatus }
+                    : e
+            ));
 
             // Build the query parameters
             const params = new URLSearchParams({
@@ -197,7 +199,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             }
 
             // Make API call to update status
-            const response = await fetch(`/api/email?${params.toString()}`, {
+            const response = await fetch(`/api/email/status?${params.toString()}`, {
                 method: 'POST'
             });
 
@@ -220,6 +222,11 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         setSelectedEmail(email);
         setDialogOpen(true);
 
+        // Fetch full email content if not already loaded
+        if (!email.body) {
+            fetchEmailContent(email.id);
+        }
+
         // Mark as read if currently unread
         if (email.unread) {
             toggleReadStatus(email.id);
@@ -230,6 +237,49 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     const closeEmailDialog = () => {
         setDialogOpen(false);
         setSelectedEmail(null);
+    };
+
+    // Fetch full email content
+    const fetchEmailContent = async (emailId: string) => {
+        try {
+            // Build the query parameters
+            const params = new URLSearchParams({
+                provider,
+                emailId,
+                fullContent: 'true'
+            });
+
+            // Add provider-specific parameters
+            if (provider === 'gmail' && refreshToken) {
+                params.append('refreshToken', refreshToken);
+            } else if (provider === 'aol' && emailAddress && password) {
+                params.append('email', emailAddress);
+                params.append('password', password);
+            }
+
+            const response = await fetch(`/api/email/content?${params.toString()}`);
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch email content: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            // Update the email in the emails array
+            setEmails(emails.map(email =>
+                email.id === emailId
+                    ? { ...email, body: data.body }
+                    : email
+            ));
+
+            // Update selected email if it's the one being viewed
+            if (selectedEmail && selectedEmail.id === emailId) {
+                setSelectedEmail(prev => prev ? { ...prev, body: data.body } : null);
+            }
+
+        } catch (err) {
+            console.error('Error fetching email content:', err);
+        }
     };
 
     // Render configuration form
@@ -845,21 +895,23 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                             {formatDate(selectedEmail.date)}
                         </Typography>
                     </Box>
-                    <Typography variant="body1" sx={{
-                        whiteSpace: 'pre-line',
-                        lineHeight: 1.6
-                    }}>
-                        {selectedEmail.snippet}
-                        {/* In a real implementation, this would show the full email body */}
-                        {Array(3).fill(null).map((_, i) => (
-                            <React.Fragment key={i}>
-                                <br /><br />
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                                Nullam auctor, nisl eget ultricies tincidunt, nisl nisl
-                                aliquam nisl, eget ultricies nisl nisl eget nisl.
-                            </React.Fragment>
-                        ))}
-                    </Typography>
+                    {selectedEmail.body ? (
+                        <div
+                            dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
+                            style={{
+                                lineHeight: 1.6,
+                                overflow: 'auto'
+                            }}
+                        />
+                    ) : (
+                        <Typography variant="body1" sx={{
+                            whiteSpace: 'pre-line',
+                            lineHeight: 1.6
+                        }}>
+                            {selectedEmail.snippet}
+                            {/* Fallback to snippet if no body is available */}
+                        </Typography>
+                    )}
                 </DialogContent>
                 <DialogActions sx={{
                     borderTop: '1px solid',
