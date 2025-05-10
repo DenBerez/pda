@@ -833,29 +833,56 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                             <Typography variant="body2" sx={{ mb: 1 }}>
                                 Categories
                             </Typography>
-                            <ToggleButtonGroup
-                                value={tempWidget?.config?.categories || ['all']}
-                                onChange={(e, newValue) => {
-                                    // Ensure at least one category is selected
-                                    if (newValue.length > 0) {
-                                        handleConfigChange({ categories: newValue });
+
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                <Chip
+                                    label="All Categories"
+                                    onClick={() => {
+                                        // If not all categories are selected, select all
+                                        // If all are selected, do nothing (prevent deselecting all)
+                                        const allCategoryValues = quoteCategories
+                                            .filter(cat => cat.value !== 'all')
+                                            .map(cat => cat.value);
+
+                                        const currentCategories = tempWidget?.config?.categories || ['all'];
+                                        const hasAllExceptAll = allCategoryValues.every(cat =>
+                                            currentCategories.includes(cat)
+                                        );
+
+                                        if (!hasAllExceptAll) {
+                                            handleConfigChange({ categories: allCategoryValues });
+                                        }
+                                    }}
+                                    color={quoteCategories
+                                        .filter(cat => cat.value !== 'all')
+                                        .every(cat => tempWidget?.config?.categories?.includes(cat.value))
+                                        ? "primary"
+                                        : "default"
                                     }
-                                }}
-                                aria-label="quote categories"
-                                size="small"
-                                color="primary"
-                                sx={{ mb: 2, flexWrap: 'wrap' }}
-                            >
-                                {quoteCategories.map((category) => (
-                                    <ToggleButton
+                                    sx={{ mb: 1 }}
+                                />
+                                {quoteCategories.filter(cat => cat.value !== 'all').map((category) => (
+                                    <Chip
                                         key={category.value}
-                                        value={category.value}
-                                        sx={{ mr: 1, mb: 1 }}
-                                    >
-                                        {category.label}
-                                    </ToggleButton>
+                                        label={category.label}
+                                        onClick={() => {
+                                            const currentCategories = tempWidget?.config?.categories || [];
+                                            const newCategories = currentCategories.includes(category.value)
+                                                ? currentCategories.filter((cat: string) => cat !== category.value)
+                                                : [...currentCategories, category.value];
+
+                                            // Ensure at least one category is selected
+                                            if (newCategories.length > 0) {
+                                                handleConfigChange({ categories: newCategories });
+                                            }
+                                        }}
+                                        color={tempWidget?.config?.categories?.includes(category.value)
+                                            ? "primary"
+                                            : "default"
+                                        }
+                                    />
                                 ))}
-                            </ToggleButtonGroup>
+                            </Box>
 
                             <FormControl fullWidth margin="normal" size="small">
                                 <InputLabel id="quote-refresh-rate-label">Refresh Rate</InputLabel>

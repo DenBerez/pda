@@ -432,55 +432,77 @@ const Tour: React.FC<TourProps> = ({
             /* Define the pulsing animation for all tour highlights */
             @keyframes tour-spotlight-pulse {
                 0% {
-                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}70, 
-                               0 0 0 8px ${theme.palette.primary.main}40,
-                               0 0 0 12px ${theme.palette.primary.main}20,
-                               0 0 15px 5px ${theme.palette.primary.main}30,
-                               0 0 30px 10px ${theme.palette.primary.main}20,
-                               0 0 45px 15px ${theme.palette.primary.main}10;
+                    background: radial-gradient(
+                        circle at center,
+                        transparent 0%,
+                        transparent 45%,
+                        ${theme.palette.primary.main}20 50%,
+                        ${theme.palette.primary.main}10 60%,
+                        rgba(0, 0, 0, 0.5) 70%
+                    );
+                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}40,
+                               0 0 15px ${theme.palette.primary.main}30;
                 }
                 50% {
-                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}80, 
-                               0 0 0 8px ${theme.palette.primary.main}50,
-                               0 0 0 12px ${theme.palette.primary.main}30,
-                               0 0 20px 8px ${theme.palette.primary.main}40,
-                               0 0 35px 12px ${theme.palette.primary.main}30,
-                               0 0 50px 18px ${theme.palette.primary.main}20;
+                    background: radial-gradient(
+                        circle at center,
+                        transparent 0%,
+                        transparent 40%,
+                        ${theme.palette.primary.main}30 45%,
+                        ${theme.palette.primary.main}15 55%,
+                        rgba(0, 0, 0, 0.6) 65%
+                    );
+                    box-shadow: 0 0 0 6px ${theme.palette.primary.main}50,
+                               0 0 20px ${theme.palette.primary.main}40;
                 }
                 100% {
-                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}70, 
-                               0 0 0 8px ${theme.palette.primary.main}40,
-                               0 0 0 12px ${theme.palette.primary.main}20,
-                               0 0 15px 5px ${theme.palette.primary.main}30,
-                               0 0 30px 10px ${theme.palette.primary.main}20,
-                               0 0 45px 15px ${theme.palette.primary.main}10;
+                    background: radial-gradient(
+                        circle at center,
+                        transparent 0%,
+                        transparent 45%,
+                        ${theme.palette.primary.main}20 50%,
+                        ${theme.palette.primary.main}10 60%,
+                        rgba(0, 0, 0, 0.5) 70%
+                    );
+                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}40,
+                               0 0 15px ${theme.palette.primary.main}30;
                 }
             }
             
             /* Generic tour highlight class that can be applied to any element */
             .tour-highlight {
-                animation: tour-spotlight-pulse 2s infinite ease-in-out;
-                z-index: 10001 !important;
                 position: relative !important;
-            }
-            
-            /* Specific highlight for resize handle */
-            .tour-highlight.react-resizable-handle {
-                animation: tour-spotlight-pulse 2s infinite ease-in-out;
                 z-index: 10001 !important;
             }
             
-            /* Specific highlight for edit button */
-            .tour-highlight.widget-edit-button {
+            .tour-highlight::before {
+                content: '';
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 200%;
+                height: 200%;
                 animation: tour-spotlight-pulse 2s infinite ease-in-out;
-                z-index: 10001 !important;
+                pointer-events: none;
             }
             
-            /* Highlight for settings button - now inherits from tour-highlight */
+            /* Specific highlight for settings button */
             .tour-highlight-settings {
-                animation: tour-spotlight-pulse 2s infinite ease-in-out;
+                position: relative !important;
                 z-index: 10001 !important;
-                transition: box-shadow 0.3s ease-in-out !important;
+            }
+            
+            .tour-highlight-settings::before {
+                content: '';
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 200%;
+                height: 200%;
+                animation: tour-spotlight-pulse 2s infinite ease-in-out;
+                pointer-events: none;
             }
             
             /* Arrow styling */
