@@ -51,6 +51,7 @@ import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import LayoutStyleSelector from './LayoutStyle';
 import AccountConnectionBox from './AccountConnectionBox';
 import { quoteCategories } from '../../data/quotes';
+import { SelectChangeEvent } from '@mui/material';
 
 interface WidgetEditPanelProps {
     open: boolean;
@@ -110,15 +111,21 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
 
     const handleEditorChange = useCallback((newState: EditorState) => {
         setEditorState(newState);
-        // Save to tempWidget so it can be saved on panel save
+
         if (tempWidget) {
             const contentRaw = convertToRaw(newState.getCurrentContent());
-            setTempWidget({
+            const updatedWidget = {
                 ...tempWidget,
-                content: JSON.stringify(contentRaw)
-            });
+                content: JSON.stringify(contentRaw),
+                config: {
+                    ...tempWidget.config,
+                    fontSize
+                }
+            };
+            setTempWidget(updatedWidget);
+            onSave(updatedWidget);
         }
-    }, [tempWidget, setTempWidget]);
+    }, [tempWidget, fontSize, onSave]);
 
     const handleKeyCommand = useCallback((command: string) => {
         const newState = RichUtils.handleKeyCommand(editorState, command);
@@ -200,7 +207,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                     id="font-size-select"
                     value={fontSize}
                     label="Size"
-                    onChange={e => setFontSize(e.target.value)}
+                    onChange={(e: SelectChangeEvent<string>) => handleFontSizeChange(e.target.value)}
                     size="small"
                 >
                     <MenuItem value="x-small">X-Small</MenuItem>
@@ -221,7 +228,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
         }
     }, [widget]);
 
-    const handleSave = () => {
+    const handleSave = useCallback(() => {
         if (tempWidget) {
             // Update the title and ensure fontSize is included in config
             const updatedWidget = {
@@ -234,44 +241,58 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
             };
             onSave(updatedWidget);
         }
-        onClose();
-    };
+    }, [tempWidget, title, fontSize, onSave]);
 
-    const handleWeatherConfigChange = (config: any) => {
+    const updateAndSave = useCallback((updates: Partial<Widget>) => {
         if (tempWidget) {
-            setTempWidget({
+            const updatedWidget = {
+                ...tempWidget,
+                ...updates,
+                title: updates.title !== undefined ? updates.title : title,
+                config: {
+                    ...tempWidget.config,
+                    ...(updates.config || {}),
+                    fontSize // Always include fontSize
+                }
+            };
+            setTempWidget(updatedWidget);
+            onSave(updatedWidget);
+        }
+    }, [tempWidget, title, fontSize, onSave]);
+
+    const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const newTitle = e.target.value;
+        setTitle(newTitle);
+        updateAndSave({ title: newTitle });
+    }, [updateAndSave]);
+
+    const handleConfigChange = useCallback((config: any) => {
+        if (tempWidget) {
+            const updatedWidget = {
                 ...tempWidget,
                 config: {
                     ...tempWidget.config,
-                    ...config
+                    ...config,
+                    fontSize // Ensure fontSize is included
                 }
-            });
+            };
+            setTempWidget(updatedWidget);
+            onSave(updatedWidget);
         }
-    };
+    }, [tempWidget, fontSize, onSave]);
 
-    const handleEmailConfigChange = (config: any) => {
-        if (tempWidget) {
-            setTempWidget({
-                ...tempWidget,
-                config: {
-                    ...tempWidget.config,
-                    ...config
-                }
-            });
-        }
-    };
+    const handleWeatherConfigChange = useCallback((config: any) => {
+        handleConfigChange(config);
+    }, [handleConfigChange]);
 
-    const handleConfigChange = (config: any) => {
-        if (tempWidget) {
-            setTempWidget({
-                ...tempWidget,
-                config: {
-                    ...tempWidget.config,
-                    ...config
-                }
-            });
-        }
-    };
+    const handleEmailConfigChange = useCallback((config: any) => {
+        handleConfigChange(config);
+    }, [handleConfigChange]);
+
+    const handleFontSizeChange = useCallback((newFontSize: string) => {
+        setFontSize(newFontSize);
+        handleConfigChange({ fontSize: newFontSize });
+    }, [handleConfigChange]);
 
     useEffect(() => {
         // Listen for messages from the auth windows
@@ -393,7 +414,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                         label="Title"
                         variant="outlined"
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        onChange={handleTitleChange}
                         size="small"
                         margin="normal"
                     />
@@ -894,14 +915,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<SaveIcon />}
-                        onClick={handleSave}
-                    >
-                        Save Changes
-                    </Button>
+                    {/* Save button removed - changes are applied immediately */}
                 </Box>
             </Box>
         </Drawer>

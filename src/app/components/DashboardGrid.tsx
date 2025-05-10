@@ -100,6 +100,7 @@ const DashboardGrid: React.FC = () => {
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const [forceRefresh, setForceRefresh] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [audioVisualization, setAudioVisualization] = useState(false);
 
     // Use a separate loading check
     const isLocalStorageLoading = false; // Remove or handle loading differently
@@ -411,6 +412,10 @@ const DashboardGrid: React.FC = () => {
         };
     }, []);
 
+    const toggleAudioVisualization = useCallback(() => {
+        setAudioVisualization(prev => !prev);
+    }, []);
+
     return (
         <ThemeProvider theme={customTheme}>
             {!initialLoadComplete && (
@@ -574,6 +579,8 @@ const DashboardGrid: React.FC = () => {
                     onChangeBackgroundImage={setBackgroundImage}
                     backgroundOpacity={backgroundOpacity}
                     onChangeBackgroundOpacity={setBackgroundOpacity}
+                    audioVisualization={audioVisualization}
+                    onToggleAudioVisualization={toggleAudioVisualization}
                 />
 
                 {/* Widget Edit Panel */}

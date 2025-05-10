@@ -96,10 +96,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isTransferringPlayback, setIsTransferringPlayback] = useState(false);
-    const [volume, setVolume] = useState<number>(50);
+    const [volume, setVolume] = useState<number>(30);
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [username, setUsername] = useState<string | null>(null);
 
     // Use the OAuth2 hook for consistent auth handling
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
@@ -361,6 +362,35 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         });
     }, [process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET, refreshToken]);
 
+    // Add this function to fetch user profile
+    const fetchUserProfile = useCallback(async () => {
+        if (!accessToken) return;
+
+        try {
+            const response = await fetch('https://api.spotify.com/v1/me', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch user profile');
+            }
+
+            const data = await response.json();
+            setUsername(data.display_name || data.id);
+        } catch (err) {
+            console.error('Error fetching user profile:', err);
+        }
+    }, [accessToken]);
+
+    // Call this when we get an access token
+    useEffect(() => {
+        if (accessToken) {
+            fetchUserProfile();
+        }
+    }, [accessToken, fetchUserProfile]);
+
     // Loading state
     if (loading) {
         return (
@@ -424,7 +454,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                     color: 'primary.contrastText'
                 }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-                        {showRecent ? 'Recently Played' : 'Spotify'}
+                        {showRecent ? 'Recently Played' : (username ? `${username}'s Spotify` : 'Spotify')}
                     </Typography>
                     <Box>
                         <IconButton size="small" onClick={toggleView} sx={{ color: 'primary.contrastText' }}>
@@ -518,23 +548,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                             <IconButton size="small" onClick={nextTrack}>
                                                 <SkipNextIcon fontSize="small" />
                                             </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-                                            >
-                                                {getVolumeIcon()}
-                                            </IconButton>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, width: '100%' }}>
+                                                <IconButton>
+                                                    {getVolumeIcon()}
+                                                </IconButton>
+                                                <Slider
+                                                    value={volume}
+                                                    onChange={handleVolumeChange}
+                                                    aria-labelledby="volume-slider"
+                                                    sx={{ ml: 2, flexGrow: 1 }}
+                                                />
+                                            </Box>
                                         </Box>
-
-                                        {showVolumeSlider && (
-                                            <Slider
-                                                size="small"
-                                                value={volume}
-                                                onChange={handleVolumeChange}
-                                                aria-label="Volume"
-                                                sx={{ mt: 1, mb: 1 }}
-                                            />
-                                        )}
 
                                         <LinearProgress
                                             variant="determinate"
@@ -590,7 +615,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                     color: 'primary.contrastText'
                 }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                        {showRecent ? 'Spotify History' : 'Spotify Player'}
+                        {showRecent ? 'Spotify History' : (username ? `${username}'s Player` : 'Spotify Player')}
                     </Typography>
                     <Box>
                         <Tooltip title={showRecent ? "Show Player" : "Show History"}>
@@ -652,7 +677,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 </Box>
                                             }
                                         >
-                                            <ListItemAvatar>
+                                            <ListItemAvatar sx={{ minWidth: 90 }}>
                                                 <Avatar
                                                     src={item.track.album.images?.[0]?.url}
                                                     alt={item.track.name}
@@ -782,18 +807,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                             </Tooltip>
                                         </Stack>
 
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                                            <IconButton onClick={() => setShowVolumeSlider(!showVolumeSlider)}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, width: '100%' }}>
+                                            <IconButton>
                                                 {getVolumeIcon()}
                                             </IconButton>
-                                            {showVolumeSlider && (
-                                                <Slider
-                                                    value={volume}
-                                                    onChange={handleVolumeChange}
-                                                    aria-labelledby="volume-slider"
-                                                    sx={{ ml: 2, width: '70%' }}
-                                                />
-                                            )}
+                                            <Slider
+                                                value={volume}
+                                                onChange={handleVolumeChange}
+                                                aria-labelledby="volume-slider"
+                                                sx={{ ml: 2, flexGrow: 1 }}
+                                            />
                                         </Box>
                                     </Box>
                                 </Box>
@@ -835,7 +858,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             {/* Header */}
             <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography variant="h6">
-                    {showRecent ? 'Recently Played' : 'Spotify'}
+                    {showRecent ? 'Recently Played' : (username ? `${username}'s Spotify` : 'Spotify')}
                 </Typography>
                 <Box>
                     <IconButton onClick={toggleView}>
@@ -912,7 +935,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         src={currentTrack.album.images?.[0]?.url}
                                         alt={currentTrack.name}
                                         variant="rounded"
-                                        sx={{ width: 120, height: 120, mr: 2 }}
+                                        sx={{ width: 120, height: 120, mr: 3 }}
                                     >
                                         <MusicNoteIcon sx={{ fontSize: 40 }} />
                                     </Avatar>
@@ -952,18 +975,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         aria-labelledby="continuous-slider"
                                     />
 
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, mb: 1 }}>
-                                        <IconButton onClick={() => setShowVolumeSlider(!showVolumeSlider)}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, width: '100%' }}>
+                                        <IconButton>
                                             {getVolumeIcon()}
                                         </IconButton>
-                                        {showVolumeSlider && (
-                                            <Slider
-                                                value={volume}
-                                                onChange={handleVolumeChange}
-                                                aria-labelledby="volume-slider"
-                                                sx={{ ml: 2, width: '70%' }}
-                                            />
-                                        )}
+                                        <Slider
+                                            value={volume}
+                                            onChange={handleVolumeChange}
+                                            aria-labelledby="volume-slider"
+                                            sx={{ ml: 2, flexGrow: 1 }}
+                                        />
                                     </Box>
 
                                     <Stack
