@@ -81,6 +81,19 @@ interface Layouts {
     [breakpoint: string]: LayoutItem[];
 }
 
+// Add a type for the particles array and its elements
+interface Particle {
+    element: HTMLDivElement;
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    life: number;
+    startTime: number;
+    duration: number;
+    update: () => boolean;
+}
+
 // Dashboard grid component
 const DashboardGrid: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -425,84 +438,339 @@ const DashboardGrid: React.FC = () => {
         setTimeout(() => setForceRefresh(false), 100);
     }, [setAudioVisualization]);
 
-    // Add this to the main layout component where the dashboard is rendered
+    // Replace the existing audio visualization effect in DashboardGrid.tsx
     useEffect(() => {
         if (audioVisualization) {
-            // Create audio visualization effect
-            const visualizer = document.createElement('div');
-            visualizer.id = 'audio-visualizer';
-            visualizer.style.cssText = `
+            // Create main audio visualizer container
+            const visualizerContainer = document.createElement('div');
+            visualizerContainer.id = 'audio-visualizer-container';
+            visualizerContainer.style.cssText = `
                 position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 9999;
+                overflow: hidden;
+            `;
+            document.body.appendChild(visualizerContainer);
+
+            // Create bottom wave effect
+            const bottomWave = document.createElement('div');
+            bottomWave.id = 'audio-visualizer-wave';
+            bottomWave.style.cssText = `
+                position: absolute;
                 bottom: 0;
                 left: 0;
                 width: 100%;
-                height: 3px;
+                height: 5px;
                 background: ${primaryColor};
                 opacity: 0.8;
-                z-index: 9999;
-                box-shadow: 0 0 10px ${primaryColor}, 0 0 20px ${primaryColor};
-                transition: height 0.3s ease;
+                box-shadow: 0 0 20px ${primaryColor}, 0 0 40px ${primaryColor};
+                transition: height 0.2s ease;
             `;
-            document.body.appendChild(visualizer);
+            visualizerContainer.appendChild(bottomWave);
+
+            // Create corner glow effects
+            const corners = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+            const cornerElements = corners.map(corner => {
+                const element = document.createElement('div');
+                element.id = `audio-visualizer-${corner}`;
+
+                let position = '';
+                if (corner.includes('top')) position += 'top: 0;';
+                if (corner.includes('bottom')) position += 'bottom: 0;';
+                if (corner.includes('left')) position += 'left: 0;';
+                if (corner.includes('right')) position += 'right: 0;';
+
+                element.style.cssText = `
+                    position: absolute;
+                    ${position}
+                    width: 100px;
+                    height: 100px;
+                    background: radial-gradient(circle, ${primaryColor}00 0%, ${primaryColor}00 70%, ${primaryColor}40 100%);
+                    opacity: 0;
+                    transition: opacity 0.3s ease, transform 0.3s ease;
+                `;
+                visualizerContainer.appendChild(element);
+                return element;
+            });
+
+            // Create center pulse effect
+            const centerPulse = document.createElement('div');
+            centerPulse.id = 'audio-visualizer-center';
+            centerPulse.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%) scale(0);
+                width: 200px;
+                height: 200px;
+                border-radius: 50%;
+                background: radial-gradient(circle, ${primaryColor}80 0%, ${primaryColor}40 50%, ${primaryColor}00 100%);
+                opacity: 0;
+                transition: transform 0.5s ease, opacity 0.5s ease;
+            `;
+            visualizerContainer.appendChild(centerPulse);
+
+            // Create particles container
+            const particlesContainer = document.createElement('div');
+            particlesContainer.id = 'audio-visualizer-particles';
+            particlesContainer.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            `;
+            visualizerContainer.appendChild(particlesContainer);
+
+            // Create border glow effect
+            const borderGlow = document.createElement('div');
+            borderGlow.id = 'audio-visualizer-border';
+            borderGlow.style.cssText = `
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                border: 2px solid ${primaryColor}00;
+                box-shadow: inset 0 0 0px ${primaryColor}00;
+                opacity: 0.7;
+                transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            `;
+            visualizerContainer.appendChild(borderGlow);
 
             // Set up audio context and analyzer if browser supports it
             if (window.AudioContext || window.webkitAudioContext) {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 const audioCtx = new AudioContext();
                 const analyzer = audioCtx.createAnalyser();
-                analyzer.fftSize = 256;
+                analyzer.fftSize = 1024; // Larger FFT for more detailed frequency data
 
-                // Create audio source from system audio (requires user permission)
-                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-                    .then(stream => {
-                        const source = audioCtx.createMediaStreamSource(stream);
-                        source.connect(analyzer);
+                // Create multiple analyzers for different frequency ranges
+                const bassAnalyzer = audioCtx.createBiquadFilter();
+                bassAnalyzer.type = 'lowpass';
+                bassAnalyzer.frequency.value = 150;
 
-                        // Create data array for frequency data
-                        const bufferLength = analyzer.frequencyBinCount;
-                        const dataArray = new Uint8Array(bufferLength);
+                const midAnalyzer = audioCtx.createBiquadFilter();
+                midAnalyzer.type = 'bandpass';
+                midAnalyzer.frequency.value = 500;
+                midAnalyzer.Q.value = 0.5;
 
-                        // Animation function to update visualizer
-                        const updateVisualizer = () => {
-                            if (!document.getElementById('audio-visualizer')) return;
+                const trebleAnalyzer = audioCtx.createBiquadFilter();
+                trebleAnalyzer.type = 'highpass';
+                trebleAnalyzer.frequency.value = 2000;
 
-                            analyzer.getByteFrequencyData(dataArray);
+                // Connect the filters to separate analyzers
+                const bassAnalyzerNode = audioCtx.createAnalyser();
+                bassAnalyzerNode.fftSize = 256;
 
-                            // Calculate average frequency value
-                            let sum = 0;
-                            for (let i = 0; i < bufferLength; i++) {
-                                sum += dataArray[i];
+                const midAnalyzerNode = audioCtx.createAnalyser();
+                midAnalyzerNode.fftSize = 256;
+
+                const trebleAnalyzerNode = audioCtx.createAnalyser();
+                trebleAnalyzerNode.fftSize = 256;
+
+                // Beat detection variables
+                let lastBeatTime = 0;
+                let beatThreshold = 0.15;
+                let beatHoldTime = 100;
+                let beatDecayRate = 0.97;
+                let beatCutOff = 0;
+
+                // Particle system
+                const particles: Particle[] = [];
+                const maxParticles = 50;
+
+                function createParticle(intensity: number) {
+                    if (particles.length >= maxParticles) return;
+
+                    const particle = document.createElement('div');
+                    const size = Math.random() * 10 + 5;
+                    const posX = Math.random() * window.innerWidth;
+                    const posY = Math.random() * window.innerHeight;
+                    const opacity = Math.random() * 0.5 + 0.2;
+                    const duration = Math.random() * 2000 + 1000;
+
+                    particle.style.cssText = `
+                        position: absolute;
+                        width: ${size}px;
+                        height: ${size}px;
+                        border-radius: 50%;
+                        background-color: ${primaryColor};
+                        opacity: ${opacity};
+                        top: ${posY}px;
+                        left: ${posX}px;
+                        transform: scale(0);
+                        box-shadow: 0 0 ${10 * intensity}px ${primaryColor};
+                        pointer-events: none;
+                    `;
+
+                    particlesContainer.appendChild(particle);
+
+                    // Animate the particle
+                    const startTime = Date.now();
+                    const moveX = (Math.random() - 0.5) * 100 * intensity;
+                    const moveY = (Math.random() - 0.5) * 100 * intensity;
+
+                    const particleObj: Particle = {
+                        element: particle,
+                        x: posX,
+                        y: posY,
+                        vx: moveX,
+                        vy: moveY,
+                        life: duration,
+                        startTime: startTime,
+                        duration: duration,
+                        update: function () {
+                            const elapsed = Date.now() - this.startTime;
+                            const progress = Math.min(elapsed / this.duration, 1);
+
+                            if (progress >= 1) {
+                                this.element.remove();
+                                return false;
                             }
-                            const average = sum / bufferLength;
 
-                            // Update visualizer height based on audio level
-                            const height = Math.max(3, Math.min(20, average / 5));
-                            visualizer.style.height = `${height}px`;
+                            // Easing functions for smooth animation
+                            const scaleProgress = progress < 0.3
+                                ? progress / 0.3
+                                : 1 - ((progress - 0.3) / 0.7);
 
-                            requestAnimationFrame(updateVisualizer);
-                        };
+                            const newPosX = this.x + this.vx * progress;
+                            const newPosY = this.y + this.vy * progress;
 
-                        updateVisualizer();
-                    })
-                    .catch(err => {
-                        console.error('Error accessing microphone:', err);
-                        // Fallback to a simple pulsing animation if mic access is denied
-                        let pulse = 0;
-                        const pulseAnimation = () => {
-                            if (!document.getElementById('audio-visualizer')) return;
+                            this.element.style.transform = `scale(${scaleProgress})`;
+                            this.element.style.left = `${newPosX}px`;
+                            this.element.style.top = `${newPosY}px`;
+                            this.element.style.opacity = String(opacity * (1 - progress));
 
-                            pulse = (pulse + 0.05) % (2 * Math.PI);
-                            const height = 3 + Math.sin(pulse) * 5;
-                            visualizer.style.height = `${height}px`;
+                            return true;
+                        }
+                    };
 
-                            requestAnimationFrame(pulseAnimation);
-                        };
-                        pulseAnimation();
+                    particles.push(particleObj);
+                }
+
+                // Create data arrays for frequency data
+                const mainDataArray = new Uint8Array(analyzer.frequencyBinCount);
+                const bassDataArray = new Uint8Array(bassAnalyzerNode.frequencyBinCount);
+                const midDataArray = new Uint8Array(midAnalyzerNode.frequencyBinCount);
+                const trebleDataArray = new Uint8Array(trebleAnalyzerNode.frequencyBinCount);
+
+                const mainBufferLength = analyzer.frequencyBinCount;
+                const bassBufferLength = bassAnalyzerNode.frequencyBinCount;
+                const midBufferLength = midAnalyzerNode.frequencyBinCount;
+                const trebleBufferLength = trebleAnalyzerNode.frequencyBinCount;
+
+                // Animation function to update visualizer
+                const updateVisualizer = () => {
+                    if (!document.getElementById('audio-visualizer-container')) return;
+
+                    // Get frequency data from all analyzers
+                    analyzer.getByteFrequencyData(mainDataArray);
+                    bassAnalyzerNode.getByteFrequencyData(bassDataArray);
+                    midAnalyzerNode.getByteFrequencyData(midDataArray);
+                    trebleAnalyzerNode.getByteFrequencyData(trebleDataArray);
+
+                    // Calculate average values for each frequency range
+                    let bassSum = 0, midSum = 0, trebleSum = 0, mainSum = 0;
+
+                    for (let i = 0; i < bassBufferLength; i++) {
+                        bassSum += bassDataArray[i];
+                    }
+
+                    for (let i = 0; i < midBufferLength; i++) {
+                        midSum += midDataArray[i];
+                    }
+
+                    for (let i = 0; i < trebleBufferLength; i++) {
+                        trebleSum += trebleDataArray[i];
+                    }
+
+                    for (let i = 0; i < mainBufferLength; i++) {
+                        mainSum += mainDataArray[i];
+                    }
+
+                    const bassAvg = bassSum / bassBufferLength / 255;
+                    const midAvg = midSum / midBufferLength / 255;
+                    const trebleAvg = trebleSum / trebleBufferLength / 255;
+                    const mainAvg = mainSum / mainBufferLength / 255;
+
+                    // Beat detection for bass frequencies
+                    if (bassAvg > beatCutOff && bassAvg > beatThreshold) {
+                        const now = Date.now();
+                        if (now - lastBeatTime > beatHoldTime) {
+                            // Beat detected!
+                            lastBeatTime = now;
+                            beatCutOff = bassAvg * 1.1;
+                            beatCutOff = Math.min(beatCutOff, 1);
+
+                            // Create particles on beat
+                            for (let i = 0; i < 5; i++) {
+                                createParticle(bassAvg * 2);
+                            }
+
+                            // Pulse center on strong beats
+                            centerPulse.style.transform = `translate(-50%, -50%) scale(${bassAvg * 3})`;
+                            centerPulse.style.opacity = String(bassAvg * 0.8);
+
+                            // Flash border on beats
+                            borderGlow.style.borderColor = `${primaryColor}${Math.floor(bassAvg * 255).toString(16).padStart(2, '0')}`;
+                            borderGlow.style.boxShadow = `inset 0 0 ${30 * bassAvg}px ${primaryColor}${Math.floor(bassAvg * 200).toString(16).padStart(2, '0')}`;
+                        }
+                    } else {
+                        // Decay the beat cutoff
+                        beatCutOff *= beatDecayRate;
+                        beatCutOff = Math.max(beatCutOff, beatThreshold);
+
+                        // Fade out center pulse
+                        centerPulse.style.transform = 'translate(-50%, -50%) scale(0)';
+                        centerPulse.style.opacity = '0';
+
+                        // Fade border
+                        borderGlow.style.borderColor = `${primaryColor}00`;
+                        borderGlow.style.boxShadow = `inset 0 0 0px ${primaryColor}00`;
+                    }
+
+                    // Update bottom wave based on overall volume
+                    const waveHeight = Math.max(5, Math.min(50, mainAvg * 100));
+                    bottomWave.style.height = `${waveHeight}px`;
+                    bottomWave.style.boxShadow = `0 0 ${20 * mainAvg}px ${primaryColor}, 0 0 ${40 * mainAvg}px ${primaryColor}`;
+
+                    // Update corner elements based on different frequency ranges
+                    cornerElements.forEach((corner, index) => {
+                        let intensity: number;
+                        switch (index) {
+                            case 0: intensity = bassAvg; break;
+                            case 1: intensity = trebleAvg; break;
+                            case 2: intensity = midAvg; break;
+                            case 3: intensity = mainAvg; break;
+                            default: intensity = 0;  // Provide default value
+                        }
+
+                        corner.style.opacity = String(intensity * 0.8);
+                        corner.style.transform = `scale(${1 + intensity})`;
+                        corner.style.background = `radial-gradient(circle, ${primaryColor}${Math.floor(intensity * 40).toString(16).padStart(2, '0')} 0%, ${primaryColor}${Math.floor(intensity * 30).toString(16).padStart(2, '0')} 70%, ${primaryColor}${Math.floor(intensity * 60).toString(16).padStart(2, '0')} 100%)`;
                     });
+
+                    // Update particles
+                    for (let i = particles.length - 1; i >= 0; i--) {
+                        const stillAlive = particles[i].update();
+                        if (!stillAlive) {
+                            particles.splice(i, 1);
+                        }
+                    }
+
+                    requestAnimationFrame(updateVisualizer);
+                };
+
+                updateVisualizer();
             }
 
             return () => {
-                document.getElementById('audio-visualizer')?.remove();
+                document.getElementById('audio-visualizer-container')?.remove();
                 // Clean up audio context if needed
             };
         }

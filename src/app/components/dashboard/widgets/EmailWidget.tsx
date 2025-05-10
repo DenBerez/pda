@@ -14,7 +14,11 @@ import {
     Select,
     MenuItem,
     TextField,
-    Button
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
@@ -23,6 +27,7 @@ import { Widget } from '../types';
 import Settings from '@mui/icons-material/Settings';
 import LayoutStyleSelector from '../LayoutStyle';
 import { useOAuth2Connection } from '../../../hooks/useOAuth2Connection';
+import CloseIcon from '@mui/icons-material/Close';
 
 interface Email {
     id: string;
@@ -49,6 +54,8 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     const [configuring, setConfiguring] = useState(false);
     const [refreshInterval, setRefreshInterval] = useState(widget.config?.refreshInterval || 5);
     const [layoutOption, setLayoutOption] = useState(widget.config?.layoutOption || 'normal');
+    const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
         widget,
@@ -164,6 +171,23 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 ? { ...email, unread: !email.unread }
                 : email
         ));
+    };
+
+    // Open email dialog and mark as read if unread
+    const openEmailDialog = (email: Email) => {
+        setSelectedEmail(email);
+        setDialogOpen(true);
+
+        // Mark as read if currently unread
+        if (email.unread) {
+            toggleReadStatus(email.id);
+        }
+    };
+
+    // Close email dialog
+    const closeEmailDialog = () => {
+        setDialogOpen(false);
+        setSelectedEmail(null);
     };
 
     // Render configuration form
@@ -351,9 +375,11 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                                     py: 1.5,
                                     bgcolor: email.unread ? 'action.hover' : 'transparent',
                                     '&:hover': {
-                                        bgcolor: 'action.selected'
+                                        bgcolor: 'action.selected',
+                                        cursor: 'pointer'
                                     }
                                 }}
+                                onClick={() => openEmailDialog(email)}
                             >
                                 <ListItemText
                                     primary={
@@ -401,7 +427,10 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
                                                 <IconButton
                                                     size="small"
-                                                    onClick={() => toggleReadStatus(email.id)}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        toggleReadStatus(email.id);
+                                                    }}
                                                     sx={{ p: 0.5 }}
                                                 >
                                                     {email.unread ?
@@ -495,8 +524,13 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                             sx={{
                                 px: 1.5,
                                 py: 0.75,
-                                bgcolor: email.unread ? 'action.hover' : 'transparent'
+                                bgcolor: email.unread ? 'action.hover' : 'transparent',
+                                '&:hover': {
+                                    bgcolor: 'action.selected',
+                                    cursor: 'pointer'
+                                }
                             }}
+                            onClick={() => openEmailDialog(email)}
                         >
                             <ListItemText
                                 primary={
@@ -619,9 +653,11 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                                         py: 2,
                                         bgcolor: email.unread ? 'action.hover' : 'transparent',
                                         '&:hover': {
-                                            bgcolor: 'action.selected'
+                                            bgcolor: 'action.selected',
+                                            cursor: 'pointer'
                                         }
                                     }}
+                                    onClick={() => openEmailDialog(email)}
                                 >
                                     <ListItemText
                                         primary={
@@ -659,7 +695,9 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                                                     color="text.secondary"
                                                     sx={{
                                                         display: 'block',
-                                                        mb: 1
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
                                                     }}
                                                 >
                                                     {email.snippet}
@@ -668,7 +706,10 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                                                     <Button
                                                         size="small"
                                                         variant="outlined"
-                                                        onClick={() => toggleReadStatus(email.id)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            toggleReadStatus(email.id);
+                                                        }}
                                                         startIcon={email.unread ? <MarkEmailReadIcon /> : <MarkEmailUnreadIcon />}
                                                     >
                                                         Mark as {email.unread ? 'read' : 'unread'}
@@ -707,6 +748,89 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         </>
     );
 
+    // Render email dialog
+    const renderEmailDialog = () => {
+        if (!selectedEmail) return null;
+
+        return (
+            <Dialog
+                open={dialogOpen}
+                onClose={closeEmailDialog}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        overflow: 'hidden'
+                    }
+                }}
+            >
+                <DialogTitle sx={{
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <Typography variant="h6" sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '90%'
+                    }}>
+                        {selectedEmail.subject}
+                    </Typography>
+                    <IconButton size="small" onClick={closeEmailDialog}>
+                        <CloseIcon />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ p: 3 }}>
+                    <Box sx={{ mb: 3 }}>
+                        <Typography variant="subtitle1" fontWeight="medium">
+                            {selectedEmail.from}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {formatDate(selectedEmail.date)}
+                        </Typography>
+                    </Box>
+                    <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
+                        {selectedEmail.snippet}
+                        {/* In a real implementation, this would show the full email body */}
+                        {Array(3).fill(null).map((_, i) => (
+                            <React.Fragment key={i}>
+                                <br /><br />
+                                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                                Nullam auctor, nisl eget ultricies tincidunt, nisl nisl
+                                aliquam nisl, eget ultricies nisl nisl eget nisl.
+                            </React.Fragment>
+                        ))}
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    p: 2
+                }}>
+                    <Button
+                        startIcon={<MarkEmailUnreadIcon />}
+                        onClick={() => {
+                            toggleReadStatus(selectedEmail.id);
+                            closeEmailDialog();
+                        }}
+                    >
+                        Mark as unread
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={closeEmailDialog}
+                    >
+                        Close
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        );
+    };
+
     return (
         <Box sx={{
             height: '100%',
@@ -721,6 +845,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     layoutOption === 'detailed' ? renderDetailedLayout() :
                         renderEmailList()
             )}
+            {renderEmailDialog()}
         </Box>
     );
 };
