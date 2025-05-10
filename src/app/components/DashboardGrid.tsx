@@ -626,7 +626,7 @@ const DashboardGrid: React.FC = () => {
                     sx={{
                         position: 'fixed',
                         bottom: { xs: 16, sm: 20 },
-                        right: { xs: 16, sm: 20 },
+                        right: { xs: 32, sm: 40 },
                         zIndex: 1200,
                         opacity: showSettingsButton && !settingsOpen ? 1 : 0,
                         visibility: showSettingsButton && !settingsOpen ? 'visible' : 'hidden',
