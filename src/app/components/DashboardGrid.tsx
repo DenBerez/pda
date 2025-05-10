@@ -480,8 +480,13 @@ const DashboardGrid: React.FC = () => {
         setTimeout(() => setForceRefresh(false), 100);
     }, [setAudioVisualization]);
 
-    // Replace the existing audio visualization effect in DashboardGrid.tsx
+    // Add this effect to handle the audio visualization setup
     useEffect(() => {
+        // Only run in browser environment
+        if (typeof window === 'undefined' || typeof document === 'undefined') {
+            return;
+        }
+
         if (audioVisualization) {
             // Create visualization container and elements
             const visualizerContainer = document.createElement('div');
@@ -913,14 +918,20 @@ const DashboardGrid: React.FC = () => {
 
             updateVisualizer();
 
+            // Clean up function to remove elements when component unmounts or effect re-runs
             return () => {
-                document.getElementById('audio-visualizer-container')?.remove();
-                systemAudioButton.remove();
-                observer.disconnect();
-                audioCtx.close().catch(err => console.error('Error closing audio context:', err));
+                if (visualizerContainer && document.body.contains(visualizerContainer)) {
+                    document.body.removeChild(visualizerContainer);
+                }
+
+                // Remove any other elements you've added to the DOM
+                const systemAudioButton = document.getElementById('system-audio-button');
+                if (systemAudioButton) {
+                    systemAudioButton.remove();
+                }
             };
         }
-    }, [audioVisualization, primaryColor]);
+    }, [audioVisualization, primaryColor]); // Add dependencies as needed
 
     return (
         <ThemeProvider theme={customTheme}>
