@@ -87,6 +87,8 @@ interface SpotifyWidgetProps {
     onUpdateWidget: (widget: Widget) => void;
 }
 
+type LayoutOptionType = 'compact' | 'detailed' | 'normal';
+
 const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdateWidget }) => {
     const [recentTracks, setRecentTracks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -391,6 +393,104 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         }
     }, [accessToken, fetchUserProfile]);
 
+    // Create a reusable header component within the SpotifyWidget component
+    const SpotifyHeader = ({
+        showRecent,
+        username,
+        toggleView,
+        layoutOption,
+        isPlayerConnected,
+        handleTransferPlayback,
+        isTransferringPlayback
+    }: {
+        showRecent: boolean;
+        username: string | null;
+        toggleView: () => void;
+        layoutOption: LayoutOptionType;
+        isPlayerConnected: boolean;
+        handleTransferPlayback: () => void;
+        isTransferringPlayback: boolean;
+    }) => {
+        // Base styles that apply to all layouts
+        const baseStyles = {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+        };
+
+        // Layout-specific styles
+        const layoutStyles = {
+            compact: {
+                p: 1,
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText'
+            },
+            detailed: {
+                p: 2,
+                bgcolor: 'primary.dark',
+                color: 'primary.contrastText'
+            },
+            normal: {
+                p: 2,
+                bgcolor: 'background.paper',
+                color: 'text.primary'
+            }
+        };
+
+        // Title variants based on layout
+        const titleVariants: Record<LayoutOptionType, 'subtitle1' | 'h6'> = {
+            compact: 'subtitle1',
+            detailed: 'h6',
+            normal: 'h6'
+        };
+
+        // Title styles based on layout
+        const titleStyles = {
+            compact: { fontWeight: 'medium' },
+            detailed: { fontWeight: 'bold' },
+            normal: {}
+        };
+
+        // Icon button styles based on layout
+        const iconButtonStyles = {
+            compact: { color: 'primary.contrastText' },
+            detailed: { color: 'primary.contrastText' },
+            normal: {}
+        };
+
+        return (
+            <Box sx={{
+                ...baseStyles,
+                ...layoutStyles[layoutOption],
+                borderBottom: layoutOption === 'normal' ? 1 : 0,
+                borderColor: 'divider'
+            }}>
+                <Typography
+                    variant={titleVariants[layoutOption]}
+                    sx={titleStyles[layoutOption]}
+                >
+                    {showRecent
+                        ? (layoutOption === 'detailed' ? 'Spotify History' : 'Recently Played')
+                        : (username ? `${username}` : 'Spotify')}
+                </Typography>
+
+                <Box>
+                    <Tooltip title={showRecent ? "Show Player" : "Show History"}>
+                        <IconButton
+                            onClick={toggleView}
+                            size={layoutOption === 'compact' ? 'small' : 'medium'}
+                            sx={iconButtonStyles[layoutOption]}
+                        >
+                            {showRecent ? <MusicNoteIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> : <AccessTimeIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />}
+                        </IconButton>
+                    </Tooltip>
+
+
+                </Box>
+            </Box>
+        );
+    };
+
     // Loading state
     if (loading) {
         return (
@@ -445,33 +545,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                 borderRadius: 2
             }}>
                 {/* Header */}
-                <Box sx={{
-                    p: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText'
-                }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-                        {showRecent ? 'Recently Played' : (username ? `${username}'s Spotify` : 'Spotify')}
-                    </Typography>
-                    <Box>
-                        <IconButton size="small" onClick={toggleView} sx={{ color: 'primary.contrastText' }}>
-                            {showRecent ? <MusicNoteIcon fontSize="small" /> : <AccessTimeIcon fontSize="small" />}
-                        </IconButton>
-                        {isPlayerConnected && (
-                            <IconButton
-                                size="small"
-                                sx={{ color: 'primary.contrastText' }}
-                                onClick={handleTransferPlayback}
-                                disabled={isTransferringPlayback}
-                            >
-                                <DevicesIcon fontSize="small" />
-                            </IconButton>
-                        )}
-                    </Box>
-                </Box>
+                <SpotifyHeader
+                    showRecent={showRecent}
+                    username={username}
+                    toggleView={toggleView}
+                    layoutOption="compact"
+                    isPlayerConnected={isPlayerConnected}
+                    handleTransferPlayback={handleTransferPlayback}
+                    isTransferringPlayback={isTransferringPlayback}
+                />
 
                 {/* Content */}
                 <Box sx={{ flexGrow: 1, overflow: 'auto', p: 1 }}>
@@ -606,36 +688,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                 borderRadius: 2
             }}>
                 {/* Header */}
-                <Box sx={{
-                    p: 2,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    bgcolor: 'primary.dark',
-                    color: 'primary.contrastText'
-                }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                        {showRecent ? 'Spotify History' : (username ? `${username}'s Player` : 'Spotify Player')}
-                    </Typography>
-                    <Box>
-                        <Tooltip title={showRecent ? "Show Player" : "Show History"}>
-                            <IconButton onClick={toggleView} sx={{ color: 'primary.contrastText' }}>
-                                {showRecent ? <MusicNoteIcon /> : <AccessTimeIcon />}
-                            </IconButton>
-                        </Tooltip>
-                        {isPlayerConnected && (
-                            <Tooltip title="Transfer Playback">
-                                <IconButton
-                                    color="inherit"
-                                    onClick={handleTransferPlayback}
-                                    disabled={isTransferringPlayback}
-                                >
-                                    <DevicesIcon />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                    </Box>
-                </Box>
+                <SpotifyHeader
+                    showRecent={showRecent}
+                    username={username}
+                    toggleView={toggleView}
+                    layoutOption="detailed"
+                    isPlayerConnected={isPlayerConnected}
+                    handleTransferPlayback={handleTransferPlayback}
+                    isTransferringPlayback={isTransferringPlayback}
+                />
 
                 {/* Content */}
                 <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, bgcolor: 'background.paper' }}>
@@ -856,25 +917,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     return (
         <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Header */}
-            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6">
-                    {showRecent ? 'Recently Played' : (username ? `${username}'s Spotify` : 'Spotify')}
-                </Typography>
-                <Box>
-                    <IconButton onClick={toggleView}>
-                        {showRecent ? <MusicNoteIcon /> : <AccessTimeIcon />}
-                    </IconButton>
-                    {isPlayerConnected && (
-                        <IconButton
-                            color="primary"
-                            onClick={handleTransferPlayback}
-                            disabled={isTransferringPlayback}
-                        >
-                            <DevicesIcon />
-                        </IconButton>
-                    )}
-                </Box>
-            </Box>
+            <SpotifyHeader
+                showRecent={showRecent}
+                username={username}
+                toggleView={toggleView}
+                layoutOption="normal"
+                isPlayerConnected={isPlayerConnected}
+                handleTransferPlayback={handleTransferPlayback}
+                isTransferringPlayback={isTransferringPlayback}
+            />
 
             <Divider />
 
