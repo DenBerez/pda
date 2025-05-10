@@ -487,23 +487,6 @@ const Tour: React.FC<TourProps> = ({
                 pointer-events: none;
             }
             
-            /* Specific highlight for settings button */
-            .tour-highlight-settings {
-                position: relative !important;
-                z-index: 10001 !important;
-            }
-            
-            .tour-highlight-settings::before {
-                content: '';
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                width: 200%;
-                height: 200%;
-                animation: tour-spotlight-pulse 2s infinite ease-in-out;
-                pointer-events: none;
-            }
             
             /* Arrow styling */
             .shepherd-arrow {
