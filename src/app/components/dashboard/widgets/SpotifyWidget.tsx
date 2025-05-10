@@ -447,31 +447,26 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                 p: layoutOption === 'compact' ? 1 : 2
             }}>
                 {/* Toggle button with styling based on layout option */}
-                <Box sx={{
-                    position: 'absolute',
-                    top: layoutOption === 'compact' ? 4 : 8,
-                    right: layoutOption === 'compact' ? 4 : 8,
-                    zIndex: 2,
-                    // For detailed layout, add a background
-                    ...(layoutOption === 'detailed' ? {
-                        bgcolor: 'primary.dark',
-                        borderRadius: '50%',
-                        p: 0.5
-                    } : {})
-                }}>
-                    <Tooltip title={showRecent ? "Show Player" : "Show History"}>
-                        <IconButton
-                            onClick={toggleView}
-                            size={layoutOption === 'compact' ? 'small' : 'medium'}
-                            sx={layoutOption === 'detailed' ? { color: 'primary.contrastText' } : {}}
-                        >
-                            {showRecent ?
-                                <MusicNoteIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> :
-                                <AccessTimeIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
-                            }
-                        </IconButton>
-                    </Tooltip>
-                </Box>
+                {layoutOption !== 'detailed' && (
+                    <Box sx={{
+                        position: 'absolute',
+                        top: layoutOption === 'compact' ? 4 : 8,
+                        right: layoutOption === 'compact' ? 4 : 8,
+                        zIndex: 2
+                    }}>
+                        <Tooltip title={showRecent ? "Show Player" : "Show History"}>
+                            <IconButton
+                                onClick={toggleView}
+                                size={layoutOption === 'compact' ? 'small' : 'medium'}
+                            >
+                                {showRecent ?
+                                    <MusicNoteIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> :
+                                    <AccessTimeIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                }
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                )}
 
                 {/* Title based on layout option */}
                 {layoutOption === 'detailed' && (
@@ -485,99 +480,24 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                             variant="h6"
                             sx={{ fontWeight: 'bold' }}
                         >
-                            {showRecent ? 'Spotify History' : (username ? `${username}'s Spotify` : 'Spotify')}
+                            {username ? `${username}'s Spotify` : 'Spotify'}
                         </Typography>
                     </Box>
                 )}
 
-                {showRecent ? (
-                    <List sx={{
-                        mt: layoutOption === 'compact' ? 0 : 2,
-                        // Adjust spacing for compact layout
-                        '& .MuiListItem-root': layoutOption === 'compact' ? {
-                            py: 0.5
-                        } : {}
-                    }}>
-                        {recentTracks.length > 0 ? (
-                            recentTracks.map((item: any, index: number) => (
-                                <ListItem
-                                    key={`${item.track.id}-${index}`}
-                                    secondaryAction={
-                                        <Box>
-                                            {item.track.preview_url && (
-                                                <IconButton
-                                                    edge="end"
-                                                    onClick={() => playPreview(item.track.preview_url)}
-                                                    sx={{ mr: 1 }}
-                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
-                                                >
-                                                    <PlayArrowIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
-                                                </IconButton>
-                                            )}
-                                            <IconButton
-                                                edge="end"
-                                                onClick={() => openInSpotify(item.track.uri)}
-                                                size={layoutOption === 'compact' ? 'small' : 'medium'}
-                                            >
-                                                <LaunchIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
-                                            </IconButton>
-                                        </Box>
-                                    }
-                                >
-                                    <ListItemAvatar>
-                                        <Avatar
-                                            src={item.track.album.images?.[0]?.url}
-                                            alt={item.track.name}
-                                            variant="rounded"
-                                            sx={layoutOption === 'compact' ? { width: 32, height: 32 } : {}}
-                                        >
-                                            <MusicNoteIcon />
-                                        </Avatar>
-                                    </ListItemAvatar>
-                                    <ListItemText
-                                        primary={item.track.name}
-                                        secondary={
-                                            <>
-                                                {item.track.artists.map((artist: any) => artist.name).join(', ')}
-                                                {layoutOption !== 'compact' && (
-                                                    <>
-                                                        <br />
-                                                        {item.track.album.name}
-                                                        <br />
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            {new Date(item.played_at).toLocaleString()}
-                                                        </Typography>
-                                                    </>
-                                                )}
-                                            </>
-                                        }
-                                        primaryTypographyProps={{
-                                            variant: layoutOption === 'compact' ? 'body2' : 'body1'
-                                        }}
-                                        secondaryTypographyProps={{
-                                            variant: layoutOption === 'compact' ? 'caption' : 'body2'
-                                        }}
-                                    />
-                                </ListItem>
-                            ))
-                        ) : (
-                            <Typography variant={layoutOption === 'compact' ? 'body2' : 'body1'} sx={{ p: 2 }}>
-                                No recent tracks found
-                            </Typography>
-                        )}
-                    </List>
-                ) : (
-                    <>
+                {layoutOption === 'detailed' ? (
+                    // Detailed layout shows both player and recent tracks
+                    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        {/* Player section */}
                         {currentTrack ? (
                             <Box sx={{
                                 display: 'flex',
                                 flexDirection: 'column',
-                                height: '100%',
-                                pt: layoutOption === 'compact' ? 0 : 2
+                                mb: 3
                             }}>
                                 <Box sx={{
                                     display: 'flex',
-                                    mb: layoutOption === 'compact' ? 1 : 3,
+                                    mb: 3,
                                     alignItems: 'center'
                                 }}>
                                     <Avatar
@@ -585,30 +505,28 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         alt={currentTrack.name}
                                         variant="rounded"
                                         sx={{
-                                            width: layoutOption === 'compact' ? 60 : layoutOption === 'detailed' ? 150 : 120,
-                                            height: layoutOption === 'compact' ? 60 : layoutOption === 'detailed' ? 150 : 120,
-                                            mr: layoutOption === 'compact' ? 1 : 3
+                                            width: 150,
+                                            height: 150,
+                                            mr: 3
                                         }}
                                     >
-                                        <MusicNoteIcon sx={{ fontSize: layoutOption === 'compact' ? 24 : 40 }} />
+                                        <MusicNoteIcon sx={{ fontSize: 40 }} />
                                     </Avatar>
                                     <Box>
                                         <Typography
-                                            variant={layoutOption === 'compact' ? 'subtitle1' : 'h6'}
+                                            variant="h6"
                                             gutterBottom
                                         >
                                             {currentTrack.name}
                                         </Typography>
                                         <Typography
-                                            variant={layoutOption === 'compact' ? 'body2' : 'body1'}
+                                            variant="body1"
                                         >
                                             {currentTrack.artists.map((artist: any) => artist.name).join(', ')}
                                         </Typography>
-                                        {layoutOption !== 'compact' && (
-                                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                {currentTrack.album.name}
-                                            </Typography>
-                                        )}
+                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            {currentTrack.album.name}
+                                        </Typography>
                                         <Chip
                                             label={isPlaying ? "Playing" : "Paused"}
                                             color={isPlaying ? "primary" : "default"}
@@ -633,40 +551,32 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         max={duration}
                                         onChange={handleSeekChange}
                                         aria-labelledby="continuous-slider"
-                                        size={layoutOption === 'compact' ? 'small' : 'medium'}
                                     />
 
-                                    {layoutOption !== 'compact' && (
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, width: '100%' }}>
-                                            <IconButton>
-                                                {getVolumeIcon()}
-                                            </IconButton>
-                                            <Slider
-                                                value={volume}
-                                                onChange={handleVolumeChange}
-                                                aria-labelledby="volume-slider"
-                                                sx={{ ml: 2, flexGrow: 1 }}
-                                                size={layoutOption === 'compact' ? 'small' : 'medium'}
-                                            />
-                                        </Box>
-                                    )}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, width: '100%' }}>
+                                        <IconButton>
+                                            {getVolumeIcon()}
+                                        </IconButton>
+                                        <Slider
+                                            value={volume}
+                                            onChange={handleVolumeChange}
+                                            aria-labelledby="volume-slider"
+                                            sx={{ ml: 2, flexGrow: 1 }}
+                                        />
+                                    </Box>
 
                                     <Stack
                                         direction="row"
                                         spacing={1}
                                         justifyContent="center"
                                         alignItems="center"
-                                        sx={{ mt: layoutOption === 'compact' ? 1 : 2 }}
+                                        sx={{ mt: 2 }}
                                     >
-                                        <IconButton
-                                            onClick={previousTrack}
-                                            size={layoutOption === 'compact' ? 'small' : 'medium'}
-                                        >
-                                            <SkipPreviousIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                        <IconButton onClick={previousTrack}>
+                                            <SkipPreviousIcon />
                                         </IconButton>
                                         <IconButton
                                             onClick={togglePlay}
-                                            size={layoutOption === 'compact' ? 'small' : 'medium'}
                                             sx={{
                                                 bgcolor: 'primary.main',
                                                 color: 'primary.contrastText',
@@ -675,31 +585,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 }
                                             }}
                                         >
-                                            {isPlaying ?
-                                                <PauseIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> :
-                                                <PlayArrowIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
-                                            }
+                                            {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
                                         </IconButton>
-                                        <IconButton
-                                            onClick={nextTrack}
-                                            size={layoutOption === 'compact' ? 'small' : 'medium'}
-                                        >
-                                            <SkipNextIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                        <IconButton onClick={nextTrack}>
+                                            <SkipNextIcon />
                                         </IconButton>
                                     </Stack>
                                 </Box>
                             </Box>
                         ) : (
-                            <Box sx={{ p: 2, textAlign: 'center' }}>
-                                <MusicNoteIcon sx={{
-                                    fontSize: layoutOption === 'compact' ? 40 : 60,
-                                    color: 'text.secondary',
-                                    mb: 2
-                                }} />
-                                <Typography
-                                    variant={layoutOption === 'compact' ? 'subtitle1' : 'h6'}
-                                    gutterBottom
-                                >
+                            <Box sx={{ p: 2, textAlign: 'center', mb: 3 }}>
+                                <MusicNoteIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                                <Typography variant="h6" gutterBottom>
                                     {isPlayerConnected ? 'No track playing' : 'Connect to start playing'}
                                 </Typography>
                                 {isPlayerConnected ? (
@@ -708,25 +605,339 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         onClick={handleTransferPlayback}
                                         disabled={isTransferringPlayback}
                                         sx={{ mt: 2 }}
-                                        size={layoutOption === 'compact' ? 'small' : 'medium'}
                                     >
                                         Transfer Playback to This Device
                                     </Button>
                                 ) : (
-                                    <Typography
-                                        variant={layoutOption === 'compact' ? 'caption' : 'body2'}
-                                        color="text.secondary"
-                                    >
+                                    <Typography variant="body2" color="text.secondary">
                                         Waiting for Spotify connection...
                                     </Typography>
                                 )}
                             </Box>
+                        )}
+
+                        {/* Divider between player and recent tracks */}
+                        <Divider sx={{ my: 2 }}>
+                            <Chip label="Recent Tracks" />
+                        </Divider>
+
+                        {/* Recent tracks section */}
+                        <List sx={{ overflow: 'auto' }}>
+                            {recentTracks.length > 0 ? (
+                                recentTracks.map((item: any, index: number) => (
+                                    <ListItem
+                                        key={`${item.track.id}-${index}`}
+                                        secondaryAction={
+                                            <Box>
+                                                {item.track.preview_url && (
+                                                    <IconButton
+                                                        edge="end"
+                                                        onClick={() => playPreview(item.track.preview_url)}
+                                                        sx={{ mr: 1 }}
+                                                    >
+                                                        <PlayArrowIcon />
+                                                    </IconButton>
+                                                )}
+                                                <IconButton
+                                                    edge="end"
+                                                    onClick={() => openInSpotify(item.track.uri)}
+                                                >
+                                                    <LaunchIcon />
+                                                </IconButton>
+                                            </Box>
+                                        }
+                                    >
+                                        <ListItemAvatar>
+                                            <Avatar
+                                                src={item.track.album.images?.[0]?.url}
+                                                alt={item.track.name}
+                                                variant="rounded"
+                                            >
+                                                <MusicNoteIcon />
+                                            </Avatar>
+                                        </ListItemAvatar>
+                                        <ListItemText
+                                            primary={item.track.name}
+                                            secondary={
+                                                <>
+                                                    {item.track.artists.map((artist: any) => artist.name).join(', ')}
+                                                    <br />
+                                                    {item.track.album.name}
+                                                    <br />
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {new Date(item.played_at).toLocaleString()}
+                                                    </Typography>
+                                                </>
+                                            }
+                                        />
+                                    </ListItem>
+                                ))
+                            ) : (
+                                <Typography variant="body1" sx={{ p: 2 }}>
+                                    No recent tracks found
+                                </Typography>
+                            )}
+                        </List>
+                    </Box>
+                ) : (
+                    // For compact and normal layouts, keep the toggle functionality
+                    <>
+                        {showRecent ? (
+                            <List sx={{
+                                mt: layoutOption === 'compact' ? 0 : 2,
+                                // Adjust spacing for compact layout
+                                '& .MuiListItem-root': layoutOption === 'compact' ? {
+                                    py: 0.5
+                                } : {}
+                            }}>
+                                {recentTracks.length > 0 ? (
+                                    recentTracks.map((item: any, index: number) => (
+                                        <ListItem
+                                            key={`${item.track.id}-${index}`}
+                                            secondaryAction={
+                                                <Box>
+                                                    {item.track.preview_url && (
+                                                        <IconButton
+                                                            edge="end"
+                                                            onClick={() => playPreview(item.track.preview_url)}
+                                                            sx={{ mr: 1 }}
+                                                            size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                        >
+                                                            <PlayArrowIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                        </IconButton>
+                                                    )}
+                                                    <IconButton
+                                                        edge="end"
+                                                        onClick={() => openInSpotify(item.track.uri)}
+                                                        size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                    >
+                                                        <LaunchIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                    </IconButton>
+                                                </Box>
+                                            }
+                                        >
+                                            <ListItemAvatar>
+                                                <Avatar
+                                                    src={item.track.album.images?.[0]?.url}
+                                                    alt={item.track.name}
+                                                    variant="rounded"
+                                                    sx={layoutOption === 'compact' ? { width: 32, height: 32 } : {}}
+                                                >
+                                                    <MusicNoteIcon />
+                                                </Avatar>
+                                            </ListItemAvatar>
+                                            <ListItemText
+                                                primary={item.track.name}
+                                                secondary={
+                                                    <>
+                                                        {item.track.artists.map((artist: any) => artist.name).join(', ')}
+                                                        {layoutOption !== 'compact' && (
+                                                            <>
+                                                                <br />
+                                                                {item.track.album.name}
+                                                                <br />
+                                                                <Typography variant="caption" color="text.secondary">
+                                                                    {new Date(item.played_at).toLocaleString()}
+                                                                </Typography>
+                                                            </>
+                                                        )}
+                                                    </>
+                                                }
+                                                primaryTypographyProps={{
+                                                    variant: layoutOption === 'compact' ? 'body2' : 'body1'
+                                                }}
+                                                secondaryTypographyProps={{
+                                                    variant: layoutOption === 'compact' ? 'caption' : 'body2'
+                                                }}
+                                            />
+                                        </ListItem>
+                                    ))
+                                ) : (
+                                    <Typography variant={layoutOption === 'compact' ? 'body2' : 'body1'} sx={{ p: 2 }}>
+                                        No recent tracks found
+                                    </Typography>
+                                )}
+                            </List>
+                        ) : (
+                            <>
+                                {currentTrack ? (
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        height: '100%',
+                                        pt: layoutOption === 'compact' ? 0 : 2
+                                    }}>
+                                        <Box sx={{
+                                            display: 'flex',
+                                            mb: layoutOption === 'compact' ? 1 : 3,
+                                            alignItems: 'center'
+                                        }}>
+                                            <Avatar
+                                                src={currentTrack.album.images?.[0]?.url}
+                                                alt={currentTrack.name}
+                                                variant="rounded"
+                                                sx={{
+                                                    width: layoutOption === 'compact' ? 60 : 120,
+                                                    height: layoutOption === 'compact' ? 60 : 120,
+                                                    mr: layoutOption === 'compact' ? 1 : 3
+                                                }}
+                                            >
+                                                <MusicNoteIcon sx={{ fontSize: layoutOption === 'compact' ? 24 : 40 }} />
+                                            </Avatar>
+                                            <Box>
+                                                <Typography
+                                                    variant={layoutOption === 'compact' ? 'subtitle1' : 'h6'}
+                                                    gutterBottom
+                                                >
+                                                    {currentTrack.name}
+                                                </Typography>
+                                                <Typography
+                                                    variant={layoutOption === 'compact' ? 'body2' : 'body1'}
+                                                >
+                                                    {currentTrack.artists.map((artist: any) => artist.name).join(', ')}
+                                                </Typography>
+                                                {layoutOption !== 'compact' && (
+                                                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                                                        {currentTrack.album.name}
+                                                    </Typography>
+                                                )}
+                                                <Chip
+                                                    label={isPlaying ? "Playing" : "Paused"}
+                                                    color={isPlaying ? "primary" : "default"}
+                                                    size="small"
+                                                />
+                                            </Box>
+                                        </Box>
+
+                                        <Box sx={{ mt: 'auto' }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                                <Typography variant="caption">
+                                                    {formatDuration(position)}
+                                                </Typography>
+                                                <Typography variant="caption">
+                                                    {formatDuration(duration)}
+                                                </Typography>
+                                            </Box>
+
+                                            <Slider
+                                                value={position}
+                                                min={0}
+                                                max={duration}
+                                                onChange={handleSeekChange}
+                                                aria-labelledby="continuous-slider"
+                                                size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                            />
+
+                                            <Box sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                mt: 2,
+                                                width: '100%',
+                                                ...(layoutOption === 'compact' ? {
+                                                    mt: 1,
+                                                    mb: 1
+                                                } : {})
+                                            }}>
+                                                <IconButton size={layoutOption === 'compact' ? 'small' : 'medium'}>
+                                                    {getVolumeIcon()}
+                                                </IconButton>
+                                                <Slider
+                                                    value={volume}
+                                                    onChange={handleVolumeChange}
+                                                    aria-labelledby="volume-slider"
+                                                    sx={{ ml: 2, flexGrow: 1 }}
+                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                />
+                                            </Box>
+
+                                            <Stack
+                                                direction="row"
+                                                spacing={1}
+                                                justifyContent="center"
+                                                alignItems="center"
+                                                sx={{ mt: layoutOption === 'compact' ? 1 : 2 }}
+                                            >
+                                                <IconButton
+                                                    onClick={previousTrack}
+                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                >
+                                                    <SkipPreviousIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                </IconButton>
+                                                <IconButton
+                                                    onClick={togglePlay}
+                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                    sx={{
+                                                        bgcolor: 'primary.main',
+                                                        color: 'primary.contrastText',
+                                                        '&:hover': {
+                                                            bgcolor: 'primary.dark',
+                                                        }
+                                                    }}
+                                                >
+                                                    {isPlaying ?
+                                                        <PauseIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> :
+                                                        <PlayArrowIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                    }
+                                                </IconButton>
+                                                <IconButton
+                                                    onClick={nextTrack}
+                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                >
+                                                    <SkipNextIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                </IconButton>
+                                            </Stack>
+                                        </Box>
+                                    </Box>
+                                ) : (
+                                    <Box sx={{ p: 2, textAlign: 'center' }}>
+                                        <MusicNoteIcon sx={{
+                                            fontSize: layoutOption === 'compact' ? 40 : 60,
+                                            color: 'text.secondary',
+                                            mb: 2
+                                        }} />
+                                        <Typography
+                                            variant={layoutOption === 'compact' ? 'subtitle1' : 'h6'}
+                                            gutterBottom
+                                        >
+                                            {isPlayerConnected ? 'No track playing' : 'Connect to start playing'}
+                                        </Typography>
+                                        {isPlayerConnected ? (
+                                            <Button
+                                                variant="contained"
+                                                onClick={handleTransferPlayback}
+                                                disabled={isTransferringPlayback}
+                                                sx={{ mt: 2 }}
+                                                size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                            >
+                                                Transfer Playback to This Device
+                                            </Button>
+                                        ) : (
+                                            <Typography
+                                                variant={layoutOption === 'compact' ? 'caption' : 'body2'}
+                                                color="text.secondary"
+                                            >
+                                                Waiting for Spotify connection...
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )}
+                            </>
                         )}
                     </>
                 )}
             </Box>
 
             {statusMessage && <StatusMessage message={statusMessage} />}
+
+            {/* Add this near line 764 where you display the current track */}
+            {currentTrack && currentTrack.name === 'Up next' && (
+                <Chip
+                    label="DJ X Transition"
+                    color="secondary"
+                    size="small"
+                    sx={{ mt: 1 }}
+                />
+            )}
         </Paper>
     );
 };

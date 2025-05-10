@@ -573,6 +573,11 @@ const DashboardGrid: React.FC = () => {
                 const trebleAnalyzerNode = audioCtx.createAnalyser();
                 trebleAnalyzerNode.fftSize = 256;
 
+                // Connect the filter chain
+                bassAnalyzer.connect(bassAnalyzerNode);
+                midAnalyzer.connect(midAnalyzerNode);
+                trebleAnalyzer.connect(trebleAnalyzerNode);
+
                 // Beat detection variables
                 let lastBeatTime = 0;
                 let beatThreshold = 0.15;
@@ -663,6 +668,85 @@ const DashboardGrid: React.FC = () => {
                 const bassBufferLength = bassAnalyzerNode.frequencyBinCount;
                 const midBufferLength = midAnalyzerNode.frequencyBinCount;
                 const trebleBufferLength = trebleAnalyzerNode.frequencyBinCount;
+
+                // Find and connect to audio sources
+                const connectToAudioSource = () => {
+                    // Look for Spotify audio elements
+                    const audioElements = document.querySelectorAll('audio');
+                    if (audioElements.length > 0) {
+                        audioElements.forEach(audioEl => {
+                            try {
+                                // Create a media element source for each audio element
+                                const source = audioCtx.createMediaElementSource(audioEl);
+
+                                // Connect the source to the analyzer and filters
+                                source.connect(analyzer);
+                                source.connect(bassAnalyzer);
+                                source.connect(midAnalyzer);
+                                source.connect(trebleAnalyzer);
+
+                                // Connect the source to the destination (speakers)
+                                source.connect(audioCtx.destination);
+
+                                console.log('Connected to audio element:', audioEl);
+                            } catch (err) {
+                                // Skip if already connected
+                                if (err instanceof Error && err.message.includes('already connected')) {
+                                    console.log('Audio element already connected');
+                                } else {
+                                    console.error('Error connecting to audio element:', err);
+                                }
+                            }
+                        });
+                    } else {
+                        // If no audio elements found, try to use microphone as fallback
+                        navigator.mediaDevices.getUserMedia({ audio: true })
+                            .then(stream => {
+                                const micSource = audioCtx.createMediaStreamSource(stream);
+                                micSource.connect(analyzer);
+                                micSource.connect(bassAnalyzer);
+                                micSource.connect(midAnalyzer);
+                                micSource.connect(trebleAnalyzer);
+                                console.log('Connected to microphone input');
+                            })
+                            .catch(err => {
+                                console.error('Error accessing microphone:', err);
+                                // Use dummy data for visualization if no audio source available
+                                setInterval(() => {
+                                    const dummyValue = Math.random() * 0.3;
+                                    bassDataArray.fill(dummyValue * 255);
+                                    midDataArray.fill(dummyValue * 255);
+                                    trebleDataArray.fill(dummyValue * 255);
+                                    mainDataArray.fill(dummyValue * 255);
+                                }, 100);
+                            });
+                    }
+                };
+
+                // Try to connect immediately and also set up a mutation observer to detect new audio elements
+                connectToAudioSource();
+
+                // Set up a MutationObserver to watch for new audio elements
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.addedNodes.length > 0) {
+                            // Check if any of the added nodes are audio elements or contain audio elements
+                            mutation.addedNodes.forEach((node) => {
+                                if (node.nodeName === 'AUDIO') {
+                                    connectToAudioSource();
+                                } else if (node instanceof Element) {
+                                    const audioElements = node.querySelectorAll('audio');
+                                    if (audioElements.length > 0) {
+                                        connectToAudioSource();
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+
+                // Start observing the document with the configured parameters
+                observer.observe(document.body, { childList: true, subtree: true });
 
                 // Animation function to update visualizer
                 const updateVisualizer = () => {
@@ -767,12 +851,14 @@ const DashboardGrid: React.FC = () => {
                 };
 
                 updateVisualizer();
-            }
 
-            return () => {
-                document.getElementById('audio-visualizer-container')?.remove();
-                // Clean up audio context if needed
-            };
+                return () => {
+                    document.getElementById('audio-visualizer-container')?.remove();
+                    observer.disconnect();
+                    // Clean up audio context
+                    audioCtx.close().catch(err => console.error('Error closing audio context:', err));
+                };
+            }
         }
     }, [audioVisualization, primaryColor]);
 

@@ -839,7 +839,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                             {selectedEmail.from}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            To: you@example.com
+                            To: {emailAddress || 'you@example.com'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                             {formatDate(selectedEmail.date)}

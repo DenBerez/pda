@@ -210,13 +210,23 @@ export const useSpotifyWebPlayback = ({
                     track_window: { current_track }
                 } = state;
 
-                console.log('Player state changed:', {
-                    position,
-                    duration,
-                    paused,
-                    track: current_track.name
-                });
+                // Check if this is a DJ X announcement or transition
+                const isDJXContent = current_track.name === 'Up next' ||
+                    current_track.name.includes('DJ') ||
+                    current_track.duration_ms < 10000; // DJ announcements are typically short
 
+                // Only log non-DJ content or log once for DJ content
+                if (!isDJXContent || position === 0) {
+                    console.log('Player state changed:', {
+                        position,
+                        duration,
+                        paused,
+                        track: current_track.name,
+                        isDJContent: isDJXContent
+                    });
+                }
+
+                // Update state as normal
                 setState(prev => ({
                     ...prev,
                     isPlaying: !paused,
