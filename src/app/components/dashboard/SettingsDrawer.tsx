@@ -29,6 +29,7 @@ import TemplateIcon from '@mui/icons-material/Dashboard';
 import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import RestoreIcon from '@mui/icons-material/RestoreOutlined';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
+import MusicNoteIcon from '@mui/icons-material/MusicNote';
 
 interface SettingsDrawerProps {
     open: boolean;
@@ -53,6 +54,8 @@ interface SettingsDrawerProps {
     onChangeBackgroundImage?: (image: string) => void;
     backgroundOpacity?: number;
     onChangeBackgroundOpacity?: (opacity: number) => void;
+    audioVisualization?: boolean;
+    onToggleAudioVisualization?: () => void;
 }
 
 const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
@@ -77,7 +80,9 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     backgroundImage = '',
     onChangeBackgroundImage = () => { },
     backgroundOpacity = 0.15,
-    onChangeBackgroundOpacity = () => { }
+    onChangeBackgroundOpacity = () => { },
+    audioVisualization = false,
+    onToggleAudioVisualization = () => { }
 }) => {
     // Add state for template selection
     const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
@@ -295,6 +300,26 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                 </Box>
                             }
                         />
+
+                        {/* Audio Visualization Toggle */}
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={audioVisualization}
+                                    onChange={onToggleAudioVisualization}
+                                    color="primary"
+                                />
+                            }
+                            label={
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <MusicNoteIcon fontSize="small" sx={{ mr: 1 }} />
+                                    Audio Visualization
+                                </Box>
+                            }
+                        />
+                        <FormHelperText>
+                            Visualize system audio with a wavy glow effect in your theme color
+                        </FormHelperText>
 
                         {/* Color Theme Selection */}
                         <Box sx={{ mt: 2 }}>

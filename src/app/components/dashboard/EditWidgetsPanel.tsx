@@ -19,7 +19,10 @@ import {
     FormHelperText,
     ToggleButtonGroup,
     ToggleButton,
-    Chip
+    Chip,
+    RadioGroup,
+    FormControlLabel as MuiFormControlLabel,
+    Radio
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
@@ -416,29 +419,16 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     "For demo purposes, you'll see mock data if no account is connected." : undefined}
                             />
 
-                            <FormControl fullWidth margin="normal" size="small">
-                                <InputLabel id="spotify-refresh-rate-label">Refresh Rate</InputLabel>
-                                <Select
-                                    labelId="spotify-refresh-rate-label"
-                                    value={tempWidget?.config?.refreshInterval || 30}
-                                    label="Refresh Rate"
-                                    onChange={(e) => handleConfigChange({ refreshInterval: e.target.value })}
-                                >
-                                    <MenuItem value={10}>Every 10 seconds</MenuItem>
-                                    <MenuItem value={30}>Every 30 seconds</MenuItem>
-                                    <MenuItem value={60}>Every minute</MenuItem>
-                                    <MenuItem value={300}>Every 5 minutes</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <Typography variant="subtitle2" sx={{ my: 2 }}>
-                                Layout Style
-                            </Typography>
-                            <LayoutStyleSelector
-                                value={tempWidget?.config?.layoutOption || 'normal'}
-                                onChange={(newValue) => handleConfigChange({ layoutOption: newValue })}
-                                helperText="Select how much Spotify information to display"
-                            />
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Layout Style
+                                </Typography>
+                                <LayoutStyleSelector
+                                    value={tempWidget?.config?.layoutOption || 'normal'}
+                                    onChange={(newValue) => handleConfigChange({ layoutOption: newValue })}
+                                    helperText="Select how to display the Spotify player"
+                                />
+                            </Box>
                         </Box>
                     )}
 

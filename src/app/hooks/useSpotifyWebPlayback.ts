@@ -416,6 +416,17 @@ export const useSpotifyWebPlayback = ({
         }
     }, [state.deviceId, getValidToken]);
 
+    // Add setVolume function
+    const setVolume = useCallback(async (volumePercent: number) => {
+        if (!playerRef.current) return;
+
+        try {
+            await playerRef.current.setVolume(volumePercent);
+        } catch (error) {
+            console.error('Error setting volume:', error);
+        }
+    }, []);
+
     return {
         ...state,
         play,
@@ -426,6 +437,7 @@ export const useSpotifyWebPlayback = ({
         seek,
         setShuffle,
         setRepeatMode,
-        transferPlayback
+        transferPlayback,
+        setVolume
     };
 }; 

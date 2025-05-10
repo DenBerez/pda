@@ -15,7 +15,8 @@ import {
     Stack,
     Button,
     Slider,
-    LinearProgress
+    LinearProgress,
+    Tooltip
 } from '@mui/material';
 import { Widget } from '../types';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -29,6 +30,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import LaunchIcon from '@mui/icons-material/Launch';
 import DevicesIcon from '@mui/icons-material/Devices';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeDownIcon from '@mui/icons-material/VolumeDown';
+import VolumeMuteIcon from '@mui/icons-material/VolumeMute';
 import { useSpotifyWebPlayback } from '@/app/hooks/useSpotifyWebPlayback';
 import { useOAuth2Connection } from '@/app/hooks/useOAuth2Connection';
 
@@ -92,6 +96,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isTransferringPlayback, setIsTransferringPlayback] = useState(false);
+    const [volume, setVolume] = useState<number>(50);
+    const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+    const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Use the OAuth2 hook for consistent auth handling
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
@@ -118,7 +126,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         seek,
         setShuffle,
         setRepeatMode,
-        transferPlayback
+        transferPlayback,
+        setVolume: setPlayerVolume
     } = useSpotifyWebPlayback({
         accessToken: accessToken || null,
         refreshToken,
@@ -131,12 +140,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     // Fetch initial access token
     useEffect(() => {
         const getInitialToken = async () => {
-            if (!refreshToken || !process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
-                console.log('Missing credentials:', {
-                    hasRefreshToken: !!refreshToken,
-                    hasClientId: !!process.env.SPOTIFY_CLIENT_ID,
-                    hasClientSecret: !!process.env.SPOTIFY_CLIENT_SECRET
-                });
+            if (!refreshToken) {
+                setLoading(false);
+                setInitialLoadComplete(true);
                 return;
             }
 
@@ -164,21 +170,32 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             } catch (err) {
                 console.error('Error getting initial token:', err);
                 setError('Failed to authenticate with Spotify');
+            } finally {
+                setInitialLoadComplete(true);
             }
         };
 
         getInitialToken();
     }, [refreshToken]);
 
-    // Fetch recent tracks
+    // Fetch recent tracks with optimized loading
     const fetchRecentTracks = useCallback(async () => {
         if (!isConnected) {
             setLoading(false);
             return;
         }
 
-        try {
+        // Use a delayed loading state to prevent flickering on quick loads
+        if (loadingTimeoutRef.current) {
+            clearTimeout(loadingTimeoutRef.current);
+        }
+
+        loadingTimeoutRef.current = setTimeout(() => {
+            if (!initialLoadComplete) return;
             setLoading(true);
+        }, 500); // Only show loading state if fetch takes more than 500ms
+
+        try {
             const params = new URLSearchParams({
                 action: 'recent',
                 refreshToken
@@ -195,19 +212,32 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             console.error('Error fetching recent tracks:', err);
             setError('Failed to load recent tracks');
         } finally {
+            if (loadingTimeoutRef.current) {
+                clearTimeout(loadingTimeoutRef.current);
+                loadingTimeoutRef.current = null;
+            }
             setLoading(false);
         }
-    }, [refreshToken, isConnected]);
+    }, [refreshToken, isConnected, initialLoadComplete]);
 
     // Fetch recent tracks on mount and when auth state changes
     useEffect(() => {
-        fetchRecentTracks();
+        if (initialLoadComplete && isConnected) {
+            fetchRecentTracks();
 
-        if (isConnected) {
             const intervalId = setInterval(fetchRecentTracks, 30000); // 30 seconds
             return () => clearInterval(intervalId);
         }
-    }, [fetchRecentTracks, isConnected]);
+    }, [fetchRecentTracks, isConnected, initialLoadComplete]);
+
+    // Clean up timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (loadingTimeoutRef.current) {
+                clearTimeout(loadingTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Handle transfer playback to this device
     const handleTransferPlayback = async () => {
@@ -272,6 +302,21 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         if (typeof newValue === 'number') {
             seek(newValue);
         }
+    };
+
+    // Handle volume change
+    const handleVolumeChange = useCallback((event: Event, newValue: number | number[]) => {
+        if (typeof newValue === 'number') {
+            setVolume(newValue);
+            setPlayerVolume(newValue / 100);
+        }
+    }, [setPlayerVolume]);
+
+    // Get volume icon based on volume level
+    const getVolumeIcon = () => {
+        if (volume === 0) return <VolumeMuteIcon />;
+        if (volume < 50) return <VolumeDownIcon />;
+        return <VolumeUpIcon />;
     };
 
     // Status message component
@@ -349,17 +394,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         return (
             <Box sx={{ p: 3, textAlign: 'center' }}>
                 <MusicNoteIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" gutterBottom>Connect to Spotify</Typography>
+                <Typography variant="h6" gutterBottom>Spotify Not Connected</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Connect your Spotify account to display your currently playing music and recently played tracks.
+                    Edit this widget to connect your Spotify account and display your currently playing music and recently played tracks.
                 </Typography>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={connect}
-                >
-                    Connect Spotify Account
-                </Button>
+
             </Box>
         );
     }
@@ -367,20 +406,34 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     // Compact layout
     if (layoutOption === 'compact') {
         return (
-            <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Paper sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                bgcolor: 'background.paper',
+                borderRadius: 2
+            }}>
                 {/* Header */}
-                <Box sx={{ p: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{
+                    p: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText'
+                }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
                         {showRecent ? 'Recently Played' : 'Spotify'}
                     </Typography>
                     <Box>
-                        <IconButton size="small" onClick={toggleView}>
+                        <IconButton size="small" onClick={toggleView} sx={{ color: 'primary.contrastText' }}>
                             {showRecent ? <MusicNoteIcon fontSize="small" /> : <AccessTimeIcon fontSize="small" />}
                         </IconButton>
                         {isPlayerConnected && (
                             <IconButton
                                 size="small"
-                                color="primary"
+                                sx={{ color: 'primary.contrastText' }}
                                 onClick={handleTransferPlayback}
                                 disabled={isTransferringPlayback}
                             >
@@ -389,8 +442,6 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                         )}
                     </Box>
                 </Box>
-
-                <Divider />
 
                 {/* Content */}
                 <Box sx={{ flexGrow: 1, overflow: 'auto', p: 1 }}>
@@ -456,23 +507,41 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         </Box>
                                     </Box>
 
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 'auto' }}>
-                                        <IconButton size="small" onClick={previousTrack}>
-                                            <SkipPreviousIcon fontSize="small" />
-                                        </IconButton>
-                                        <IconButton size="small" onClick={togglePlay}>
-                                            {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-                                        </IconButton>
-                                        <IconButton size="small" onClick={nextTrack}>
-                                            <SkipNextIcon fontSize="small" />
-                                        </IconButton>
-                                    </Box>
+                                    <Box sx={{ mt: 'auto' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <IconButton size="small" onClick={previousTrack}>
+                                                <SkipPreviousIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton size="small" onClick={togglePlay}>
+                                                {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                                            </IconButton>
+                                            <IconButton size="small" onClick={nextTrack}>
+                                                <SkipNextIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+                                            >
+                                                {getVolumeIcon()}
+                                            </IconButton>
+                                        </Box>
 
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={(position / duration) * 100}
-                                        sx={{ mt: 1 }}
-                                    />
+                                        {showVolumeSlider && (
+                                            <Slider
+                                                size="small"
+                                                value={volume}
+                                                onChange={handleVolumeChange}
+                                                aria-label="Volume"
+                                                sx={{ mt: 1, mb: 1 }}
+                                            />
+                                        )}
+
+                                        <LinearProgress
+                                            variant="determinate"
+                                            value={(position / duration) * 100}
+                                            sx={{ mt: 1 }}
+                                        />
+                                    </Box>
                                 </Box>
                             ) : (
                                 <Box sx={{ p: 1, textAlign: 'center' }}>
@@ -488,6 +557,266 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         >
                                             Transfer Playback
                                         </Button>
+                                    )}
+                                </Box>
+                            )}
+                        </>
+                    )}
+                </Box>
+
+                {statusMessage && <StatusMessage message={statusMessage} />}
+            </Paper>
+        );
+    }
+
+    // Detailed layout
+    if (layoutOption === 'detailed') {
+        return (
+            <Paper sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                bgcolor: 'background.default',
+                borderRadius: 2
+            }}>
+                {/* Header */}
+                <Box sx={{
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    bgcolor: 'primary.dark',
+                    color: 'primary.contrastText'
+                }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                        {showRecent ? 'Spotify History' : 'Spotify Player'}
+                    </Typography>
+                    <Box>
+                        <Tooltip title={showRecent ? "Show Player" : "Show History"}>
+                            <IconButton onClick={toggleView} sx={{ color: 'primary.contrastText' }}>
+                                {showRecent ? <MusicNoteIcon /> : <AccessTimeIcon />}
+                            </IconButton>
+                        </Tooltip>
+                        {isPlayerConnected && (
+                            <Tooltip title="Transfer Playback">
+                                <IconButton
+                                    color="inherit"
+                                    onClick={handleTransferPlayback}
+                                    disabled={isTransferringPlayback}
+                                >
+                                    <DevicesIcon />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </Box>
+                </Box>
+
+                {/* Content */}
+                <Box sx={{ flexGrow: 1, overflow: 'auto', p: 3, bgcolor: 'background.paper' }}>
+                    {showRecent ? (
+                        <>
+                            <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
+                                Your Listening History
+                            </Typography>
+                            <List>
+                                {recentTracks.length > 0 ? (
+                                    recentTracks.map((item: any, index: number) => (
+                                        <ListItem
+                                            key={`${item.track.id}-${index}`}
+                                            sx={{
+                                                px: 2,
+                                                py: 2,
+                                                mb: 2,
+                                                borderRadius: 2,
+                                                bgcolor: 'background.default',
+                                                boxShadow: 1
+                                            }}
+                                            secondaryAction={
+                                                <Box>
+                                                    {item.track.preview_url && (
+                                                        <IconButton
+                                                            edge="end"
+                                                            onClick={() => playPreview(item.track.preview_url)}
+                                                            sx={{ mr: 1 }}
+                                                        >
+                                                            <PlayArrowIcon />
+                                                        </IconButton>
+                                                    )}
+                                                    <IconButton
+                                                        edge="end"
+                                                        onClick={() => openInSpotify(item.track.uri)}
+                                                    >
+                                                        <LaunchIcon />
+                                                    </IconButton>
+                                                </Box>
+                                            }
+                                        >
+                                            <ListItemAvatar>
+                                                <Avatar
+                                                    src={item.track.album.images?.[0]?.url}
+                                                    alt={item.track.name}
+                                                    variant="rounded"
+                                                    sx={{ width: 70, height: 70 }}
+                                                >
+                                                    <MusicNoteIcon />
+                                                </Avatar>
+                                            </ListItemAvatar>
+                                            <ListItemText
+                                                primary={
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                                                        {item.track.name}
+                                                    </Typography>
+                                                }
+                                                secondary={
+                                                    <>
+                                                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                                            {item.track.artists.map((artist: any) => artist.name).join(', ')}
+                                                        </Typography>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            {item.track.album.name}
+                                                        </Typography>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                                            <AccessTimeIcon fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                {formatDuration(item.track.duration_ms)} • Played {new Date(item.played_at).toLocaleString()}
+                                                            </Typography>
+                                                        </Box>
+                                                    </>
+                                                }
+                                            />
+                                        </ListItem>
+                                    ))
+                                ) : (
+                                    <Typography variant="body1" sx={{ p: 2 }}>No recent tracks found</Typography>
+                                )}
+                            </List>
+                        </>
+                    ) : (
+                        <>
+                            {currentTrack ? (
+                                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+                                        <Avatar
+                                            src={currentTrack.album.images?.[0]?.url}
+                                            alt={currentTrack.name}
+                                            variant="square"
+                                            sx={{ width: 200, height: 200, mb: 2, boxShadow: 3 }}
+                                        >
+                                            <MusicNoteIcon sx={{ fontSize: 60 }} />
+                                        </Avatar>
+                                        <Box sx={{ textAlign: 'center', width: '100%' }}>
+                                            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+                                                {currentTrack.name}
+                                            </Typography>
+                                            <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                                                {currentTrack.artists.map((artist: any) => artist.name).join(', ')}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                                                {currentTrack.album.name}
+                                            </Typography>
+                                            <Chip
+                                                label={isPlaying ? "Now Playing" : "Paused"}
+                                                color={isPlaying ? "primary" : "default"}
+                                                size="small"
+                                                sx={{ mt: 1 }}
+                                            />
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ mt: 'auto' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                                            <Typography variant="body2">
+                                                {formatDuration(position)}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {formatDuration(duration)}
+                                            </Typography>
+                                        </Box>
+
+                                        <Slider
+                                            value={position}
+                                            min={0}
+                                            max={duration}
+                                            onChange={handleSeekChange}
+                                            aria-labelledby="continuous-slider"
+                                            sx={{ color: 'primary.main' }}
+                                        />
+
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            justifyContent="center"
+                                            alignItems="center"
+                                            sx={{ mt: 2 }}
+                                        >
+                                            <Tooltip title="Shuffle">
+                                                <IconButton onClick={() => setShuffle(true)}>
+                                                    <ShuffleIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <IconButton onClick={previousTrack} size="large">
+                                                <SkipPreviousIcon fontSize="large" />
+                                            </IconButton>
+                                            <IconButton
+                                                onClick={togglePlay}
+                                                sx={{
+                                                    bgcolor: 'primary.main',
+                                                    color: 'primary.contrastText',
+                                                    '&:hover': {
+                                                        bgcolor: 'primary.dark',
+                                                    },
+                                                    p: 2
+                                                }}
+                                                size="large"
+                                            >
+                                                {isPlaying ? <PauseIcon fontSize="large" /> : <PlayArrowIcon fontSize="large" />}
+                                            </IconButton>
+                                            <IconButton onClick={nextTrack} size="large">
+                                                <SkipNextIcon fontSize="large" />
+                                            </IconButton>
+                                            <Tooltip title="Repeat">
+                                                <IconButton onClick={() => setRepeatMode('track')}>
+                                                    <RepeatIcon />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Stack>
+
+                                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                                            <IconButton onClick={() => setShowVolumeSlider(!showVolumeSlider)}>
+                                                {getVolumeIcon()}
+                                            </IconButton>
+                                            {showVolumeSlider && (
+                                                <Slider
+                                                    value={volume}
+                                                    onChange={handleVolumeChange}
+                                                    aria-labelledby="volume-slider"
+                                                    sx={{ ml: 2, width: '70%' }}
+                                                />
+                                            )}
+                                        </Box>
+                                    </Box>
+                                </Box>
+                            ) : (
+                                <Box sx={{ p: 2, textAlign: 'center' }}>
+                                    <MusicNoteIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+                                    <Typography variant="h5" gutterBottom>
+                                        {isPlayerConnected ? 'No track playing' : 'Connect to start playing'}
+                                    </Typography>
+                                    {isPlayerConnected ? (
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleTransferPlayback}
+                                            disabled={isTransferringPlayback}
+                                            sx={{ mt: 2 }}
+                                            size="large"
+                                        >
+                                            Transfer Playback to This Device
+                                        </Button>
+                                    ) : (
+                                        <Typography variant="body1" color="text.secondary">
+                                            Waiting for Spotify connection...
+                                        </Typography>
                                     )}
                                 </Box>
                             )}
@@ -623,6 +952,20 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         aria-labelledby="continuous-slider"
                                     />
 
+                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, mb: 1 }}>
+                                        <IconButton onClick={() => setShowVolumeSlider(!showVolumeSlider)}>
+                                            {getVolumeIcon()}
+                                        </IconButton>
+                                        {showVolumeSlider && (
+                                            <Slider
+                                                value={volume}
+                                                onChange={handleVolumeChange}
+                                                aria-labelledby="volume-slider"
+                                                sx={{ ml: 2, width: '70%' }}
+                                            />
+                                        )}
+                                    </Box>
+
                                     <Stack
                                         direction="row"
                                         spacing={1}
@@ -630,9 +973,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         alignItems="center"
                                         sx={{ mt: 2 }}
                                     >
-                                        <IconButton onClick={() => setShuffle(true)}>
-                                            <ShuffleIcon />
-                                        </IconButton>
+                                        <Tooltip title="Shuffle">
+                                            <IconButton onClick={() => setShuffle(true)}>
+                                                <ShuffleIcon />
+                                            </IconButton>
+                                        </Tooltip>
                                         <IconButton onClick={previousTrack}>
                                             <SkipPreviousIcon />
                                         </IconButton>
@@ -651,9 +996,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         <IconButton onClick={nextTrack}>
                                             <SkipNextIcon />
                                         </IconButton>
-                                        <IconButton onClick={() => setRepeatMode('track')}>
-                                            <RepeatIcon />
-                                        </IconButton>
+                                        <Tooltip title="Repeat">
+                                            <IconButton onClick={() => setRepeatMode('track')}>
+                                                <RepeatIcon />
+                                            </IconButton>
+                                        </Tooltip>
                                     </Stack>
                                 </Box>
                             </Box>
