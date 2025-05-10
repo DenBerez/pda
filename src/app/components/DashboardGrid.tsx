@@ -101,40 +101,7 @@ let beatHoldTime = 100;
 let beatDecayRate = 0.97;
 let lastBeatTime = 0;
 
-// Create particles array
-const particles: Particle[] = [];
-const maxParticles = 50;
 
-// Create visualization container and elements
-const visualizerContainer = document.createElement('div');
-visualizerContainer.id = 'audio-visualizer-container';
-visualizerContainer.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9999;
-`;
-
-const centerPulse = document.createElement('div');
-const borderGlow = document.createElement('div');
-const bottomWave = document.createElement('div');
-const cornerElements = Array.from({ length: 4 }, () => document.createElement('div'));
-const particlesContainer = document.createElement('div');
-
-
-
-// Add similar styling for borderGlow, bottomWave, and cornerElements
-// ... 
-
-visualizerContainer.appendChild(centerPulse);
-visualizerContainer.appendChild(borderGlow);
-visualizerContainer.appendChild(bottomWave);
-cornerElements.forEach(el => visualizerContainer.appendChild(el));
-
-document.body.appendChild(visualizerContainer);
 
 // Dashboard grid component
 const DashboardGrid: React.FC = () => {
