@@ -35,10 +35,10 @@ const defaultWidgets: Widget[] = [
         id: 'quote-1',
         type: 'quote',
         title: 'Quote',
-        x: 3,
+        x: 4,
         y: 0,
         w: 3,
-        h: 3,
+        h: 2,
         minW: 2,
         minH: 2,
         config: {
