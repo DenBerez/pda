@@ -18,7 +18,8 @@ import {
     Link,
     FormHelperText,
     ToggleButtonGroup,
-    ToggleButton
+    ToggleButton,
+    Chip
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SaveIcon from '@mui/icons-material/Save';
@@ -46,6 +47,7 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
 import LayoutStyleSelector from './LayoutStyle';
 import AccountConnectionBox from './AccountConnectionBox';
+import { quoteCategories } from '../../data/quotes';
 
 interface WidgetEditPanelProps {
     open: boolean;
@@ -819,6 +821,72 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     </FormControl>
                                 </>
                             )}
+                        </Box>
+                    )}
+
+                    {widget?.type === 'quote' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Quote Configuration
+                            </Typography>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="quote-categories-label">Categories</InputLabel>
+                                <Select
+                                    labelId="quote-categories-label"
+                                    multiple
+                                    value={tempWidget?.config?.categories || ['all']}
+                                    label="Categories"
+                                    onChange={(e) => handleConfigChange({ categories: e.target.value })}
+                                    renderValue={(selected: string[]) => (
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {selected.map((value: string) => (
+                                                <Chip
+                                                    key={value}
+                                                    label={quoteCategories.find(cat => cat.value === value)?.label || value}
+                                                    size="small"
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
+                                >
+                                    {quoteCategories.map((category) => (
+                                        <MenuItem key={category.value} value={category.value}>
+                                            {category.label}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="quote-refresh-rate-label">Refresh Rate</InputLabel>
+                                <Select
+                                    labelId="quote-refresh-rate-label"
+                                    value={tempWidget?.config?.refreshInterval || 3600}
+                                    label="Refresh Rate"
+                                    onChange={(e) => handleConfigChange({ refreshInterval: e.target.value })}
+                                >
+                                    <MenuItem value={300}>Every 5 minutes</MenuItem>
+                                    <MenuItem value={900}>Every 15 minutes</MenuItem>
+                                    <MenuItem value={1800}>Every 30 minutes</MenuItem>
+                                    <MenuItem value={3600}>Every hour</MenuItem>
+                                    <MenuItem value={86400}>Every day</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="quote-display-options-label">Display Options</InputLabel>
+                                <Select
+                                    labelId="quote-display-options-label"
+                                    value={tempWidget?.config?.displayOptions || ['author', 'category']}
+                                    label="Display Options"
+                                    multiple
+                                    onChange={(e) => handleConfigChange({ displayOptions: e.target.value })}
+                                >
+                                    <MenuItem value="author">Show Author</MenuItem>
+                                    <MenuItem value="category">Show Categories</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                     )}
                 </Box>

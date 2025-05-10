@@ -115,7 +115,7 @@ const DashboardGrid: React.FC = () => {
     const [isTourActive, setIsTourActive] = useState(false);
     const [showSettingsButton, setShowSettingsButton] = useState(false);
     const [primaryColor, setPrimaryColor] = useLocalStorage<string>('dashboardPrimaryColor', '#1976d2');
-    const settingsButtonRef = useRef<HTMLDivElement>(null);
+    // const settingsButtonRef = useRef<HTMLDivElement>(null);
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const [forceRefresh, setForceRefresh] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -243,6 +243,12 @@ const DashboardGrid: React.FC = () => {
                 showEvents: true,
                 maxEvents: 5,
                 showCalendarGrid: true
+            };
+        } else if (type === 'quote') {
+            newWidget.config = {
+                categories: ['all'],
+                refreshInterval: 3600,
+                displayOptions: ['author', 'category']
             };
         }
         // Add the new widget to the state
@@ -547,7 +553,7 @@ const DashboardGrid: React.FC = () => {
                 {/* Floating Action Button for Settings */}
                 <Tooltip title="Settings">
                     <Box
-                        ref={settingsButtonRef}
+                        // ref={settingsButtonRef}
                         sx={{
                             position: 'fixed',
                             bottom: { xs: 16, sm: 20 },
