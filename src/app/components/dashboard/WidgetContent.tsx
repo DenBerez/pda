@@ -164,18 +164,15 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                             <Box sx={{ display: 'flex' }}>
                                 <IconButton
                                     size="small"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onEdit(widget);
-                                    }}
+                                    className="widget-edit-button"
+                                    onClick={() => onEdit(widget)}
                                     sx={{
                                         color: theme.palette.primary.main,
                                         '&:hover': {
                                             bgcolor: 'rgba(255,255,255,0.2)'
                                         },
-                                        mr: 1
+                                        ml: 1
                                     }}
-                                    aria-label="edit widget"
                                 >
                                     <EditIcon fontSize="small" />
                                 </IconButton>

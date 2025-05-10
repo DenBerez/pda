@@ -131,8 +131,7 @@ const Tour: React.FC<TourProps> = ({
             title: 'Arrange Widgets',
             text: `
                 <div>
-                    <p>Drag widgets by their headers to rearrange them on your dashboard.
-                    You can also resize widgets by dragging their edges.</p>
+                    <p>Drag widgets by their headers to rearrange them on your dashboard.</p>
                 </div>
             `,
             attachTo: {
@@ -147,6 +146,69 @@ const Tour: React.FC<TourProps> = ({
                         setWidgets(defaultWidgets);
                         setTimeout(() => resolve(), 800);
                     } else if (!editMode) {
+                        setEditMode(true);
+                        setTimeout(() => resolve(), 500);
+                    } else {
+                        resolve();
+                    }
+                });
+            },
+            buttons: [
+                {
+                    text: 'Next',
+                    action: () => tourRef.current?.next(),
+                    classes: 'shepherd-button-primary'
+                }
+            ]
+        });
+
+        tourRef.current.addStep({
+            id: 'resize-widgets',
+            title: 'Resize Widgets',
+            text: `
+                <div>
+                    <p>Grab any widget's bottom-right corner to resize it. Each widget can be adjusted to show more or less content.</p>
+                </div>
+            `,
+            attachTo: {
+                element: '.react-resizable-handle',
+                on: 'bottom'
+            },
+            beforeShowPromise: () => {
+                return new Promise<void>(resolve => {
+                    if (!editMode) {
+                        setEditMode(true);
+                        setTimeout(() => resolve(), 500);
+                    } else {
+                        resolve();
+                    }
+                });
+            },
+            buttons: [
+                {
+                    text: 'Next',
+                    action: () => tourRef.current?.next(),
+                    classes: 'shepherd-button-primary'
+                }
+            ]
+        });
+
+        tourRef.current.addStep({
+            id: 'widget-edit',
+            title: 'Customize Widgets',
+            text: `
+                <div>
+                    <p>Click the edit button on any widget to customize its content and settings. Each widget type has different customization options.</p>
+                </div>
+            `,
+            attachTo: {
+                element: '.widget-edit-button',
+                on: 'bottom'
+            },
+            beforeShowPromise: () => {
+                return new Promise<void>(resolve => {
+                    // Ensure edit mode is enabled
+                    if (!editMode) {
                         setEditMode(true);
                         setTimeout(() => resolve(), 500);
                     } else {
@@ -400,6 +462,18 @@ const Tour: React.FC<TourProps> = ({
                 animation: tour-spotlight-pulse 2s infinite ease-in-out;
                 z-index: 10001 !important;
                 position: relative !important;
+            }
+            
+            /* Specific highlight for resize handle */
+            .tour-highlight.react-resizable-handle {
+                animation: tour-spotlight-pulse 2s infinite ease-in-out;
+                z-index: 10001 !important;
+            }
+            
+            /* Specific highlight for edit button */
+            .tour-highlight.widget-edit-button {
+                animation: tour-spotlight-pulse 2s infinite ease-in-out;
+                z-index: 10001 !important;
             }
             
             /* Highlight for settings button - now inherits from tour-highlight */
