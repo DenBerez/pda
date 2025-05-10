@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
         const clientId = searchParams.get('clientId') || process.env.SPOTIFY_CLIENT_ID;
         const clientSecret = searchParams.get('clientSecret') || process.env.SPOTIFY_CLIENT_SECRET;
         const widgetId = searchParams.get('widgetId');
+        const state = searchParams.get('state');
 
         if (!clientId || !clientSecret) {
             return NextResponse.json({ error: 'Missing client ID or secret' }, { status: 400 });
@@ -18,10 +19,12 @@ export async function GET(request: NextRequest) {
                 `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}` :
                 'http://localhost:3000');
 
+        // Define the redirect URI
         const redirectUri = `${baseUrl}/api/spotify/auth`;
 
+        // If no code is present, initiate the OAuth flow
         if (!code) {
-            // Redirect to Spotify authorization
+            // Define required scopes
             const scope = [
                 'streaming',
                 'user-read-email',
@@ -32,33 +35,46 @@ export async function GET(request: NextRequest) {
                 'user-read-recently-played'
             ].join(' ');
 
+            // Generate a random state value for security
+            const stateValue = Buffer.from(JSON.stringify({
+                clientId,
+                clientSecret,
+                widgetId,
+                timestamp: Date.now()
+            })).toString('base64');
+
+            // Construct the Spotify authorization URL
             const authUrl = new URL('https://accounts.spotify.com/authorize');
             authUrl.searchParams.append('client_id', clientId);
             authUrl.searchParams.append('response_type', 'code');
             authUrl.searchParams.append('redirect_uri', redirectUri);
             authUrl.searchParams.append('scope', scope);
-
-            // Pass client ID and secret back in the state param as a base64 encoded JSON string
-            const state = Buffer.from(JSON.stringify({ clientId, clientSecret })).toString('base64');
-            authUrl.searchParams.append('state', state);
+            authUrl.searchParams.append('show_dialog', 'true');
+            authUrl.searchParams.append('state', stateValue);
 
             return NextResponse.redirect(authUrl.toString());
         }
 
-        // Get state parameter which contains our client ID and secret
-        const state = searchParams.get('state');
-        let stateData = { clientId, clientSecret };
-
-        if (state) {
-            try {
-                stateData = JSON.parse(Buffer.from(state, 'base64').toString());
-            } catch (e) {
-                console.error('Failed to parse state parameter:', e);
-            }
+        // Verify state parameter to prevent CSRF
+        if (!state) {
+            throw new Error('State parameter is missing');
         }
 
-        // Exchange code for tokens
-        const response = await fetch('https://accounts.spotify.com/api/token', {
+        let stateData;
+        try {
+            stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+
+            // Verify the timestamp is not too old (e.g., 1 hour)
+            if (Date.now() - stateData.timestamp > 3600000) {
+                throw new Error('State parameter has expired');
+            }
+        } catch (e) {
+            console.error('Failed to parse state parameter:', e);
+            throw new Error('Invalid state parameter');
+        }
+
+        // Exchange the authorization code for tokens
+        const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -71,13 +87,13 @@ export async function GET(request: NextRequest) {
             })
         });
 
-        const data = await response.json();
+        const data = await tokenResponse.json();
 
         if (data.error) {
             throw new Error(data.error_description || 'Failed to exchange code for tokens');
         }
 
-        // Display the tokens (in a real app, you would store these securely)
+        // Return success page with the refresh token
         return new Response(`
             <html>
                 <head>
@@ -86,46 +102,24 @@ export async function GET(request: NextRequest) {
                         body { font-family: Arial, sans-serif; text-align: center; padding: 40px; }
                         .success { color: #4caf50; }
                         .container { max-width: 600px; margin: 0 auto; }
-                        pre { background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; }
-                        button { padding: 10px 15px; background: #1db954; color: white; border: none; border-radius: 4px; cursor: pointer; }
                     </style>
                 </head>
                 <body>
                     <div class="container">
                         <h1 class="success">Spotify Connected Successfully</h1>
                         <p>Your Spotify account has been connected to the dashboard.</p>
-                        <p>If the window doesn't close automatically, you can close it and return to the dashboard.</p>
+                        <p>This window will close automatically...</p>
                         
                         <script>
-                            // Try to send the token back to the opener window
-                            (function() {
-                                const token = '${data.refresh_token}';
+                            if (window.opener) {
+                                window.opener.postMessage({ 
+                                    type: 'SPOTIFY_AUTH_SUCCESS',
+                                    refreshToken: '${data.refresh_token}',
+                                    widgetId: '${stateData.widgetId}'
+                                }, '*');
                                 
-                                if (window.opener && !window.opener.closed) {
-                                    // Send message to parent window
-                                    window.opener.postMessage({ 
-                                        type: 'SPOTIFY_AUTH_SUCCESS',
-                                        refreshToken: token,
-                                        widgetId: '${widgetId}'
-                                    }, '*');
-                                    
-                                    // Close this window after a short delay
-                                    setTimeout(() => window.close(), 2000);
-                                    document.write('<p>Token sent to dashboard! This window will close automatically...</p>');
-                                } else {
-                                    // If no opener, show the token for manual copying
-                                    document.write('<p>Please copy this refresh token and paste it in your widget settings:</p>');
-                                    document.write('<pre>' + token + '</pre>');
-                                    document.write('<button onclick="copyToClipboard()">Copy to Clipboard</button>');
-                                }
-                                
-                                function copyToClipboard() {
-                                    const token = '${data.refresh_token}';
-                                    navigator.clipboard.writeText(token)
-                                        .then(() => alert('Token copied to clipboard!'))
-                                        .catch(err => console.error('Failed to copy: ', err));
-                                }
-                            })();
+                                setTimeout(() => window.close(), 2000);
+                            }
                         </script>
                     </div>
                 </body>
@@ -138,6 +132,28 @@ export async function GET(request: NextRequest) {
 
     } catch (error) {
         console.error('Spotify Auth error:', error);
-        return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
+        return new Response(`
+            <html>
+                <head>
+                    <title>Authentication Error</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; text-align: center; padding: 40px; }
+                        .error { color: #f44336; }
+                        .container { max-width: 600px; margin: 0 auto; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h1 class="error">Authentication Failed</h1>
+                        <p>${error instanceof Error ? error.message : 'An unknown error occurred'}</p>
+                        <p>Please close this window and try again.</p>
+                    </div>
+                </body>
+            </html>
+        `, {
+            headers: {
+                'Content-Type': 'text/html'
+            }
+        });
     }
 } 
