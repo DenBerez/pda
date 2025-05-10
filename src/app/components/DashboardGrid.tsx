@@ -450,7 +450,55 @@ const DashboardGrid: React.FC = () => {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 const audioCtx = new AudioContext();
                 const analyzer = audioCtx.createAnalyser();
-                // Additional audio visualization setup...
+                analyzer.fftSize = 256;
+
+                // Create audio source from system audio (requires user permission)
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                    .then(stream => {
+                        const source = audioCtx.createMediaStreamSource(stream);
+                        source.connect(analyzer);
+
+                        // Create data array for frequency data
+                        const bufferLength = analyzer.frequencyBinCount;
+                        const dataArray = new Uint8Array(bufferLength);
+
+                        // Animation function to update visualizer
+                        const updateVisualizer = () => {
+                            if (!document.getElementById('audio-visualizer')) return;
+
+                            analyzer.getByteFrequencyData(dataArray);
+
+                            // Calculate average frequency value
+                            let sum = 0;
+                            for (let i = 0; i < bufferLength; i++) {
+                                sum += dataArray[i];
+                            }
+                            const average = sum / bufferLength;
+
+                            // Update visualizer height based on audio level
+                            const height = Math.max(3, Math.min(20, average / 5));
+                            visualizer.style.height = `${height}px`;
+
+                            requestAnimationFrame(updateVisualizer);
+                        };
+
+                        updateVisualizer();
+                    })
+                    .catch(err => {
+                        console.error('Error accessing microphone:', err);
+                        // Fallback to a simple pulsing animation if mic access is denied
+                        let pulse = 0;
+                        const pulseAnimation = () => {
+                            if (!document.getElementById('audio-visualizer')) return;
+
+                            pulse = (pulse + 0.05) % (2 * Math.PI);
+                            const height = 3 + Math.sin(pulse) * 5;
+                            visualizer.style.height = `${height}px`;
+
+                            requestAnimationFrame(pulseAnimation);
+                        };
+                        pulseAnimation();
+                    });
             }
 
             return () => {
