@@ -30,20 +30,22 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 // Default widgets for initial setup
 const defaultWidgets: Widget[] = [
+
     {
-        id: 'weather-1',
-        type: 'weather',
-        title: 'Weather',
-        x: 0,
+        id: 'quote-1',
+        type: 'quote',
+        title: 'Quote',
+        x: 3,
         y: 0,
         w: 3,
         h: 3,
         minW: 2,
         minH: 2,
         config: {
-            city: 'New York'
+            categories: ['all'],
+            refreshInterval: 3600
         }
-    },
+    }
 
 ];
 
