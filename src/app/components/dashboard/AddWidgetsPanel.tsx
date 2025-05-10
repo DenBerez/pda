@@ -21,6 +21,7 @@ import PhotoIcon from '@mui/icons-material/Photo';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
 import SlideshowIcon from '@mui/icons-material/Slideshow';
+import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import { WidgetType } from './types';
 import { useThemeContext } from '../../providers/ThemeProvider';
 
@@ -30,7 +31,7 @@ interface AddWidgetsPanelProps {
 
 // Define widget data structure for easier management
 interface WidgetInfo {
-    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow' | 'spotify';
+    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow' | 'spotify' | 'quote';
     label: string;
     icon: React.ReactNode;
     category: 'information' | 'productivity' | 'media';
@@ -60,6 +61,7 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
     const allWidgets: WidgetInfo[] = [
         // Information widgets
         { type: 'weather', label: 'Weather', icon: <Thermostat />, category: 'information' },
+        { type: 'quote', label: 'Quote', icon: <FormatQuoteIcon />, category: 'information' },
         // { type: 'news', label: 'News', icon: <PublicIcon />, category: 'information' },
 
         // Productivity widgets
