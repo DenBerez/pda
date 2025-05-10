@@ -199,7 +199,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             }
 
             // Make API call to update status
-            const response = await fetch(`/api/email/status?${params.toString()}`, {
+            const response = await fetch(`/api/email?${params.toString()}`, {
                 method: 'POST'
             });
 
