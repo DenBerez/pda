@@ -37,8 +37,8 @@ const defaultWidgets: Widget[] = [
         title: 'Quote',
         x: 4,
         y: 0,
-        w: 3,
-        h: 2,
+        w: 4,
+        h: 3,
         minW: 2,
         minH: 2,
         config: {
