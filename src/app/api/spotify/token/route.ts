@@ -3,10 +3,16 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { refreshToken, clientId, clientSecret } = body;
+        const { refreshToken } = body;
+        const clientId = process.env.SPOTIFY_CLIENT_ID;
+        const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
 
         if (!refreshToken) {
             return NextResponse.json({ error: 'Refresh token is required' }, { status: 400 });
+        }
+
+        if (!clientId || !clientSecret) {
+            return NextResponse.json({ error: 'Spotify API credentials not configured' }, { status: 500 });
         }
 
         // Get a new access token using the refresh token

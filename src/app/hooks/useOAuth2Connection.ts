@@ -32,8 +32,6 @@ export const useOAuth2Connection = ({
         // Include widget ID and credentials in the URL
         const url = new URL(authEndpoint, window.location.origin);
         url.searchParams.append('widgetId', widget.id);
-        url.searchParams.append('clientId', process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '');
-        url.searchParams.append('clientSecret', process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET || '');
 
         window.open(
             url.toString(),

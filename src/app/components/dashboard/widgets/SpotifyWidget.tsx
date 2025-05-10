@@ -148,9 +148,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        refreshToken,
-                        clientId: process.env.SPOTIFY_CLIENT_ID,
-                        clientSecret: process.env.SPOTIFY_CLIENT_SECRET
+                        refreshToken
                     })
                 });
 
