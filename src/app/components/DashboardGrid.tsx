@@ -36,36 +36,15 @@ const defaultWidgets: Widget[] = [
         title: 'Weather',
         x: 0,
         y: 0,
-        w: 2,
-        h: 2,
-        minW: 2,
-        minH: 2,
-        config: {
-            city: 'London'
-        }
-    },
-    {
-        id: 'email-1',
-        type: 'email',
-        title: 'Email',
-        x: 2,
-        y: 0,
-        w: 2,
+        w: 3,
         h: 3,
         minW: 2,
         minH: 2,
+        config: {
+            city: 'New York'
+        }
     },
-    {
-        id: 'social-1',
-        type: 'social',
-        title: 'Social Media',
-        x: 0,
-        y: 2,
-        w: 2,
-        h: 2,
-        minW: 2,
-        minH: 2,
-    },
+
 ];
 
 // Add proper type for layout items
