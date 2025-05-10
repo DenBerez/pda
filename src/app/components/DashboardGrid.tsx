@@ -104,7 +104,7 @@ const DashboardGrid: React.FC = () => {
     const [widgetToDelete, setWidgetToDelete] = useState<string | null>(null);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [editMode, setEditMode] = useLocalStorage<boolean>('dashboardEditMode', true);
-    const { toggleColorMode, mode, fontFamily, setFontFamily, backgroundImage, setBackgroundImage } = useThemeContext();
+    const { toggleColorMode, mode, fontFamily, setFontFamily, backgroundImage, setBackgroundImage, backgroundOpacity, setBackgroundOpacity } = useThemeContext();
     const [editPanelOpen, setEditPanelOpen] = useState(false);
     const [activeWidget, setActiveWidget] = useState<Widget | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -119,7 +119,6 @@ const DashboardGrid: React.FC = () => {
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const [forceRefresh, setForceRefresh] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [backgroundOpacity, setBackgroundOpacity] = useState(0.15);
 
     // Use a separate loading check
     const isLocalStorageLoading = false; // Remove or handle loading differently

@@ -335,8 +335,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
                             width: '100%',
                             height: '100%',
                             backgroundColor: mode === 'light'
-                                ? `rgba(255, 255, 255, ${1 - backgroundOpacity})`
-                                : `rgba(18, 18, 18, ${1 - backgroundOpacity})`,
+                                ? `rgba(255, 255, 255, ${backgroundOpacity})`
+                                : `rgba(18, 18, 18, ${backgroundOpacity})`,
                             zIndex: 0,
                             pointerEvents: 'none'
                         }
