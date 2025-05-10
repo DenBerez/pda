@@ -435,7 +435,6 @@ const Tour: React.FC<TourProps> = ({
             .tour-highlight {
                 position: relative !important;
                 z-index: 10001 !important;
-                border-radius: 50% !important;
                 overflow: hidden !important;
             }
             
@@ -449,7 +448,6 @@ const Tour: React.FC<TourProps> = ({
                 height: 200%;
                 animation: tour-spotlight-pulse 2s infinite ease-in-out;
                 pointer-events: none;
-                border-radius: 50%;
             }
             
             /* Add keyframes for the pulse animation */
