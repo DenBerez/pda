@@ -265,6 +265,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         }
 
         audioRef.current = new Audio(previewUrl);
+        audioRef.current.setAttribute('data-spotify-player', 'true');
         audioRef.current.play();
     };
 

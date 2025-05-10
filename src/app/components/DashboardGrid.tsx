@@ -671,56 +671,78 @@ const DashboardGrid: React.FC = () => {
 
                 // Find and connect to audio sources
                 const connectToAudioSource = () => {
-                    // Look for Spotify audio elements
+                    // Look for Spotify audio elements first
+                    const spotifyAudioElements = document.querySelectorAll('audio[data-spotify-preview]');
+                    if (spotifyAudioElements.length > 0) {
+                        console.log('Found Spotify audio elements:', spotifyAudioElements.length);
+                        spotifyAudioElements.forEach((el) => connectToAudioElement(el as HTMLAudioElement));
+                        return true;
+                    }
+
+                    // Then look for any audio elements
                     const audioElements = document.querySelectorAll('audio');
                     if (audioElements.length > 0) {
-                        audioElements.forEach(audioEl => {
-                            try {
-                                // Create a media element source for each audio element
-                                const source = audioCtx.createMediaElementSource(audioEl);
-
-                                // Connect the source to the analyzer and filters
-                                source.connect(analyzer);
-                                source.connect(bassAnalyzer);
-                                source.connect(midAnalyzer);
-                                source.connect(trebleAnalyzer);
-
-                                // Connect the source to the destination (speakers)
-                                source.connect(audioCtx.destination);
-
-                                console.log('Connected to audio element:', audioEl);
-                            } catch (err) {
-                                // Skip if already connected
-                                if (err instanceof Error && err.message.includes('already connected')) {
-                                    console.log('Audio element already connected');
-                                } else {
-                                    console.error('Error connecting to audio element:', err);
-                                }
-                            }
-                        });
-                    } else {
-                        // If no audio elements found, try to use microphone as fallback
-                        navigator.mediaDevices.getUserMedia({ audio: true })
-                            .then(stream => {
-                                const micSource = audioCtx.createMediaStreamSource(stream);
-                                micSource.connect(analyzer);
-                                micSource.connect(bassAnalyzer);
-                                micSource.connect(midAnalyzer);
-                                micSource.connect(trebleAnalyzer);
-                                console.log('Connected to microphone input');
-                            })
-                            .catch(err => {
-                                console.error('Error accessing microphone:', err);
-                                // Use dummy data for visualization if no audio source available
-                                setInterval(() => {
-                                    const dummyValue = Math.random() * 0.3;
-                                    bassDataArray.fill(dummyValue * 255);
-                                    midDataArray.fill(dummyValue * 255);
-                                    trebleDataArray.fill(dummyValue * 255);
-                                    mainDataArray.fill(dummyValue * 255);
-                                }, 100);
-                            });
+                        console.log('Found audio elements:', audioElements.length);
+                        audioElements.forEach(connectToAudioElement);
+                        return true;
                     }
+
+                    // Fall back to microphone as last resort
+                    console.log('No audio elements found, trying microphone');
+                    connectToMicrophone();
+                    return false;
+                };
+
+                const connectToAudioElement = (audioEl: HTMLAudioElement) => {
+                    try {
+                        // Create a media element source for each audio element
+                        const source = audioCtx.createMediaElementSource(audioEl);
+
+                        // Connect the source to the analyzer and filters
+                        source.connect(analyzer);
+                        source.connect(bassAnalyzer);
+                        source.connect(midAnalyzer);
+                        source.connect(trebleAnalyzer);
+
+                        // Connect the source to the destination (speakers)
+                        source.connect(audioCtx.destination);
+
+                        console.log('Connected to audio element:', audioEl);
+                    } catch (err) {
+                        // Skip if already connected
+                        if (err instanceof Error && err.message.includes('already connected')) {
+                            console.log('Audio element already connected');
+                        } else {
+                            console.error('Error connecting to audio element:', err);
+                        }
+                    }
+                };
+
+                const connectToMicrophone = () => {
+                    navigator.mediaDevices.getUserMedia({ audio: true })
+                        .then(stream => {
+                            const micSource = audioCtx.createMediaStreamSource(stream);
+                            micSource.connect(analyzer);
+                            micSource.connect(bassAnalyzer);
+                            micSource.connect(midAnalyzer);
+                            micSource.connect(trebleAnalyzer);
+                            console.log('Connected to microphone input');
+                        })
+                        .catch(err => {
+                            console.error('Error accessing microphone:', err);
+                            useDummyData();
+                        });
+                };
+
+                const useDummyData = () => {
+                    console.log('Using dummy data for visualization');
+                    setInterval(() => {
+                        const dummyValue = Math.random() * 0.3;
+                        bassDataArray.fill(dummyValue * 255);
+                        midDataArray.fill(dummyValue * 255);
+                        trebleDataArray.fill(dummyValue * 255);
+                        mainDataArray.fill(dummyValue * 255);
+                    }, 100);
                 };
 
                 // Try to connect immediately and also set up a mutation observer to detect new audio elements
@@ -730,21 +752,37 @@ const DashboardGrid: React.FC = () => {
                 const observer = new MutationObserver((mutations) => {
                     mutations.forEach((mutation) => {
                         if (mutation.addedNodes.length > 0) {
+                            let foundAudio = false;
+
                             // Check if any of the added nodes are audio elements or contain audio elements
                             mutation.addedNodes.forEach((node) => {
                                 if (node.nodeName === 'AUDIO') {
-                                    connectToAudioSource();
+                                    console.log('MutationObserver: Found new audio element');
+                                    connectToAudioElement(node as HTMLAudioElement);
+                                    foundAudio = true;
                                 } else if (node instanceof Element) {
-                                    const audioElements = node.querySelectorAll('audio');
-                                    if (audioElements.length > 0) {
-                                        connectToAudioSource();
+                                    // Look specifically for Spotify-related elements first
+                                    const spotifyAudio = node.querySelectorAll('audio[data-spotify-player="true"]');
+                                    if (spotifyAudio.length > 0) {
+                                        console.log('MutationObserver: Found new Spotify audio elements');
+                                        spotifyAudio.forEach(audio => connectToAudioElement(audio as HTMLAudioElement));
+                                        foundAudio = true;
+                                    }
+
+                                    // Then check for any audio elements
+                                    if (!foundAudio) {
+                                        const audioElements = node.querySelectorAll('audio');
+                                        if (audioElements.length > 0) {
+                                            console.log('MutationObserver: Found new audio elements');
+                                            audioElements.forEach(audio => connectToAudioElement(audio as HTMLAudioElement));
+                                            foundAudio = true;
+                                        }
                                     }
                                 }
                             });
                         }
                     });
                 });
-
                 // Start observing the document with the configured parameters
                 observer.observe(document.body, { childList: true, subtree: true });
 
