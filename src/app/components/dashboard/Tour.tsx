@@ -171,8 +171,8 @@ const Tour: React.FC<TourProps> = ({
                 </div>
             `,
             attachTo: {
-                element: '.react-resizable-handle',
-                on: 'bottom'
+                element: '.react-grid-item:first-child .react-resizable-handle',
+                on: 'right'
             },
             beforeShowPromise: () => {
                 return new Promise<void>(resolve => {
