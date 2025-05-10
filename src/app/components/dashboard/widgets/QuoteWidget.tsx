@@ -59,19 +59,7 @@ const QuoteWidget: React.FC<QuoteWidgetProps> = ({ widget, editMode }) => {
 
     return (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                {showCategory && (
-                    <Box>
-                        {currentQuote.categories.map(category => (
-                            <Chip
-                                key={category}
-                                label={category}
-                                size="small"
-                                sx={{ mr: 0.5 }}
-                            />
-                        ))}
-                    </Box>
-                )}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Tooltip title="Get new quote">
                     <IconButton onClick={getRandomQuote} size="small">
                         <RefreshIcon />
@@ -111,18 +99,16 @@ const QuoteWidget: React.FC<QuoteWidgetProps> = ({ widget, editMode }) => {
                 >
                     {currentQuote.text}
                 </Typography>
-                {showAuthor && (
-                    <Typography
-                        variant="subtitle1"
-                        color="text.secondary"
-                        sx={{
-                            textAlign: 'right',
-                            mt: 'auto'
-                        }}
-                    >
-                        — {currentQuote.author}
-                    </Typography>
-                )}
+                <Typography
+                    variant="subtitle1"
+                    color="text.secondary"
+                    sx={{
+                        textAlign: 'right',
+                        mt: 'auto'
+                    }}
+                >
+                    — {currentQuote.author}
+                </Typography>
             </Paper>
         </Box>
     );

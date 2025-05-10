@@ -247,8 +247,7 @@ const DashboardGrid: React.FC = () => {
         } else if (type === 'quote') {
             newWidget.config = {
                 categories: ['all'],
-                refreshInterval: 3600,
-                displayOptions: ['author', 'category']
+                refreshInterval: 3600
             };
         }
         // Add the new widget to the state
