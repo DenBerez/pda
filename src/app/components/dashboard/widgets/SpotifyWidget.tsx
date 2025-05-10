@@ -122,15 +122,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     } = useSpotifyWebPlayback({
         accessToken: accessToken || null,
         refreshToken,
-        clientId: process.env.SPOTIFY_CLIENT_ID || '',
-        clientSecret: process.env.SPOTIFY_CLIENT_SECRET || '',
         playerName: 'Dashboard Player'
     });
-
-    // Get config from widget
-    const clientId = process.env.SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-    const refreshInterval = widget.config?.refreshInterval || 30; // seconds
 
     // Get layout option from widget config or default to 'normal'
     const layoutOption = widget.config?.layoutOption || 'normal';
@@ -138,11 +131,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     // Fetch initial access token
     useEffect(() => {
         const getInitialToken = async () => {
-            if (!refreshToken || !clientId || !clientSecret) {
+            if (!refreshToken || !process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
                 console.log('Missing credentials:', {
                     hasRefreshToken: !!refreshToken,
-                    hasClientId: !!clientId,
-                    hasClientSecret: !!clientSecret
+                    hasClientId: !!process.env.SPOTIFY_CLIENT_ID,
+                    hasClientSecret: !!process.env.SPOTIFY_CLIENT_SECRET
                 });
                 return;
             }
@@ -156,8 +149,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                     },
                     body: JSON.stringify({
                         refreshToken,
-                        clientId,
-                        clientSecret
+                        clientId: process.env.SPOTIFY_CLIENT_ID,
+                        clientSecret: process.env.SPOTIFY_CLIENT_SECRET
                     })
                 });
 
@@ -177,7 +170,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         };
 
         getInitialToken();
-    }, [refreshToken, clientId, clientSecret]);
+    }, [refreshToken]);
 
     // Fetch recent tracks
     const fetchRecentTracks = useCallback(async () => {
@@ -317,13 +310,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
     useEffect(() => {
         console.log('Spotify credentials check:', {
-            clientId,
-            clientSecret,
+            clientId: process.env.SPOTIFY_CLIENT_ID,
+            clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
             hasRefreshToken: !!refreshToken,
             envClientId: process.env.SPOTIFY_CLIENT_ID,
             envClientSecret: process.env.SPOTIFY_CLIENT_SECRET
         });
-    }, [clientId, clientSecret, refreshToken]);
+    }, [process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET, refreshToken]);
 
     // Loading state
     if (loading) {
@@ -360,23 +353,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                 <MusicNoteIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" gutterBottom>Connect to Spotify</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    Please configure your Spotify account in widget settings or connect directly.
+                    Connect your Spotify account to display your currently playing music and recently played tracks.
                 </Typography>
-                {!clientId || !clientSecret ? (
-                    <Typography variant="body2" color="error" sx={{ mb: 2 }}>
-                        Please add your Spotify Client ID and Secret in widget settings first
-                    </Typography>
-                ) : (
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        href="/api/spotify/auth"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Connect Spotify Account
-                    </Button>
-                )}
+                <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={connect}
+                >
+                    Connect Spotify Account
+                </Button>
             </Box>
         );
     }

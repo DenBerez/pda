@@ -46,8 +46,6 @@ interface PlaybackState {
 interface UseSpotifyWebPlaybackProps {
     accessToken: string | null;
     refreshToken: string | null;
-    clientId: string | null;
-    clientSecret: string | null;
     playerName?: string;
 }
 
@@ -87,8 +85,6 @@ const REQUIRED_SPOTIFY_SCOPES = [
 export const useSpotifyWebPlayback = ({
     accessToken: initialAccessToken,
     refreshToken,
-    clientId,
-    clientSecret,
     playerName = 'Web Dashboard Player'
 }: UseSpotifyWebPlaybackProps) => {
     const [accessToken, setAccessToken] = useState<string | null>(initialAccessToken);
@@ -107,7 +103,7 @@ export const useSpotifyWebPlayback = ({
 
     // Load the Spotify Web Playback SDK script
     useEffect(() => {
-        if (!refreshToken || !clientId || !clientSecret) return;
+        if (!refreshToken) return;
 
         // Only load the script once
         if (document.getElementById('spotify-player')) return;
@@ -124,11 +120,11 @@ export const useSpotifyWebPlayback = ({
                 document.getElementById('spotify-player')?.remove();
             }
         };
-    }, [refreshToken, clientId, clientSecret]);
+    }, [refreshToken]);
 
     // Refresh the access token
     const refreshAccessToken = useCallback(async () => {
-        if (!refreshToken || !clientId || !clientSecret) return null;
+        if (!refreshToken) return null;
 
         try {
             const response = await fetch('/api/spotify/token', {
@@ -137,9 +133,7 @@ export const useSpotifyWebPlayback = ({
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    refreshToken,
-                    clientId,
-                    clientSecret
+                    refreshToken
                 })
             });
 
@@ -156,7 +150,7 @@ export const useSpotifyWebPlayback = ({
             setState(prev => ({ ...prev, error: 'Failed to refresh access token' }));
             return null;
         }
-    }, [refreshToken, clientId, clientSecret]);
+    }, [refreshToken]);
 
     // Get a valid token, refreshing if necessary
     const getValidToken = useCallback(async () => {
@@ -168,7 +162,7 @@ export const useSpotifyWebPlayback = ({
 
     // Initialize the player when the SDK is ready
     useEffect(() => {
-        if (!refreshToken || !clientId || !clientSecret) return;
+        if (!refreshToken) return;
 
         window.onSpotifyWebPlaybackSDKReady = async () => {
             const token = await getValidToken();
@@ -291,7 +285,7 @@ export const useSpotifyWebPlayback = ({
                 positionIntervalRef.current = null;
             }
         };
-    }, [refreshToken, clientId, clientSecret, getValidToken, playerName, refreshAccessToken]);
+    }, [refreshToken, getValidToken, playerName, refreshAccessToken]);
 
     // Player control functions
     const play = useCallback(async (uri?: string) => {
