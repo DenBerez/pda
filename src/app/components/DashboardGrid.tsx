@@ -28,6 +28,13 @@ import Tour from './dashboard/Tour';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
+// Add at the top of the file
+declare global {
+    interface Window {
+        webkitAudioContext: typeof AudioContext;
+    }
+}
+
 // Default widgets for initial setup
 const defaultWidgets: Widget[] = [
 
@@ -100,8 +107,7 @@ const DashboardGrid: React.FC = () => {
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const [forceRefresh, setForceRefresh] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [audioVisualization, setAudioVisualization] = useState(false);
-
+    const [audioVisualization, setAudioVisualization] = useLocalStorage<boolean>('dashboardAudioVisualization', false);
     // Use a separate loading check
     const isLocalStorageLoading = false; // Remove or handle loading differently
 
@@ -414,7 +420,45 @@ const DashboardGrid: React.FC = () => {
 
     const toggleAudioVisualization = useCallback(() => {
         setAudioVisualization(prev => !prev);
-    }, []);
+        // Force a refresh to ensure the visualization effect is applied/removed
+        setForceRefresh(true);
+        setTimeout(() => setForceRefresh(false), 100);
+    }, [setAudioVisualization]);
+
+    // Add this to the main layout component where the dashboard is rendered
+    useEffect(() => {
+        if (audioVisualization) {
+            // Create audio visualization effect
+            const visualizer = document.createElement('div');
+            visualizer.id = 'audio-visualizer';
+            visualizer.style.cssText = `
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 3px;
+                background: ${primaryColor};
+                opacity: 0.8;
+                z-index: 9999;
+                box-shadow: 0 0 10px ${primaryColor}, 0 0 20px ${primaryColor};
+                transition: height 0.3s ease;
+            `;
+            document.body.appendChild(visualizer);
+
+            // Set up audio context and analyzer if browser supports it
+            if (window.AudioContext || window.webkitAudioContext) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const audioCtx = new AudioContext();
+                const analyzer = audioCtx.createAnalyser();
+                // Additional audio visualization setup...
+            }
+
+            return () => {
+                document.getElementById('audio-visualizer')?.remove();
+                // Clean up audio context if needed
+            };
+        }
+    }, [audioVisualization, primaryColor]);
 
     return (
         <ThemeProvider theme={customTheme}>

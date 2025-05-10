@@ -314,6 +314,14 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                     <MusicNoteIcon fontSize="small" sx={{ mr: 1 }} />
                                     Audio Visualization
+                                    {audioVisualization && (
+                                        <Chip
+                                            size="small"
+                                            label="Active"
+                                            color="primary"
+                                            sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                                        />
+                                    )}
                                 </Box>
                             }
                         />
