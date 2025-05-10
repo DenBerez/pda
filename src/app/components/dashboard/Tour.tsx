@@ -323,6 +323,7 @@ const Tour: React.FC<TourProps> = ({
                 --shepherd-bg: ${theme.palette.background.paper};
                 --shepherd-text: ${theme.palette.text.primary};
                 --shepherd-primary: ${theme.palette.primary.main};
+                --shepherd-primary-rgb: ${theme.palette.primary.main.replace(/^#/, '').match(/.{2}/g)?.map(x => parseInt(x, 16)).join(', ')};
                 --shepherd-header-bg: ${theme.palette.background.paper};
                 --shepherd-element-border-radius: 12px;
                 --shepherd-element-width: 350px;
@@ -429,50 +430,13 @@ const Tour: React.FC<TourProps> = ({
                 opacity: 1 !important;
             }
             
-            /* Define the pulsing animation for all tour highlights */
-            @keyframes tour-spotlight-pulse {
-                0% {
-                    background: radial-gradient(
-                        circle at center,
-                        transparent 0%,
-                        transparent 45%,
-                        ${theme.palette.primary.main}20 50%,
-                        ${theme.palette.primary.main}10 60%,
-                        rgba(0, 0, 0, 0.5) 70%
-                    );
-                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}40,
-                               0 0 15px ${theme.palette.primary.main}30;
-                }
-                50% {
-                    background: radial-gradient(
-                        circle at center,
-                        transparent 0%,
-                        transparent 40%,
-                        ${theme.palette.primary.main}30 45%,
-                        ${theme.palette.primary.main}15 55%,
-                        rgba(0, 0, 0, 0.6) 65%
-                    );
-                    box-shadow: 0 0 0 6px ${theme.palette.primary.main}50,
-                               0 0 20px ${theme.palette.primary.main}40;
-                }
-                100% {
-                    background: radial-gradient(
-                        circle at center,
-                        transparent 0%,
-                        transparent 45%,
-                        ${theme.palette.primary.main}20 50%,
-                        ${theme.palette.primary.main}10 60%,
-                        rgba(0, 0, 0, 0.5) 70%
-                    );
-                    box-shadow: 0 0 0 4px ${theme.palette.primary.main}40,
-                               0 0 15px ${theme.palette.primary.main}30;
-                }
-            }
             
             /* Generic tour highlight class that can be applied to any element */
             .tour-highlight {
                 position: relative !important;
                 z-index: 10001 !important;
+                border-radius: 8px !important;
+                overflow: hidden !important;
             }
             
             .tour-highlight::before {
@@ -485,6 +449,20 @@ const Tour: React.FC<TourProps> = ({
                 height: 200%;
                 animation: tour-spotlight-pulse 2s infinite ease-in-out;
                 pointer-events: none;
+                border-radius: 12px;
+            }
+            
+            /* Add keyframes for the pulse animation */
+            @keyframes tour-spotlight-pulse {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(var(--shepherd-primary-rgb), 0.2);
+                }
+                70% {
+                    box-shadow: 0 0 0 15px rgba(var(--shepherd-primary-rgb), 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(var(--shepherd-primary-rgb), 0);
+                }
             }
             
             
