@@ -99,6 +99,7 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                     <SpotifyWidget
                         widget={widget}
                         editMode={editMode}
+                        onUpdateWidget={onUpdateWidget || (() => { })}
                     />
                 );
             case 'quote':
