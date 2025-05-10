@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
         const code = searchParams.get('code');
         const clientId = process.env.SPOTIFY_CLIENT_ID;
         const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+        const widgetId = searchParams.get('widgetId');
 
         if (!clientId || !clientSecret) {
             return NextResponse.json({ error: 'Missing client ID or secret' }, { status: 400 });
@@ -103,8 +104,9 @@ export async function GET(request: NextRequest) {
                                 if (window.opener && !window.opener.closed) {
                                     // Send message to parent window
                                     window.opener.postMessage({ 
-                                        type: 'SPOTIFY_AUTH_SUCCESS', 
-                                        refreshToken: token 
+                                        type: 'SPOTIFY_AUTH_SUCCESS',
+                                        refreshToken: token,
+                                        widgetId: '${widgetId}'
                                     }, '*');
                                     
                                     // Close this window after a short delay

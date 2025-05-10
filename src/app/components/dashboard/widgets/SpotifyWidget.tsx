@@ -30,6 +30,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import LaunchIcon from '@mui/icons-material/Launch';
 import DevicesIcon from '@mui/icons-material/Devices';
 import { useSpotifyWebPlayback } from '@/app/hooks/useSpotifyWebPlayback';
+import { useOAuth2Connection } from '@/app/hooks/useOAuth2Connection';
 
 // Sample data for demonstration when not connected
 const sampleSpotifyData = {
@@ -79,9 +80,10 @@ const sampleSpotifyData = {
 interface SpotifyWidgetProps {
     widget: Widget;
     editMode: boolean;
+    onUpdateWidget: (widget: Widget) => void;
 }
 
-const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
+const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdateWidget }) => {
     const [recentTracks, setRecentTracks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -91,18 +93,17 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isTransferringPlayback, setIsTransferringPlayback] = useState(false);
 
-    // Get config from widget
-    const refreshToken = widget.config?.refreshToken || '';
-    const clientId = process.env.SPOTIFY_CLIENT_ID;
-    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-    const refreshInterval = widget.config?.refreshInterval || 30; // seconds
+    // Use the OAuth2 hook for consistent auth handling
+    const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
+        widget,
+        messageType: 'SPOTIFY_AUTH_SUCCESS',
+        authEndpoint: '/api/spotify/auth',
+        onUpdateWidget
+    });
 
-    // Get layout option from widget config or default to 'normal'
-    const layoutOption = widget.config?.layoutOption || 'normal';
-
-    // Use the Spotify Web Playback SDK hook
+    // Use the Spotify Web Playback SDK hook with the refreshToken from OAuth2
     const {
-        isConnected,
+        isConnected: isPlayerConnected,
         isPlaying,
         currentTrack,
         deviceId,
@@ -119,12 +120,20 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         setRepeatMode,
         transferPlayback
     } = useSpotifyWebPlayback({
-        accessToken,
+        accessToken: accessToken || null,
         refreshToken,
         clientId: process.env.SPOTIFY_CLIENT_ID || '',
         clientSecret: process.env.SPOTIFY_CLIENT_SECRET || '',
         playerName: 'Dashboard Player'
     });
+
+    // Get config from widget
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+    const refreshInterval = widget.config?.refreshInterval || 30; // seconds
+
+    // Get layout option from widget config or default to 'normal'
+    const layoutOption = widget.config?.layoutOption || 'normal';
 
     // Fetch initial access token
     useEffect(() => {
@@ -172,47 +181,42 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
 
     // Fetch recent tracks
     const fetchRecentTracks = useCallback(async () => {
-        if (!refreshToken || !clientId || !clientSecret) return;
+        if (!isConnected) {
+            setLoading(false);
+            return;
+        }
 
         try {
             setLoading(true);
-
             const params = new URLSearchParams({
                 action: 'recent',
-                refreshToken,
-                clientId,
-                clientSecret
+                refreshToken
             });
 
             const response = await fetch(`/api/spotify?${params.toString()}`);
-
             if (!response.ok) {
                 throw new Error('Failed to fetch recent tracks');
             }
 
             const data = await response.json();
-
-            if (data.recentTracks) {
-                setRecentTracks(data.recentTracks);
-            }
+            setRecentTracks(data.recentTracks || []);
         } catch (err) {
             console.error('Error fetching recent tracks:', err);
             setError('Failed to load recent tracks');
         } finally {
             setLoading(false);
         }
-    }, [refreshToken, clientId, clientSecret]);
+    }, [refreshToken, isConnected]);
 
-    // Fetch recent tracks on initial load and periodically
+    // Fetch recent tracks on mount and when auth state changes
     useEffect(() => {
         fetchRecentTracks();
 
-        const intervalId = setInterval(fetchRecentTracks, refreshInterval * 1000);
-
-        return () => {
-            clearInterval(intervalId);
-        };
-    }, [fetchRecentTracks, refreshInterval]);
+        if (isConnected) {
+            const intervalId = setInterval(fetchRecentTracks, 30000); // 30 seconds
+            return () => clearInterval(intervalId);
+        }
+    }, [fetchRecentTracks, isConnected]);
 
     // Handle transfer playback to this device
     const handleTransferPlayback = async () => {
@@ -304,12 +308,12 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         console.log('Spotify connection status:', {
             accessToken: !!accessToken,
             refreshToken: !!refreshToken,
-            isConnected,
+            isConnected: isPlayerConnected,
             deviceId,
             currentTrack: !!currentTrack,
             error: sdkError
         });
-    }, [accessToken, refreshToken, isConnected, deviceId, currentTrack, sdkError]);
+    }, [accessToken, refreshToken, isPlayerConnected, deviceId, currentTrack, sdkError]);
 
     useEffect(() => {
         console.log('Spotify credentials check:', {
@@ -321,20 +325,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
         });
     }, [clientId, clientSecret, refreshToken]);
 
-    // Uncomment this loading state check
-    if (loading && !isConnected && !currentTrack && recentTracks.length === 0) {
+    // Loading state
+    if (loading) {
         return (
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', flexDirection: 'column' }}>
-                <CircularProgress size={40} sx={{ mb: 2 }} />
-                <Typography variant="body2" color="text.secondary">
-                    Loading Spotify data...
-                </Typography>
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+                <CircularProgress size={40} />
+                <Typography sx={{ mt: 2 }}>Loading Spotify data...</Typography>
             </Box>
         );
     }
 
     // Error state
-    if ((error || sdkError) && !isConnected && !currentTrack && recentTracks.length === 0) {
+    if (error || sdkError) {
         return (
             <Box sx={{ p: 2, textAlign: 'center' }}>
                 <Typography color="error">{error || sdkError}</Typography>
@@ -392,7 +394,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                         <IconButton size="small" onClick={toggleView}>
                             {showRecent ? <MusicNoteIcon fontSize="small" /> : <AccessTimeIcon fontSize="small" />}
                         </IconButton>
-                        {isConnected && (
+                        {isPlayerConnected && (
                             <IconButton
                                 size="small"
                                 color="primary"
@@ -492,9 +494,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                             ) : (
                                 <Box sx={{ p: 1, textAlign: 'center' }}>
                                     <Typography variant="body2">
-                                        {isConnected ? 'No track playing' : 'Connect to start playing'}
+                                        {isPlayerConnected ? 'No track playing' : 'Connect to start playing'}
                                     </Typography>
-                                    {isConnected && (
+                                    {isPlayerConnected && (
                                         <Button
                                             variant="outlined"
                                             size="small"
@@ -527,7 +529,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                     <IconButton onClick={toggleView}>
                         {showRecent ? <MusicNoteIcon /> : <AccessTimeIcon />}
                     </IconButton>
-                    {isConnected && (
+                    {isPlayerConnected && (
                         <IconButton
                             color="primary"
                             onClick={handleTransferPlayback}
@@ -676,9 +678,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode }) => {
                             <Box sx={{ p: 2, textAlign: 'center' }}>
                                 <MusicNoteIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                                 <Typography variant="h6" gutterBottom>
-                                    {isConnected ? 'No track playing' : 'Connect to start playing'}
+                                    {isPlayerConnected ? 'No track playing' : 'Connect to start playing'}
                                 </Typography>
-                                {isConnected ? (
+                                {isPlayerConnected ? (
                                     <Button
                                         variant="contained"
                                         onClick={handleTransferPlayback}

@@ -14,6 +14,40 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Spotify API credentials not configured' }, { status: 500 });
         }
 
+        // For development or when no token is provided, return mock data
+        if (process.env.NODE_ENV === 'development' || !refreshToken) {
+            if (action === 'current') {
+                return NextResponse.json({
+                    isPlaying: true,
+                    currentTrack: {
+                        name: "Demo Track",
+                        album: {
+                            name: "Demo Album",
+                            images: [{ url: "https://via.placeholder.com/300" }]
+                        },
+                        artists: [{ name: "Demo Artist" }],
+                        duration_ms: 180000
+                    }
+                });
+            } else {
+                return NextResponse.json({
+                    recentTracks: Array(5).fill(null).map((_, i) => ({
+                        track: {
+                            id: `demo-${i}`,
+                            name: `Demo Track ${i + 1}`,
+                            album: {
+                                name: `Demo Album ${i + 1}`,
+                                images: [{ url: "https://via.placeholder.com/300" }]
+                            },
+                            artists: [{ name: `Demo Artist ${i + 1}` }],
+                            duration_ms: 180000
+                        },
+                        played_at: new Date(Date.now() - i * 3600000).toISOString()
+                    }))
+                });
+            }
+        }
+
         // Get the base URL from the request or environment variable
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
             (request.headers.get('host') ?
