@@ -29,9 +29,14 @@ export const useOAuth2Connection = ({
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
 
-        // Include widget ID in the auth window name to track multiple instances
+        // Include widget ID and credentials in the URL
+        const url = new URL(authEndpoint, window.location.origin);
+        url.searchParams.append('widgetId', widget.id);
+        url.searchParams.append('clientId', process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID || '');
+        url.searchParams.append('clientSecret', process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_SECRET || '');
+
         window.open(
-            authEndpoint,
+            url.toString(),
             `oauth-${widget.id}`,
             `width=${width},height=${height},left=${left},top=${top}`
         );
