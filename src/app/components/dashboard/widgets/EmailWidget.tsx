@@ -254,9 +254,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     : e
             ));
 
-
-
-            // Create request body instead of using query parameters
+            // Create request body
             const requestBody = {
                 provider,
                 emailId,
@@ -286,9 +284,18 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 const errorData = await response.json().catch(() => ({}));
                 const errorMessage = errorData.error || response.statusText;
                 console.error(`Failed to update email status: ${errorMessage}`);
+
+                // Set error state to show to the user
+                setError(`Failed to update email status: ${errorMessage}`);
+
+                // Clear error after 5 seconds
+                setTimeout(() => setError(null), 5000);
             }
         } catch (err) {
             console.error('Error updating email status:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            setError(`Error updating email status: ${errorMessage}`);
+            setTimeout(() => setError(null), 5000);
         }
     };
 

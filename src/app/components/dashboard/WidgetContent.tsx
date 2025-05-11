@@ -85,6 +85,7 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                     <EmailWidget
                         widget={widget}
                         editMode={editMode}
+                        onUpdateWidget={onUpdateWidget || (() => { })}
                     />
                 );
             case 'slideshow':

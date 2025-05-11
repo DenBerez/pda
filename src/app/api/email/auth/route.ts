@@ -33,7 +33,10 @@ export async function GET(request: NextRequest) {
     if (!code) {
       const authUrl = oauth2Client.generateAuthUrl({
         access_type: 'offline',
-        scope: ['https://www.googleapis.com/auth/gmail.readonly'],
+        scope: [
+          'https://www.googleapis.com/auth/gmail.readonly',
+          'https://www.googleapis.com/auth/gmail.modify'
+        ],
         prompt: 'consent'
       });
 
