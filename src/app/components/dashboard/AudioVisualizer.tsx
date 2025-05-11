@@ -1,6 +1,6 @@
 // Add this component to your DashboardGrid.tsx file or create a new file
 import { useState, useEffect, useRef } from 'react';
-import { AudioVisualizer } from 'react-audio-visualize';
+import WaveSurfer from 'wavesurfer.js';
 
 interface AudioVisualizerProps {
     enabled: boolean;
@@ -10,7 +10,11 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const visualizerRef = useRef<HTMLDivElement>(null);
-    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+    const animationRef = useRef<number | null>(null);
 
     // Connect to Spotify audio elements
     useEffect(() => {
@@ -48,12 +52,78 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         };
     }, [enabled]);
 
+    // Initialize WaveSurfer when audio element is available
     useEffect(() => {
-        if (!audioElement?.src) return;
-        fetch(audioElement.src)
-            .then(r => r.blob())
-            .then(setAudioBlob);
-    }, [audioElement?.src]);
+        if (!enabled || !audioElement || !visualizerRef.current) return;
+
+        // Create audio context and analyzer
+        if (!audioContextRef.current) {
+            audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (!analyserRef.current) {
+            analyserRef.current = audioContextRef.current.createAnalyser();
+            analyserRef.current.fftSize = 256;
+        }
+
+        // Connect audio element to analyzer
+        if (!sourceNodeRef.current && audioElement) {
+            sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElement);
+            sourceNodeRef.current.connect(analyserRef.current);
+            analyserRef.current.connect(audioContextRef.current.destination);
+        }
+
+        // Initialize WaveSurfer
+        if (!wavesurferRef.current) {
+            wavesurferRef.current = WaveSurfer.create({
+                container: visualizerRef.current,
+                waveColor: 'rgba(255, 0, 255, 0.5)',
+                progressColor: 'rgba(255, 0, 255, 0.8)',
+                cursorWidth: 0,
+                barWidth: 2,
+                barGap: 2,
+                height: 100,
+                interact: false,
+                normalize: true
+            });
+        }
+
+        // Start visualization
+        const visualize = () => {
+            if (!analyserRef.current || !visualizerRef.current) return;
+
+            const bufferLength = analyserRef.current.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyserRef.current.getByteFrequencyData(dataArray);
+
+            // Update WaveSurfer with frequency data
+            if (wavesurferRef.current) {
+                const waveformData = Array.from(dataArray).map(value => value / 128 - 1);
+                const blob = new Blob([new Float32Array(waveformData)], { type: 'audio/wav' });
+                wavesurferRef.current.loadBlob(blob);
+            }
+
+            animationRef.current = requestAnimationFrame(visualize);
+        };
+
+        visualize();
+
+        return () => {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+
+            if (wavesurferRef.current) {
+                wavesurferRef.current.destroy();
+                wavesurferRef.current = null;
+            }
+
+            if (sourceNodeRef.current) {
+                sourceNodeRef.current.disconnect();
+                sourceNodeRef.current = null;
+            }
+        };
+    }, [enabled, audioElement]);
 
     if (!enabled || !audioElement) return null;
 
@@ -70,18 +140,6 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                 zIndex: 1,
                 opacity: 0.7
             }}
-        >
-            {audioBlob && (
-                <AudioVisualizer
-                    blob={audioBlob}
-                    barWidth={2}
-                    gap={2}
-                    barColor="rgba(255, 0, 255, 0.5)"
-                    barPlayedColor="rgba(255, 0, 255, 0.8)"
-                    height={100}
-                    width={window.innerWidth}
-                />
-            )}
-        </div>
+        />
     );
 }
