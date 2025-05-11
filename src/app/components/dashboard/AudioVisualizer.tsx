@@ -22,6 +22,7 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
 
         const findAndConnectSpotifyAudio = () => {
             const audioElements = document.querySelectorAll('audio[data-spotify-player="true"]');
+            console.log('Found audio elements:', audioElements.length);
             if (audioElements.length > 0) {
                 setAudioElement(audioElements[0] as HTMLAudioElement);
                 setIsPlaying(true);

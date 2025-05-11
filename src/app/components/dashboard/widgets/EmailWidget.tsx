@@ -301,25 +301,22 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
 
     // Open email dialog and mark as read if unread
     const openEmailDialog = async (email: Email) => {
-        // If email content isn't loaded yet, fetch it first
+        // Set selected email and open dialog immediately to show loading state
+        setSelectedEmail(email);
+        setDialogOpen(true);
+
+        // If email content isn't loaded yet, fetch it
         if (!email.body) {
             setLoadingEmailId(email.id);
             try {
                 await fetchEmailContent(email.id);
-                // Get the updated email with body from the emails state
-                const updatedEmail = emails.find(e => e.id === email.id);
-                if (updatedEmail) {
-                    email = updatedEmail;
-                }
+                // The email state will be updated by fetchEmailContent
             } catch (err) {
                 console.error('Error loading email content:', err);
             } finally {
                 setLoadingEmailId(null);
             }
         }
-
-        setSelectedEmail(email);
-        setDialogOpen(true);
 
         // Mark as read if currently unread
         if (email.unread) {
@@ -995,7 +992,11 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                             {formatDate(selectedEmail.date)}
                         </Typography>
                     </Box>
-                    {selectedEmail.body ? (
+                    {loadingEmailId === selectedEmail.id ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                            <CircularProgress size={24} />
+                        </Box>
+                    ) : selectedEmail.body ? (
                         <div
                             dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
                             style={{
@@ -1033,16 +1034,8 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     <Box>
                         <Button
                             onClick={closeEmailDialog}
-                            sx={{ mr: 1 }}
                         >
                             Close
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={<ReplyIcon />}
-                            onClick={closeEmailDialog}
-                        >
-                            Reply
                         </Button>
                     </Box>
                 </DialogActions>

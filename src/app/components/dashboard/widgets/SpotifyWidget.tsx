@@ -247,10 +247,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         setIsTransferringPlayback(true);
         try {
             await transferPlayback();
-            showStatus('Playback transferred to this device');
+            // showStatus('Playback transferred to this device');
         } catch (err) {
             console.error('Error transferring playback:', err);
-            showStatus('Failed to transfer playback');
+            // showStatus('Failed to transfer playback');
         } finally {
             setIsTransferringPlayback(false);
         }
