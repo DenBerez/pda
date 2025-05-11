@@ -28,85 +28,37 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
     useEffect(() => {
         if (!enabled) return;
 
-        const findAndConnectSpotifyAudio = () => {
-            // Try multiple selector approaches with broader criteria
-            const audioElements = document.querySelectorAll('audio');
-            console.log('Found audio elements:', audioElements.length);
-
-            // Check for iframes that might contain audio elements
-            const iframes = document.querySelectorAll('iframe');
-            console.log('Found iframes:', iframes.length);
-
-            // Try to access audio in iframes
-            iframes.forEach(iframe => {
-                try {
-                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-                    if (iframeDoc) {
-                        const iframeAudio = iframeDoc.querySelectorAll('audio');
-                        console.log(`Found ${iframeAudio.length} audio elements in iframe`);
-
-                        if (iframeAudio.length > 0) {
-                            setAudioElement(iframeAudio[0] as HTMLAudioElement);
-                            setIsPlaying(true);
-                        }
-                    }
-                } catch (e) {
-                    console.log('Cannot access iframe content due to same-origin policy');
-                }
-            });
-
-            if (audioElements.length > 0) {
-                // Log more details about the found elements
-                console.log('Audio elements details:',
-                    Array.from(audioElements).map(el => ({
-                        hasDataAttr: !!(el as HTMLElement).dataset.spotifyPlayer,
-                        src: (el as HTMLAudioElement).src,
-                        paused: (el as HTMLAudioElement).paused
-                    }))
-                );
-
-                // Try to find one that's playing or has a source
-                const playingAudio = Array.from(audioElements).find(
-                    audio => !audio.paused || (audio.src && audio.src !== '')
-                );
-
-                if (playingAudio) {
-                    console.log('Found playing audio:', playingAudio);
-                    setAudioElement(playingAudio as HTMLAudioElement);
-                    setIsPlaying(true);
-                } else {
-                    setAudioElement(audioElements[0] as HTMLAudioElement);
-                    setIsPlaying(true);
-                }
-            }
-        };
-
-        // Listen for Spotify player ready event
-        const handleSpotifyPlayerReady = (event: Event) => {
-            console.log('Spotify player ready event received', event);
-
-            // Handle both CustomEvent and regular Event
-            const customEvent = event as CustomEvent;
-            if (customEvent.detail?.audioElement) {
-                console.log('Audio element found in event:', customEvent.detail.audioElement);
-                setAudioElement(customEvent.detail.audioElement);
+        // Primary strategy: Listen for the custom event from SpotifyWidget
+        const handleSpotifyAudio = (event: CustomEvent) => {
+            if (event.detail?.audioElement) {
+                console.log('Received audio element from SpotifyWidget:', event.detail.audioElement);
+                setAudioElement(event.detail.audioElement);
                 setIsPlaying(true);
             }
         };
 
-        window.addEventListener('spotify-player-ready', handleSpotifyPlayerReady as EventListener);
+        // Secondary strategy: Find existing audio elements with the data attribute
+        const findExistingAudioElements = () => {
+            const spotifyAudio = document.querySelector('audio[data-spotify-player="true"]');
+            if (spotifyAudio) {
+                console.log('Found existing Spotify audio element');
+                const audioEl = spotifyAudio as HTMLAudioElement;
+                setAudioElement(audioEl);
+                setIsPlaying(!audioEl.paused);
+            }
+        };
 
-        // Initial check for existing audio elements
-        findAndConnectSpotifyAudio();
+        window.addEventListener('spotify-audio-element', handleSpotifyAudio as EventListener);
 
-        // Periodically check for new audio elements
-        const intervalId = setInterval(findAndConnectSpotifyAudio, 2000);
+        // Initial check
+        findExistingAudioElements();
+
+        // Periodic check as fallback
+        const intervalId = setInterval(findExistingAudioElements, 2000);
 
         return () => {
-            window.removeEventListener('spotify-player-ready', handleSpotifyPlayerReady as EventListener);
+            window.removeEventListener('spotify-audio-element', handleSpotifyAudio as EventListener);
             clearInterval(intervalId);
-            setIsPlaying(false);
-            setAudioElement(null);
         };
     }, [enabled]);
 
@@ -116,115 +68,69 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
 
         console.log('Setting up audio context for element:', audioElement);
 
-        // Create audio context and analyzer
+        // Create audio context and analyzer if they don't exist
         if (!audioContextRef.current) {
             try {
                 audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
                 console.log('Created audio context:', audioContextRef.current);
-            } catch (err) {
-                console.error('Failed to create audio context:', err);
-                return;
-            }
-        }
 
-        if (!analyserRef.current) {
-            try {
                 analyserRef.current = audioContextRef.current.createAnalyser();
                 analyserRef.current.fftSize = 256;
                 console.log('Created analyzer node');
             } catch (err) {
-                console.error('Failed to create analyzer:', err);
+                console.error('Failed to create audio context or analyzer:', err);
                 return;
             }
         }
 
-        // Connect audio element to analyzer with error handling
-        if (!sourceNodeRef.current && audioElement) {
+        // Connect audio element to analyzer with progressive fallbacks
+        const connectAudio = async () => {
+            if (sourceNodeRef.current) {
+                sourceNodeRef.current.disconnect();
+                sourceNodeRef.current = null;
+            }
+
+            // Method 1: Direct connection
             try {
-                // First try direct connection
-                sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElement);
+                sourceNodeRef.current = audioContextRef.current!.createMediaElementSource(audioElement);
                 sourceNodeRef.current.connect(analyserRef.current!);
+                analyserRef.current!.connect(audioContextRef.current!.destination);
                 console.log('Connected directly to audio element');
+                return true;
             } catch (err) {
-                console.error('Direct connection failed:', err);
+                console.warn('Direct connection failed:', err);
+            }
 
-                // Then try stream capture if available
-                try {
-                    const stream = audioElement.mozCaptureStream?.() ||
-                        audioElement.captureStream?.();
-
-                    if (stream) {
-                        sourceNodeRef.current = audioContextRef.current.createMediaStreamSource(stream);
-                        sourceNodeRef.current.connect(analyserRef.current!);
-                        console.log('Connected via media stream capture');
-                    } else {
-                        throw new Error('Stream capture not available');
-                    }
-                } catch (streamErr) {
-                    console.error('Stream capture failed:', streamErr);
-
-                    // Last resort - try system audio capture
-                    try {
-                        console.log('Trying system audio capture');
-                        navigator.mediaDevices.getDisplayMedia({ audio: true, video: false })
-                            .then(stream => {
-                                sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
-                                sourceNodeRef.current.connect(analyserRef.current!);
-                                console.log('Connected using system audio');
-                            })
-                            .catch(err => console.error('System audio capture failed:', err));
-                    } catch (sysErr) {
-                        console.error('All audio capture methods failed');
-                    }
+            // Method 2: Stream capture
+            try {
+                const stream = audioElement.mozCaptureStream?.() || audioElement.captureStream?.();
+                if (stream) {
+                    sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
+                    sourceNodeRef.current.connect(analyserRef.current!);
+                    console.log('Connected via media stream capture');
+                    return true;
                 }
-            }
-        }
-
-        // Initialize WaveSurfer
-        if (!wavesurferRef.current) {
-            wavesurferRef.current = WaveSurfer.create({
-                container: visualizerRef.current,
-                waveColor: 'rgba(255, 0, 255, 0.5)',
-                progressColor: 'rgba(255, 0, 255, 0.8)',
-                cursorWidth: 0,
-                barWidth: 2,
-                barGap: 2,
-                height: 100,
-                interact: false,
-                normalize: true
-            });
-        }
-
-        // Start visualization
-        const visualize = () => {
-            if (!analyserRef.current || !visualizerRef.current) return;
-
-            const bufferLength = analyserRef.current.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            analyserRef.current.getByteFrequencyData(dataArray);
-
-            // Update WaveSurfer with frequency data
-            if (wavesurferRef.current) {
-                const waveformData = Array.from(dataArray).map(value => value / 128 - 1);
-                const blob = new Blob([new Float32Array(waveformData)], { type: 'audio/wav' });
-                wavesurferRef.current.loadBlob(blob);
+            } catch (err) {
+                console.warn('Stream capture failed:', err);
             }
 
-            animationRef.current = requestAnimationFrame(visualize);
+            // Method 3: System audio capture (requires user permission)
+            try {
+                console.log('Trying system audio capture');
+                const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: false });
+                sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
+                sourceNodeRef.current.connect(analyserRef.current!);
+                console.log('Connected using system audio');
+                return true;
+            } catch (err) {
+                console.error('All audio capture methods failed');
+                return false;
+            }
         };
 
-        visualize();
+        connectAudio();
 
         return () => {
-            if (animationRef.current) {
-                cancelAnimationFrame(animationRef.current);
-            }
-
-            if (wavesurferRef.current) {
-                wavesurferRef.current.destroy();
-                wavesurferRef.current = null;
-            }
-
             if (sourceNodeRef.current) {
                 sourceNodeRef.current.disconnect();
                 sourceNodeRef.current = null;
@@ -280,34 +186,39 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
     useEffect(() => {
         if (!enabled || !audioElement || !canvasRef.current || !analyserRef.current) return;
 
-        // Set up canvas visualization as fallback
         const canvas = canvasRef.current;
         const canvasCtx = canvas.getContext('2d');
         if (!canvasCtx) return;
 
-        // Set canvas dimensions
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+        // Set canvas dimensions with device pixel ratio for sharper rendering
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.clientWidth * dpr;
+        canvas.height = canvas.clientHeight * dpr;
+        canvasCtx.scale(dpr, dpr);
+
+        let animationId: number;
 
         const renderCanvas = () => {
             if (!analyserRef.current || !canvasCtx) return;
+
+            animationId = requestAnimationFrame(renderCanvas);
 
             const bufferLength = analyserRef.current.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
             analyserRef.current.getByteFrequencyData(dataArray);
 
             // Clear canvas
-            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            canvasCtx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
 
             // Create a more dynamic visualization
-            const barWidth = (canvas.width / bufferLength) * 2.5;
+            const barWidth = (canvas.clientWidth / bufferLength) * 2.5;
             let x = 0;
 
             // Create gradient that changes with audio intensity
             const maxFreq = Math.max(...Array.from(dataArray));
             const intensity = maxFreq / 255;
 
-            const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
+            const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.clientHeight);
             gradient.addColorStop(0, `rgba(${255 * intensity}, 0, 255, 0.8)`);
             gradient.addColorStop(1, `rgba(0, 255, ${255 * (1 - intensity)}, 0.5)`);
 
@@ -319,36 +230,20 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                 // Add a slight curve to the visualization
                 const heightMultiplier = 0.8 + 0.4 * Math.sin((i / bufferLength) * Math.PI);
 
-                canvasCtx.fillRect(x, canvas.height - barHeight * heightMultiplier, barWidth, barHeight * heightMultiplier);
+                canvasCtx.fillRect(x, canvas.clientHeight - barHeight * heightMultiplier,
+                    barWidth, barHeight * heightMultiplier);
                 x += barWidth + 1;
             }
-
-            requestAnimationFrame(renderCanvas);
         };
 
         renderCanvas();
 
-    }, [enabled, audioElement]);
-
-    // Add this useEffect to connect directly with the SpotifyWidget
-    useEffect(() => {
-        if (!enabled) return;
-
-        // Create a custom event for the SpotifyWidget to dispatch when audio is playing
-        const handleSpotifyAudio = (event: CustomEvent) => {
-            if (event.detail?.audioElement) {
-                console.log('Received audio element from SpotifyWidget:', event.detail.audioElement);
-                setAudioElement(event.detail.audioElement);
-                setIsPlaying(true);
+        return () => {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
             }
         };
-
-        window.addEventListener('spotify-audio-element', handleSpotifyAudio as EventListener);
-
-        return () => {
-            window.removeEventListener('spotify-audio-element', handleSpotifyAudio as EventListener);
-        };
-    }, [enabled]);
+    }, [enabled, audioElement]);
 
     if (!enabled || !audioElement) return null;
 
