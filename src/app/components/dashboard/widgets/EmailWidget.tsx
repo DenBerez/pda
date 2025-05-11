@@ -58,6 +58,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     const [layoutOption, setLayoutOption] = useState(widget.config?.layoutOption || 'normal');
     const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [loadingEmailId, setLoadingEmailId] = useState<string | null>(null);
 
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
         widget,
@@ -108,29 +109,8 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         if (!refreshToken) return;
 
         try {
-            // For demo purposes, we'll simulate fetching the profile
-            // In a real implementation, you would call an API endpoint
-            if (process.env.NODE_ENV === 'development') {
-                // Simulate API call in development
-                setTimeout(() => {
-                    if (refreshToken && !emailAddress) {
-                        const mockEmail = 'user@gmail.com';
-                        setEmailAddress(mockEmail);
 
-                        // Update widget config
-                        if (onUpdateWidget) {
-                            onUpdateWidget({
-                                ...widget,
-                                config: {
-                                    ...widget.config,
-                                    email: mockEmail
-                                }
-                            });
-                        }
-                    }
-                }, 500);
-                return;
-            }
+
 
             // In production, make an actual API call
             const response = await fetch(`/api/email/profile?refreshToken=${refreshToken}`);
@@ -274,11 +254,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     : e
             ));
 
-            // For development or demo mode, don't make actual API calls
-            if (process.env.NODE_ENV === 'development' || !refreshToken) {
-                console.log('Development mode: Email status updated locally only');
-                return;
-            }
+
 
             // Create request body instead of using query parameters
             const requestBody = {
@@ -320,7 +296,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     const openEmailDialog = async (email: Email) => {
         // If email content isn't loaded yet, fetch it first
         if (!email.body) {
-            setLoading(true);
+            setLoadingEmailId(email.id);
             try {
                 await fetchEmailContent(email.id);
                 // Get the updated email with body from the emails state
@@ -331,7 +307,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             } catch (err) {
                 console.error('Error loading email content:', err);
             } finally {
-                setLoading(false);
+                setLoadingEmailId(null);
             }
         }
 
@@ -371,7 +347,9 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             const response = await fetch(`/api/email/content?${params.toString()}`);
 
             if (!response.ok) {
-                throw new Error(`Failed to fetch email content: ${response.statusText}`);
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.error || response.statusText;
+                throw new Error(`Failed to fetch email content: ${errorMessage}`);
             }
 
             const data = await response.json();
@@ -391,6 +369,8 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             return data.body;
         } catch (err) {
             console.error('Error fetching email content:', err);
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            setError(`Failed to load email content: ${errorMessage}`);
             throw err;
         }
     };
