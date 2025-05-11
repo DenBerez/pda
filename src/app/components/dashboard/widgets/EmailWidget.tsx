@@ -103,16 +103,101 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         }
     };
 
+    // Fetch user profile to get email address
+    const fetchUserProfile = async () => {
+        if (!refreshToken) return;
+
+        try {
+            // For demo purposes, we'll simulate fetching the profile
+            // In a real implementation, you would call an API endpoint
+            if (process.env.NODE_ENV === 'development') {
+                // Simulate API call in development
+                setTimeout(() => {
+                    if (refreshToken && !emailAddress) {
+                        const mockEmail = 'user@gmail.com';
+                        setEmailAddress(mockEmail);
+
+                        // Update widget config
+                        if (onUpdateWidget) {
+                            onUpdateWidget({
+                                ...widget,
+                                config: {
+                                    ...widget.config,
+                                    email: mockEmail
+                                }
+                            });
+                        }
+                    }
+                }, 500);
+                return;
+            }
+
+            // In production, make an actual API call
+            const response = await fetch(`/api/email/profile?refreshToken=${refreshToken}`);
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            if (data.email) {
+                setEmailAddress(data.email);
+
+                // Update widget config
+                if (onUpdateWidget) {
+                    onUpdateWidget({
+                        ...widget,
+                        config: {
+                            ...widget.config,
+                            email: data.email
+                        }
+                    });
+                }
+            }
+        } catch (err) {
+            console.error('Error fetching user profile:', err);
+        }
+    };
+
+    // Listen for auth messages that might include email
+    useEffect(() => {
+        const handleAuthMessage = (event: MessageEvent) => {
+            if (event.data?.type === 'GMAIL_AUTH_SUCCESS' &&
+                event.data?.widgetId === widget.id &&
+                event.data?.email) {
+
+                setEmailAddress(event.data.email);
+
+                // Update widget config
+                if (onUpdateWidget) {
+                    onUpdateWidget({
+                        ...widget,
+                        config: {
+                            ...widget.config,
+                            email: event.data.email
+                        }
+                    });
+                }
+            }
+        };
+
+        window.addEventListener('message', handleAuthMessage);
+        return () => window.removeEventListener('message', handleAuthMessage);
+    }, [widget.id, onUpdateWidget]);
+
     // Fetch emails on component mount and when configuration changes
     useEffect(() => {
-
         fetchEmails();
+
+        // If we have a refresh token but no email address, fetch the user profile
+        if (refreshToken && !emailAddress && provider === 'gmail') {
+            fetchUserProfile();
+        }
 
         // Set up refresh interval based on configuration
         const intervalId = setInterval(fetchEmails, refreshInterval * 60 * 1000);
 
         return () => clearInterval(intervalId);
-
     }, [editMode, provider, refreshToken, emailAddress, password, refreshInterval]);
 
     // Format date to a more readable format
@@ -139,6 +224,12 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         }
         // If just an email address
         return from.split('@')[0];
+    };
+
+    // Extract username from email address
+    const extractUsername = (email: string) => {
+        if (!email) return '';
+        return email.split('@')[0];
     };
 
     // Toggle configuration mode
@@ -183,6 +274,12 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     : e
             ));
 
+            // For development or demo mode, don't make actual API calls
+            if (process.env.NODE_ENV === 'development' || !refreshToken) {
+                console.log('Development mode: Email status updated locally only');
+                return;
+            }
+
             // Build the query parameters
             const params = new URLSearchParams({
                 provider,
@@ -199,7 +296,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             }
 
             // Make API call to update status
-            const response = await fetch(`/api/email?${params.toString()}`, {
+            const response = await fetch(`/api/email/status?${params.toString()}`, {
                 method: 'POST'
             });
 
@@ -210,7 +307,10 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                         ? { ...e, unread: email.unread }
                         : e
                 ));
-                console.error('Failed to update email status:', response.statusText);
+
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.error || response.statusText;
+                console.error(`Failed to update email status: ${errorMessage}`);
             }
         } catch (err) {
             console.error('Error updating email status:', err);
@@ -218,14 +318,26 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     };
 
     // Open email dialog and mark as read if unread
-    const openEmailDialog = (email: Email) => {
+    const openEmailDialog = async (email: Email) => {
+        // If email content isn't loaded yet, fetch it first
+        if (!email.body) {
+            setLoading(true);
+            try {
+                await fetchEmailContent(email.id);
+                // Get the updated email with body from the emails state
+                const updatedEmail = emails.find(e => e.id === email.id);
+                if (updatedEmail) {
+                    email = updatedEmail;
+                }
+            } catch (err) {
+                console.error('Error loading email content:', err);
+            } finally {
+                setLoading(false);
+            }
+        }
+
         setSelectedEmail(email);
         setDialogOpen(true);
-
-        // Fetch full email content if not already loaded
-        if (!email.body) {
-            fetchEmailContent(email.id);
-        }
 
         // Mark as read if currently unread
         if (email.unread) {
@@ -277,8 +389,10 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 setSelectedEmail(prev => prev ? { ...prev, body: data.body } : null);
             }
 
+            return data.body;
         } catch (err) {
             console.error('Error fetching email content:', err);
+            throw err;
         }
     };
 
@@ -421,7 +535,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
                 }}>
-                    {emailAddress || (provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
+                    {emailAddress ? extractUsername(emailAddress) : (isConnected ? 'Connected Gmail Account' : provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
                 </Typography>
                 <IconButton
                     size="small"
@@ -581,7 +695,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
                 }}>
-                    {emailAddress || (provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
+                    {emailAddress ? extractUsername(emailAddress) : (isConnected ? 'Connected Gmail Account' : provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
                 </Typography>
                 <IconButton
                     size="small"
@@ -696,7 +810,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap'
                 }}>
-                    {emailAddress || (provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
+                    {emailAddress ? extractUsername(emailAddress) : (isConnected ? 'Connected Gmail Account' : provider === 'gmail' ? 'Gmail' : provider === 'aol' ? 'AOL' : 'Inbox')}
                 </Typography>
                 <Box>
                     <IconButton

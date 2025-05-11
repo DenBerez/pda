@@ -449,14 +449,15 @@ const DashboardGrid: React.FC = () => {
 
     // Add this effect to handle the audio visualization setup
     useEffect(() => {
-        // Only run in browser environment
-        if (typeof window === 'undefined' || typeof document === 'undefined') {
-            return;
-        }
-
         if (audioVisualization) {
-            // Create visualization container
+            // Create visualization container and elements
             const visualizerContainer = document.createElement('div');
+            const root = document.createElement('div');
+            const topVisualizer = document.createElement('div');
+            const centerVisualizer = document.createElement('div');
+            const bottomVisualizer = document.createElement('div');
+
+            // Set up container styles
             visualizerContainer.id = 'audio-visualizer-container';
             visualizerContainer.style.cssText = `
                 position: fixed;
@@ -466,73 +467,51 @@ const DashboardGrid: React.FC = () => {
                 height: 100%;
                 pointer-events: none;
                 z-index: 9999;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            `;
-            document.body.appendChild(visualizerContainer);
-
-            // Create React root for the visualizer
-            const root = document.createElement('div');
-            root.id = 'audio-visualizer-root';
-            root.style.cssText = `
-                width: 100%;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                align-items: center;
-            `;
-            visualizerContainer.appendChild(root);
-
-            // Create top, center, and bottom visualizer containers
-            const topVisualizer = document.createElement('div');
-            topVisualizer.style.cssText = `
-                width: 100%;
-                height: 100px;
-                display: flex;
-                justify-content: center;
             `;
 
-            const centerVisualizer = document.createElement('div');
-            centerVisualizer.style.cssText = `
-                width: 300px;
-                height: 300px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            `;
-
-            const bottomVisualizer = document.createElement('div');
-            bottomVisualizer.style.cssText = `
-                width: 100%;
-                height: 100px;
-                display: flex;
-                justify-content: center;
-            `;
+            // Set up visualizer styles and append to container
+            topVisualizer.style.cssText = `width: 100%; height: 100px;`;
+            centerVisualizer.style.cssText = `width: 300px; height: 300px;`;
+            bottomVisualizer.style.cssText = `width: 100%; height: 100px;`;
 
             root.appendChild(topVisualizer);
             root.appendChild(centerVisualizer);
             root.appendChild(bottomVisualizer);
+            visualizerContainer.appendChild(root);
+            document.body.appendChild(visualizerContainer);
 
-            // Audio context setup
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             const audioCtx = new AudioContext();
             const analyzer = audioCtx.createAnalyser();
             analyzer.fftSize = 2048;
 
-            // Function to connect to audio element
             const connectToAudioElement = (audioEl: HTMLAudioElement) => {
                 try {
                     const source = audioCtx.createMediaElementSource(audioEl);
                     source.connect(analyzer);
                     source.connect(audioCtx.destination);
                     showAudioNotification('Connected to audio element');
+
+                    // Add data attribute to mark this element as connected
+                    audioEl.dataset.visualizerConnected = 'true';
+
+                    // Add event listener to play/pause visualization based on audio state
+                    audioEl.addEventListener('play', () => {
+                        console.log('Audio element started playing');
+                    });
+
+                    audioEl.addEventListener('pause', () => {
+                        console.log('Audio element paused');
+                    });
+
+                    return true;
                 } catch (err) {
                     if (err instanceof Error && err.message.includes('already connected')) {
                         console.log('Audio element already connected');
+                        return true;
                     } else {
                         console.error('Error connecting audio element:', err);
+                        return false;
                     }
                 }
             };
@@ -592,26 +571,37 @@ const DashboardGrid: React.FC = () => {
 
             // Function to find and connect to audio sources
             const connectToAudioSource = () => {
+                let connected = false;
+
                 // Look for Spotify audio elements first
-                const spotifyAudioElements = document.querySelectorAll('audio[data-spotify-player="true"]');
+                const spotifyAudioElements = document.querySelectorAll('audio[data-spotify-player="true"]:not([data-visualizer-connected="true"])');
                 if (spotifyAudioElements.length > 0) {
                     console.log('Found Spotify audio elements:', spotifyAudioElements.length);
-                    spotifyAudioElements.forEach((el) => connectToAudioElement(el as HTMLAudioElement));
-                    return true;
+                    spotifyAudioElements.forEach((el) => {
+                        if (connectToAudioElement(el as HTMLAudioElement)) {
+                            connected = true;
+                        }
+                    });
                 }
 
                 // Then look for any audio elements
-                const audioElements = document.querySelectorAll('audio');
+                const audioElements = document.querySelectorAll('audio:not([data-visualizer-connected="true"])');
                 if (audioElements.length > 0) {
                     console.log('Found audio elements:', audioElements.length);
-                    audioElements.forEach(audio => connectToAudioElement(audio as HTMLAudioElement));
-                    return true;
+                    audioElements.forEach(audio => {
+                        if (connectToAudioElement(audio as HTMLAudioElement)) {
+                            connected = true;
+                        }
+                    });
                 }
 
-                // Fall back to microphone as last resort
-                console.log('No audio elements found, trying microphone');
-                connectToMicrophone();
-                return false;
+                // If no audio elements were connected, try microphone
+                if (!connected) {
+                    console.log('No audio elements found or connected, trying microphone');
+                    connectToMicrophone();
+                }
+
+                return connected;
             };
 
             // Add a button to request system audio access
@@ -641,7 +631,7 @@ const DashboardGrid: React.FC = () => {
             // First try to find existing audio elements
             connectToAudioSource();
 
-            // Set up MutationObserver to detect new audio elements
+            // Start observing the document
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     if (mutation.addedNodes.length > 0) {
@@ -665,7 +655,7 @@ const DashboardGrid: React.FC = () => {
             // Start observing the document
             observer.observe(document.body, { childList: true, subtree: true });
 
-            // Create the visualizers using react-audio-visualize
+            // Initialize the visualizers
             const renderVisualizers = () => {
                 // Create the visualizers
                 const topVisualizerElement = document.createElement('canvas');
@@ -826,6 +816,13 @@ const DashboardGrid: React.FC = () => {
             // Initialize the visualizers
             renderVisualizers();
 
+            // Add Spotify event listener here
+            window.addEventListener('spotify-player-ready', (e: any) => {
+                if (e.detail && e.detail.audioElement) {
+                    connectToAudioElement(e.detail.audioElement);
+                }
+            });
+
             // Clean up function
             return () => {
                 if (visualizerContainer && document.body.contains(visualizerContainer)) {
@@ -843,6 +840,12 @@ const DashboardGrid: React.FC = () => {
                 if (audioCtx.state !== 'closed') {
                     audioCtx.close().catch(err => console.error('Error closing audio context:', err));
                 }
+
+                window.removeEventListener('spotify-player-ready', (e: any) => {
+                    if (e.detail && e.detail.audioElement) {
+                        connectToAudioElement(e.detail.audioElement);
+                    }
+                });
             };
         }
     }, [audioVisualization, primaryColor]);

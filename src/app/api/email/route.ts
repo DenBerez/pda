@@ -118,20 +118,10 @@ export async function GET(request: NextRequest) {
 
         // For demo purposes, we'll return mock data instead of requiring actual credentials
         if (provider === 'gmail') {
-            if (process.env.NODE_ENV === 'development' || !refreshToken) {
-                // Return mock data for development or when no token is provided
-                emails = Array(maxResults).fill(null).map((_, i) => ({
-                    id: `gmail-${i}`,
-                    subject: `Gmail Subject ${i + 1}`,
-                    from: `sender${i + 1}@gmail.com`,
-                    date: new Date(Date.now() - i * 3600000).toISOString(),
-                    snippet: `This is a preview of email message ${i + 1}...`,
-                    unread: i % 2 === 0, // Every other email is unread
-                }));
-            } else {
-                // Use actual Gmail API with the provided refresh token
-                emails = await fetchGmailEmails(refreshToken, maxResults);
+            if (!refreshToken) {
+                return NextResponse.json({ error: 'Refresh token is required' }, { status: 400 });
             }
+            emails = await fetchGmailEmails(refreshToken, maxResults);
         } else if (provider === 'aol') {
             if (process.env.NODE_ENV === 'development' || !email || !password) {
                 // Return mock data for development or when no credentials are provided
