@@ -301,16 +301,24 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
 
     // Open email dialog and mark as read if unread
     const openEmailDialog = async (email: Email) => {
-        // Set selected email and loading state immediately
-        setSelectedEmail(email);
-        setDialogOpen(true);
-
-        // Always set loading state when opening an email
+        // Set loading state immediately
         setLoadingEmailId(email.id);
 
         try {
-            // Always fetch the full content when opening an email
-            await fetchEmailContent(email.id);
+            // Fetch the full content first before opening the dialog
+            const emailContent = await fetchEmailContent(email.id);
+
+            // Create a complete email object with the fetched content
+            const completeEmail = {
+                ...email,
+                body: emailContent
+            };
+
+            // Now set the selected email with the complete content
+            setSelectedEmail(completeEmail);
+
+            // Open the dialog after content is loaded
+            setDialogOpen(true);
 
             // Mark as read if currently unread
             if (email.unread) {
@@ -366,11 +374,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     : email
             ));
 
-            // Update selected email if it's the one being viewed
-            if (selectedEmail && selectedEmail.id === emailId) {
-                setSelectedEmail(prev => prev ? { ...prev, body: data.body } : null);
-            }
-
+            // Return the body content for immediate use
             return data.body;
         } catch (err) {
             console.error('Error fetching email content:', err);

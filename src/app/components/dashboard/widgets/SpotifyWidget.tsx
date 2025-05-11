@@ -409,6 +409,20 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         }
     }, [audioRef.current]);
 
+    // Add this after creating the audio element in playPreview function
+    useEffect(() => {
+        if (audioRef.current) {
+            // Dispatch a custom event with the audio element
+            const event = new CustomEvent('spotify-audio-element', {
+                detail: { audioElement: audioRef.current }
+            });
+            window.dispatchEvent(event);
+
+            // Also add a data attribute for detection
+            audioRef.current.dataset.spotifyPlayer = 'true';
+        }
+    }, [audioRef.current]);
+
     // Loading state
     if (loading) {
         return (

@@ -299,21 +299,27 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
             // Clear canvas
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw visualization
+            // Create a more dynamic visualization
             const barWidth = (canvas.width / bufferLength) * 2.5;
             let x = 0;
+
+            // Create gradient that changes with audio intensity
+            const maxFreq = Math.max(...Array.from(dataArray));
+            const intensity = maxFreq / 255;
+
+            const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, `rgba(${255 * intensity}, 0, 255, 0.8)`);
+            gradient.addColorStop(1, `rgba(0, 255, ${255 * (1 - intensity)}, 0.5)`);
+
+            canvasCtx.fillStyle = gradient;
 
             for (let i = 0; i < bufferLength; i++) {
                 const barHeight = dataArray[i] / 2;
 
-                // Use gradient colors
-                const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
-                gradient.addColorStop(0, 'rgba(255, 0, 255, 0.8)');
-                gradient.addColorStop(1, 'rgba(0, 255, 255, 0.5)');
+                // Add a slight curve to the visualization
+                const heightMultiplier = 0.8 + 0.4 * Math.sin((i / bufferLength) * Math.PI);
 
-                canvasCtx.fillStyle = gradient;
-                canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
+                canvasCtx.fillRect(x, canvas.height - barHeight * heightMultiplier, barWidth, barHeight * heightMultiplier);
                 x += barWidth + 1;
             }
 
@@ -323,6 +329,26 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         renderCanvas();
 
     }, [enabled, audioElement]);
+
+    // Add this useEffect to connect directly with the SpotifyWidget
+    useEffect(() => {
+        if (!enabled) return;
+
+        // Create a custom event for the SpotifyWidget to dispatch when audio is playing
+        const handleSpotifyAudio = (event: CustomEvent) => {
+            if (event.detail?.audioElement) {
+                console.log('Received audio element from SpotifyWidget:', event.detail.audioElement);
+                setAudioElement(event.detail.audioElement);
+                setIsPlaying(true);
+            }
+        };
+
+        window.addEventListener('spotify-audio-element', handleSpotifyAudio as EventListener);
+
+        return () => {
+            window.removeEventListener('spotify-audio-element', handleSpotifyAudio as EventListener);
+        };
+    }, [enabled]);
 
     if (!enabled || !audioElement) return null;
 
