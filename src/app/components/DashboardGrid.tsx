@@ -27,7 +27,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import Tour from './dashboard/Tour';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { AudioVisualizer, LiveAudioVisualizer } from 'react-audio-visualize';
 import DashboardAudioVisualizer from './dashboard/AudioVisualizer';
 
 // Add at the top of the file
