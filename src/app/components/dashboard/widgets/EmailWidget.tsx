@@ -1006,7 +1006,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                         </Box>
                     ) : (
                         <div
-                            dangerouslySetInnerHTML={{ __html: selectedEmail.body || '' }}
+                            dangerouslySetInnerHTML={{ __html: selectedEmail.body || selectedEmail.snippet || '' }}
                             style={{
                                 lineHeight: 1.6,
                                 overflow: 'auto'

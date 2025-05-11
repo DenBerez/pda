@@ -141,33 +141,41 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         // Connect audio element to analyzer with error handling
         if (!sourceNodeRef.current && audioElement) {
             try {
-                // Check if the audio element is already connected to another context
-                const stream = audioElement.mozCaptureStream?.() ||
-                    audioElement.captureStream?.() ||
-                    new MediaStream();
-                sourceNodeRef.current = audioContextRef.current.createMediaStreamSource(stream);
-                sourceNodeRef.current?.connect(analyserRef.current!);
-                analyserRef.current?.connect(audioContextRef.current!.destination);
-                console.log('Connected audio element to analyzer');
+                // First try direct connection
+                sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElement);
+                sourceNodeRef.current.connect(analyserRef.current!);
+                console.log('Connected directly to audio element');
             } catch (err) {
-                console.error('Failed to connect audio element:', err);
-                // Try alternative approach if the first one fails
+                console.error('Direct connection failed:', err);
+
+                // Then try stream capture if available
                 try {
-                    // If we can't connect directly, try to create a silent audio element
-                    // and use the microphone to capture system audio
-                    console.log('Trying alternative audio capture method');
-                    navigator.mediaDevices.getUserMedia({ audio: true })
-                        .then(stream => {
-                            sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
-                            sourceNodeRef.current.connect(analyserRef.current!);
-                            analyserRef.current!.connect(audioContextRef.current!.destination);
-                            console.log('Connected using microphone input');
-                        })
-                        .catch(micErr => {
-                            console.error('Failed to access microphone:', micErr);
-                        });
-                } catch (altErr) {
-                    console.error('Alternative method also failed:', altErr);
+                    const stream = audioElement.mozCaptureStream?.() ||
+                        audioElement.captureStream?.();
+
+                    if (stream) {
+                        sourceNodeRef.current = audioContextRef.current.createMediaStreamSource(stream);
+                        sourceNodeRef.current.connect(analyserRef.current!);
+                        console.log('Connected via media stream capture');
+                    } else {
+                        throw new Error('Stream capture not available');
+                    }
+                } catch (streamErr) {
+                    console.error('Stream capture failed:', streamErr);
+
+                    // Last resort - try system audio capture
+                    try {
+                        console.log('Trying system audio capture');
+                        navigator.mediaDevices.getDisplayMedia({ audio: true, video: false })
+                            .then(stream => {
+                                sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
+                                sourceNodeRef.current.connect(analyserRef.current!);
+                                console.log('Connected using system audio');
+                            })
+                            .catch(err => console.error('System audio capture failed:', err));
+                    } catch (sysErr) {
+                        console.error('All audio capture methods failed');
+                    }
                 }
             }
         }
@@ -233,6 +241,17 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
             // Look for any audio elements that might be playing Spotify content
             const allAudioElements = document.querySelectorAll('audio');
             console.log('All audio elements found:', allAudioElements.length);
+
+            // Add more specific selectors for Spotify
+            const spotifyIframe = document.querySelector('iframe[src*="spotify"]');
+            if (spotifyIframe) {
+                console.log('Found Spotify iframe:', spotifyIframe);
+                // Try to mark this for later processing
+            }
+
+            // Look for elements with Spotify-related classes
+            const spotifyElements = document.querySelectorAll('[class*="spotify"], [id*="spotify"]');
+            console.log('Potential Spotify elements:', spotifyElements.length);
 
             if (allAudioElements.length > 0) {
                 // Try to find one that's playing or has a source
