@@ -309,14 +309,8 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         setLoadingEmailId(email.id);
 
         try {
-            // If email content isn't loaded yet, fetch it
-            if (!email.body) {
-                await fetchEmailContent(email.id);
-                // The email state will be updated by fetchEmailContent
-            } else {
-                // Small delay to ensure smooth transition even when content is already loaded
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
+            // Always fetch the full content when opening an email
+            await fetchEmailContent(email.id);
 
             // Mark as read if currently unread
             if (email.unread) {
@@ -1010,22 +1004,14 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                         }}>
                             <CircularProgress size={32} />
                         </Box>
-                    ) : selectedEmail.body ? (
+                    ) : (
                         <div
-                            dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
+                            dangerouslySetInnerHTML={{ __html: selectedEmail.body || '' }}
                             style={{
                                 lineHeight: 1.6,
                                 overflow: 'auto'
                             }}
                         />
-                    ) : (
-                        <Typography variant="body1" sx={{
-                            whiteSpace: 'pre-line',
-                            lineHeight: 1.6
-                        }}>
-                            {selectedEmail.snippet}
-                            {/* Fallback to snippet if no body is available */}
-                        </Typography>
                     )}
                 </DialogContent>
                 <DialogActions sx={{

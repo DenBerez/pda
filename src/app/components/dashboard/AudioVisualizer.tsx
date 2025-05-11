@@ -29,9 +29,31 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         if (!enabled) return;
 
         const findAndConnectSpotifyAudio = () => {
-            // Try multiple selector approaches
-            const audioElements = document.querySelectorAll('audio[data-spotify-player="true"], audio');
+            // Try multiple selector approaches with broader criteria
+            const audioElements = document.querySelectorAll('audio');
             console.log('Found audio elements:', audioElements.length);
+
+            // Check for iframes that might contain audio elements
+            const iframes = document.querySelectorAll('iframe');
+            console.log('Found iframes:', iframes.length);
+
+            // Try to access audio in iframes
+            iframes.forEach(iframe => {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    if (iframeDoc) {
+                        const iframeAudio = iframeDoc.querySelectorAll('audio');
+                        console.log(`Found ${iframeAudio.length} audio elements in iframe`);
+
+                        if (iframeAudio.length > 0) {
+                            setAudioElement(iframeAudio[0] as HTMLAudioElement);
+                            setIsPlaying(true);
+                        }
+                    }
+                } catch (e) {
+                    console.log('Cannot access iframe content due to same-origin policy');
+                }
+            });
 
             if (audioElements.length > 0) {
                 // Log more details about the found elements
@@ -43,8 +65,19 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                     }))
                 );
 
-                setAudioElement(audioElements[0] as HTMLAudioElement);
-                setIsPlaying(true);
+                // Try to find one that's playing or has a source
+                const playingAudio = Array.from(audioElements).find(
+                    audio => !audio.paused || (audio.src && audio.src !== '')
+                );
+
+                if (playingAudio) {
+                    console.log('Found playing audio:', playingAudio);
+                    setAudioElement(playingAudio as HTMLAudioElement);
+                    setIsPlaying(true);
+                } else {
+                    setAudioElement(audioElements[0] as HTMLAudioElement);
+                    setIsPlaying(true);
+                }
             }
         };
 
@@ -224,6 +257,54 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         return () => clearInterval(intervalId);
     }, [enabled]);
 
+    // Add fallback canvas visualization
+    useEffect(() => {
+        if (!enabled || !audioElement || !canvasRef.current || !analyserRef.current) return;
+
+        // Set up canvas visualization as fallback
+        const canvas = canvasRef.current;
+        const canvasCtx = canvas.getContext('2d');
+        if (!canvasCtx) return;
+
+        // Set canvas dimensions
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+
+        const renderCanvas = () => {
+            if (!analyserRef.current || !canvasCtx) return;
+
+            const bufferLength = analyserRef.current.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyserRef.current.getByteFrequencyData(dataArray);
+
+            // Clear canvas
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw visualization
+            const barWidth = (canvas.width / bufferLength) * 2.5;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const barHeight = dataArray[i] / 2;
+
+                // Use gradient colors
+                const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
+                gradient.addColorStop(0, 'rgba(255, 0, 255, 0.8)');
+                gradient.addColorStop(1, 'rgba(0, 255, 255, 0.5)');
+
+                canvasCtx.fillStyle = gradient;
+                canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+                x += barWidth + 1;
+            }
+
+            requestAnimationFrame(renderCanvas);
+        };
+
+        renderCanvas();
+
+    }, [enabled, audioElement]);
+
     if (!enabled || !audioElement) return null;
 
     return (
@@ -238,7 +319,8 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                     height: '100px',
                     pointerEvents: 'none',
                     zIndex: 1,
-                    opacity: 0.7
+                    opacity: 0.7,
+                    display: wavesurferRef.current ? 'block' : 'none' // Only show if WaveSurfer is available
                 }}
             />
             <canvas
@@ -252,7 +334,7 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                     pointerEvents: 'none',
                     zIndex: 1,
                     opacity: 0.7,
-                    display: wavesurferRef.current ? 'none' : 'block' // Only show if WaveSurfer fails
+                    display: wavesurferRef.current ? 'none' : 'block' // Show as fallback
                 }}
             />
         </>
