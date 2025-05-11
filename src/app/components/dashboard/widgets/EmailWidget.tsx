@@ -280,24 +280,23 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 return;
             }
 
-            // Build the query parameters
-            const params = new URLSearchParams({
+            // Create request body instead of using query parameters
+            const requestBody = {
                 provider,
                 emailId,
-                markAs: newStatus ? 'unread' : 'read'
-            });
-
-            // Add provider-specific parameters
-            if (provider === 'gmail' && refreshToken) {
-                params.append('refreshToken', refreshToken);
-            } else if (provider === 'aol' && emailAddress && password) {
-                params.append('email', emailAddress);
-                params.append('password', password);
-            }
+                markAs: newStatus ? 'unread' : 'read',
+                refreshToken: provider === 'gmail' ? refreshToken : undefined,
+                email: provider === 'aol' ? emailAddress : undefined,
+                password: provider === 'aol' ? password : undefined
+            };
 
             // Make API call to update status
-            const response = await fetch(`/api/email/status?${params.toString()}`, {
-                method: 'POST'
+            const response = await fetch(`/api/email/status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
