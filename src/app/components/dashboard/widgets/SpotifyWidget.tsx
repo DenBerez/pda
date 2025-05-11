@@ -394,9 +394,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         }
     }, [accessToken, fetchUserProfile]);
 
-    // In SpotifyWidget.tsx, after audio element creation
+    // In SpotifyWidget.tsx, verify this code is executing
     useEffect(() => {
         if (audioRef.current) {
+            console.log('Setting up Spotify player for visualizer', audioRef.current);
             // Mark this as a Spotify player for the visualizer to find
             audioRef.current.dataset.spotifyPlayer = 'true';
 

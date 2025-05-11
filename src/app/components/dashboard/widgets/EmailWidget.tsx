@@ -301,26 +301,33 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
 
     // Open email dialog and mark as read if unread
     const openEmailDialog = async (email: Email) => {
-        // Set selected email and open dialog immediately to show loading state
+        // Set selected email and loading state immediately
         setSelectedEmail(email);
         setDialogOpen(true);
 
-        // If email content isn't loaded yet, fetch it
-        if (!email.body) {
-            setLoadingEmailId(email.id);
-            try {
+        // Always set loading state when opening an email
+        setLoadingEmailId(email.id);
+
+        try {
+            // If email content isn't loaded yet, fetch it
+            if (!email.body) {
                 await fetchEmailContent(email.id);
                 // The email state will be updated by fetchEmailContent
-            } catch (err) {
-                console.error('Error loading email content:', err);
-            } finally {
-                setLoadingEmailId(null);
+            } else {
+                // Small delay to ensure smooth transition even when content is already loaded
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
-        }
 
-        // Mark as read if currently unread
-        if (email.unread) {
-            toggleReadStatus(email.id);
+            // Mark as read if currently unread
+            if (email.unread) {
+                toggleReadStatus(email.id);
+            }
+        } catch (err) {
+            console.error('Error loading email content:', err);
+            setError(`Failed to load email content: ${err instanceof Error ? err.message : 'Unknown error'}`);
+            setTimeout(() => setError(null), 5000);
+        } finally {
+            setLoadingEmailId(null);
         }
     };
 
@@ -947,6 +954,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 onClose={closeEmailDialog}
                 maxWidth="md"
                 fullWidth
+                disableScrollLock={true}
                 PaperProps={{
                     sx: {
                         borderRadius: 2,
@@ -993,8 +1001,14 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                         </Typography>
                     </Box>
                     {loadingEmailId === selectedEmail.id ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                            <CircularProgress size={24} />
+                        <Box sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            p: 4,
+                            minHeight: '200px'
+                        }}>
+                            <CircularProgress size={32} />
                         </Box>
                     ) : selectedEmail.body ? (
                         <div
