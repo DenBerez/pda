@@ -1,7 +1,6 @@
 // In src/app/api/email/status/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { google } from 'googleapis';
-import { setupGmailAuth } from '../helpers';
 
 export async function POST(request: NextRequest) {
     try {
@@ -20,8 +19,18 @@ export async function POST(request: NextRequest) {
 
         if (provider === 'gmail' && refreshToken) {
             // Use the Gmail API to update email status
-            const auth = await setupGmailAuth(refreshToken);
-            const gmail = google.gmail({ version: 'v1', auth });
+            // Create OAuth2 client directly instead of using the helper
+            const oauth2Client = new google.auth.OAuth2(
+                process.env.GMAIL_CLIENT_ID,
+                process.env.GMAIL_CLIENT_SECRET
+                // No redirect URI needed for token usage
+            );
+
+            oauth2Client.setCredentials({
+                refresh_token: refreshToken
+            });
+
+            const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
             // Determine which labels to add/remove based on markAs parameter
             const addLabelIds = markAs === 'unread' ? ['UNREAD'] : [];
@@ -46,6 +55,8 @@ export async function POST(request: NextRequest) {
         }
     } catch (error) {
         console.error('Email status update error:', error);
-        return NextResponse.json({ error: 'Failed to update email status' }, { status: 500 });
+        // Add more detailed error information
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: `Failed to update email status: ${errorMessage}` }, { status: 500 });
     }
 }
