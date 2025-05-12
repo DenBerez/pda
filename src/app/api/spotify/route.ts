@@ -243,61 +243,51 @@ export async function POST(request: NextRequest) {
                     return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
                 }
 
-                try {
-                    // Fetch both audio features and analysis
-                    const [featuresResp, analysisResp] = await Promise.all([
-                        fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
-                            headers: { 'Authorization': `Bearer ${accessToken}` }
-                        }),
-                        fetch(`https://api.spotify.com/v1/audio-analysis/${trackId}`, {
-                            headers: { 'Authorization': `Bearer ${accessToken}` }
-                        })
-                    ]);
+                // Fetch both audio features and analysis
+                const [featuresResp, analysisResp] = await Promise.all([
+                    fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    }),
+                    fetch(`https://api.spotify.com/v1/audio-analysis/${trackId}`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    })
+                ]);
 
-                    console.log('Audio Features Response:', featuresResp.status);
-                    console.log('Audio Analysis Response:', analysisResp.status);
+                console.log('Audio Features Response:', featuresResp.status);
+                console.log('Audio Analysis Response:', analysisResp.status);
 
-                    let features = null;
-                    let analysis = null;
+                let features = null;
+                let analysis = null;
 
-                    if (featuresResp.ok) {
-                        features = await featuresResp.json();
-                    } else {
-                        console.error('Failed to fetch audio features:', await featuresResp.text());
-                    }
-
-                    if (analysisResp.ok) {
-                        analysis = await analysisResp.json();
-                    } else {
-                        console.error('Failed to fetch audio analysis:', await analysisResp.text());
-                    }
-
-                    if (!features && !analysis) {
-                        return NextResponse.json({
-                            error: 'Failed to fetch both audio features and analysis'
-                        }, { status: 500 });
-                    }
-
-                    return NextResponse.json({
-                        features: features || {
-                            energy: 0.5,
-                            tempo: 120,
-                            danceability: 0.5,
-                            valence: 0.5
-                        },
-                        analysis: analysis || {
-                            segments: [{ pitches: Array(12).fill(0.5) }],
-                            beats: [{ start: 0 }],
-                            tatums: [{ start: 0 }]
-                        }
-                    });
-                } catch (error) {
-                    console.error('Error fetching audio data:', error);
-                    return NextResponse.json({
-                        error: 'Failed to fetch audio data',
-                        details: error instanceof Error ? error.message : 'Unknown error'
-                    }, { status: 500 });
+                if (featuresResp.ok) {
+                    features = await featuresResp.json();
+                } else {
+                    console.error('Failed to fetch audio features:', await featuresResp.text());
                 }
+
+                if (analysisResp.ok) {
+                    analysis = await analysisResp.json();
+                } else {
+                    console.error('Failed to fetch audio analysis:', await analysisResp.text());
+                }
+
+                if (!features && !analysis) {
+                    throw new Error('Failed to fetch both audio features and analysis');
+                }
+
+                return NextResponse.json({
+                    features: features || {
+                        energy: 0.5,
+                        tempo: 120,
+                        danceability: 0.5,
+                        valence: 0.5
+                    },
+                    analysis: analysis || {
+                        segments: [{ pitches: Array(12).fill(0.5) }],
+                        beats: [{ start: 0 }],
+                        tatums: [{ start: 0 }]
+                    }
+                });
 
             // Add other actions as needed
 
