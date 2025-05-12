@@ -28,6 +28,8 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
                     })
                 });
 
+                console.log('Response:', response);
+
                 if (!response.ok) {
                     throw new Error(`Failed to fetch audio data: ${response.status}`);
                 }
