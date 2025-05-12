@@ -24,6 +24,27 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
     const animationRef = useRef<number | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+    // Add this at the beginning of your component
+    useEffect(() => {
+        if (enabled) {
+            console.log('AudioVisualizer enabled, looking for audio sources...');
+
+            // Check if Web Audio API is supported
+            if (window.AudioContext || (window as any).webkitAudioContext) {
+                console.log('Web Audio API is supported');
+            } else {
+                console.warn('Web Audio API is not supported in this browser');
+            }
+
+            // Check if MediaDevices API is supported
+            if ('mediaDevices' in navigator && 'getDisplayMedia' in navigator.mediaDevices) {
+                console.log('MediaDevices API is supported');
+            } else {
+                console.warn('MediaDevices API is not supported in this browser');
+            }
+        }
+    }, [enabled]);
+
     // Connect to Spotify audio elements
     useEffect(() => {
         if (!enabled) return;
@@ -237,11 +258,37 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
             const allAudioElements = document.querySelectorAll('audio');
             console.log('All audio elements found:', allAudioElements.length);
 
+            // Try to access elements in iframes
+            try {
+                const iframes = document.querySelectorAll('iframe');
+                console.log('Iframes found:', iframes.length);
+
+                iframes.forEach((iframe, index) => {
+                    try {
+                        if (iframe.contentDocument) {
+                            const iframeAudio = iframe.contentDocument.querySelectorAll('audio');
+                            console.log(`Audio elements in iframe ${index}:`, iframeAudio.length);
+
+                            if (iframeAudio.length > 0) {
+                                const audioEl = iframeAudio[0] as HTMLAudioElement;
+                                audioEl.dataset.spotifyPlayer = 'true';
+                                setAudioElement(audioEl);
+                                setIsPlaying(!audioEl.paused);
+                                console.log('Found audio in iframe:', audioEl);
+                            }
+                        }
+                    } catch (err) {
+                        console.log(`Cannot access iframe ${index} content (likely cross-origin)`);
+                    }
+                });
+            } catch (err) {
+                console.log('Error accessing iframes:', err);
+            }
+
             // Add more specific selectors for Spotify
             const spotifyIframe = document.querySelector('iframe[src*="spotify"]');
             if (spotifyIframe) {
                 console.log('Found Spotify iframe:', spotifyIframe);
-                // Try to mark this for later processing
             }
 
             // Look for elements with Spotify-related classes
@@ -270,6 +317,109 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
 
         return () => clearInterval(intervalId);
     }, [enabled]);
+
+    // Add this useEffect to create a fallback audio analyzer
+    useEffect(() => {
+        if (!enabled || audioElement) return; // Skip if we already have an audio element
+
+        console.log('Attempting fallback audio analysis method');
+
+        // Create audio context if it doesn't exist
+        if (!audioContextRef.current) {
+            try {
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                console.log('Created audio context for fallback method');
+
+                analyserRef.current = audioContextRef.current.createAnalyser();
+                analyserRef.current.fftSize = 256;
+            } catch (err) {
+                console.error('Failed to create audio context for fallback:', err);
+                return;
+            }
+        }
+
+        // Try to get system audio (requires user permission)
+        const getSystemAudio = async () => {
+            try {
+                console.log('Requesting system audio access...');
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    audio: true,
+                    video: false
+                });
+
+                if (stream) {
+                    console.log('Got system audio stream');
+                    sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
+                    sourceNodeRef.current.connect(analyserRef.current!);
+
+                    // Start visualization
+                    startCanvasVisualization();
+                    return true;
+                }
+            } catch (err) {
+                console.error('Failed to get system audio:', err);
+            }
+            return false;
+        };
+
+        // Function to visualize audio on canvas
+        const startCanvasVisualization = () => {
+            if (!canvasRef.current || !analyserRef.current) return;
+
+            // Show canvas since we're using it as fallback
+            canvasRef.current.style.display = 'block';
+
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            // Set canvas dimensions
+            canvas.width = window.innerWidth;
+            canvas.height = 100;
+
+            const bufferLength = analyserRef.current.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const draw = () => {
+                if (!analyserRef.current || !ctx) return;
+
+                animationRef.current = requestAnimationFrame(draw);
+
+                analyserRef.current.getByteFrequencyData(dataArray);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw visualization
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = dataArray[i] / 2;
+
+                    // Use theme colors
+                    ctx.fillStyle = `rgba(100, 100, 255, ${barHeight / 100})`;
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+                    x += barWidth + 1;
+                }
+            };
+
+            draw();
+        };
+
+        // Try to get system audio
+        getSystemAudio();
+
+        return () => {
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+
+            if (sourceNodeRef.current) {
+                sourceNodeRef.current.disconnect();
+            }
+        };
+    }, [enabled, audioElement]);
 
     if (!enabled || !audioElement) return null;
 
