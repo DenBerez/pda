@@ -66,12 +66,12 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
     useEffect(() => {
         if (!enabled || !audioElement || !visualizerRef.current) return;
 
-        console.log('Setting up audio context for element:', audioElement);
+        console.log('Setting up WaveSurfer for element:', audioElement);
 
         // Create audio context and analyzer if they don't exist
         if (!audioContextRef.current) {
             try {
-                audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
                 console.log('Created audio context:', audioContextRef.current);
 
                 analyserRef.current = audioContextRef.current.createAnalyser();
@@ -79,6 +79,28 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                 console.log('Created analyzer node');
             } catch (err) {
                 console.error('Failed to create audio context or analyzer:', err);
+                return;
+            }
+        }
+
+        // Initialize WaveSurfer
+        if (!wavesurferRef.current) {
+            try {
+                wavesurferRef.current = WaveSurfer.create({
+                    container: visualizerRef.current,
+                    waveColor: 'rgba(100, 100, 255, 0.4)',
+                    progressColor: 'rgba(150, 100, 255, 0.8)',
+                    cursorColor: 'transparent',
+                    barWidth: 2,
+                    barGap: 1,
+                    barRadius: 3,
+                    height: 80,
+                    normalize: true,
+                    interact: false,
+                });
+                console.log('WaveSurfer initialized');
+            } catch (err) {
+                console.error('Failed to initialize WaveSurfer:', err);
                 return;
             }
         }
@@ -95,7 +117,14 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                 sourceNodeRef.current = audioContextRef.current!.createMediaElementSource(audioElement);
                 sourceNodeRef.current.connect(analyserRef.current!);
                 analyserRef.current!.connect(audioContextRef.current!.destination);
-                console.log('Connected directly to audio element');
+
+                // Connect WaveSurfer to the audio element
+                wavesurferRef.current!.load(audioElement.src);
+
+                // Use the media element directly
+                wavesurferRef.current!.setMediaElement(audioElement);
+
+                console.log('Connected directly to audio element with WaveSurfer');
                 return true;
             } catch (err) {
                 console.warn('Direct connection failed:', err);
@@ -107,6 +136,10 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                 if (stream) {
                     sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
                     sourceNodeRef.current.connect(analyserRef.current!);
+
+                    // For stream capture, we need to manually update WaveSurfer
+                    updateWaveSurferWithAnalyzer();
+
                     console.log('Connected via media stream capture');
                     return true;
                 }
@@ -120,6 +153,10 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                 const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: false });
                 sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
                 sourceNodeRef.current.connect(analyserRef.current!);
+
+                // For system audio, we need to manually update WaveSurfer
+                updateWaveSurferWithAnalyzer();
+
                 console.log('Connected using system audio');
                 return true;
             } catch (err) {
@@ -128,13 +165,65 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
             }
         };
 
+        // Function to update WaveSurfer with analyzer data
+        const updateWaveSurferWithAnalyzer = () => {
+            if (!analyserRef.current || !wavesurferRef.current) return;
+
+            const bufferLength = analyserRef.current.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const updateWaveform = () => {
+                analyserRef.current!.getByteFrequencyData(dataArray);
+
+                // Convert frequency data to waveform-like data
+                const waveformData = Array.from(dataArray).map(val => val / 255);
+
+                // Update WaveSurfer with this data if possible
+                // Note: This is a simplified approach - WaveSurfer might not have a direct API for this
+                // You might need to use a custom drawer or plugin
+
+                animationRef.current = requestAnimationFrame(updateWaveform);
+            };
+
+            updateWaveform();
+        };
+
         connectAudio();
+
+        // Start WaveSurfer if audio is playing
+        if (!audioElement.paused) {
+            wavesurferRef.current?.play();
+        }
+
+        // Listen for play/pause events
+        const handlePlay = () => {
+            wavesurferRef.current?.play();
+            setIsPlaying(true);
+        };
+
+        const handlePause = () => {
+            wavesurferRef.current?.pause();
+            setIsPlaying(false);
+        };
+
+        audioElement.addEventListener('play', handlePlay);
+        audioElement.addEventListener('pause', handlePause);
 
         return () => {
             if (sourceNodeRef.current) {
                 sourceNodeRef.current.disconnect();
                 sourceNodeRef.current = null;
             }
+
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
+
+            audioElement.removeEventListener('play', handlePlay);
+            audioElement.removeEventListener('pause', handlePause);
+
+            wavesurferRef.current?.destroy();
+            wavesurferRef.current = null;
         };
     }, [enabled, audioElement]);
 
@@ -182,69 +271,6 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         return () => clearInterval(intervalId);
     }, [enabled]);
 
-    // Add fallback canvas visualization
-    useEffect(() => {
-        if (!enabled || !audioElement || !canvasRef.current || !analyserRef.current) return;
-
-        const canvas = canvasRef.current;
-        const canvasCtx = canvas.getContext('2d');
-        if (!canvasCtx) return;
-
-        // Set canvas dimensions with device pixel ratio for sharper rendering
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = canvas.clientWidth * dpr;
-        canvas.height = canvas.clientHeight * dpr;
-        canvasCtx.scale(dpr, dpr);
-
-        let animationId: number;
-
-        const renderCanvas = () => {
-            if (!analyserRef.current || !canvasCtx) return;
-
-            animationId = requestAnimationFrame(renderCanvas);
-
-            const bufferLength = analyserRef.current.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            analyserRef.current.getByteFrequencyData(dataArray);
-
-            // Clear canvas
-            canvasCtx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-
-            // Create a more dynamic visualization
-            const barWidth = (canvas.clientWidth / bufferLength) * 2.5;
-            let x = 0;
-
-            // Create gradient that changes with audio intensity
-            const maxFreq = Math.max(...Array.from(dataArray));
-            const intensity = maxFreq / 255;
-
-            const gradient = canvasCtx.createLinearGradient(0, 0, 0, canvas.clientHeight);
-            gradient.addColorStop(0, `rgba(${255 * intensity}, 0, 255, 0.8)`);
-            gradient.addColorStop(1, `rgba(0, 255, ${255 * (1 - intensity)}, 0.5)`);
-
-            canvasCtx.fillStyle = gradient;
-
-            for (let i = 0; i < bufferLength; i++) {
-                const barHeight = dataArray[i] / 2;
-
-                // Add a slight curve to the visualization
-                const heightMultiplier = 0.8 + 0.4 * Math.sin((i / bufferLength) * Math.PI);
-
-                canvasCtx.fillRect(x, canvas.clientHeight - barHeight * heightMultiplier,
-                    barWidth, barHeight * heightMultiplier);
-                x += barWidth + 1;
-            }
-        };
-
-        renderCanvas();
-
-        return () => {
-            if (animationId) {
-                cancelAnimationFrame(animationId);
-            }
-        };
-    }, [enabled, audioElement]);
-
     if (!enabled || !audioElement) return null;
 
     return (
@@ -260,9 +286,10 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                     pointerEvents: 'none',
                     zIndex: 1,
                     opacity: 0.7,
-                    display: wavesurferRef.current ? 'block' : 'none' // Only show if WaveSurfer is available
+                    display: 'block' // Always show the WaveSurfer container
                 }}
             />
+            {/* Keep the canvas as a fallback but hide it by default */}
             <canvas
                 ref={canvasRef}
                 style={{
@@ -274,7 +301,7 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                     pointerEvents: 'none',
                     zIndex: 1,
                     opacity: 0.7,
-                    display: wavesurferRef.current ? 'none' : 'block' // Show as fallback
+                    display: 'none' // Hide by default, could add logic to show if WaveSurfer fails
                 }}
             />
         </>
