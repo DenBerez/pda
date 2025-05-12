@@ -243,6 +243,11 @@ export async function POST(request: NextRequest) {
                     return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
                 }
 
+                // Get access token from tokenData
+                if (!accessToken) {
+                    return NextResponse.json({ error: 'Failed to get access token' }, { status: 401 });
+                }
+
                 // Fetch both audio features and analysis
                 const [featuresResp, analysisResp] = await Promise.all([
                     fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
@@ -252,6 +257,9 @@ export async function POST(request: NextRequest) {
                         headers: { 'Authorization': `Bearer ${accessToken}` }
                     })
                 ]);
+
+                console.log('Audio Features Response:', featuresResp.status);
+                console.log('Audio Analysis Response:', analysisResp.status);
 
                 let features = null;
                 let analysis = null;

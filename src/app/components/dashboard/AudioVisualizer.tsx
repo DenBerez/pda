@@ -15,7 +15,7 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
     useEffect(() => {
         if (!trackId || !refreshToken) return;
 
-        const fetchAudioData = async () => {
+        const fetchAudioData = async (retryCount = 0) => {
             try {
                 console.log('Fetching audio data for track:', trackId);
                 const response = await fetch('/api/spotify', {
@@ -30,6 +30,15 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
 
                 if (!response.ok) {
                     const errorData = await response.json();
+                    console.error('Error response:', errorData);
+
+                    // If we get a 401, the token might be expired
+                    if (response.status === 401 && retryCount < 2) {
+                        console.log('Retrying after authorization error...');
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        return fetchAudioData(retryCount + 1);
+                    }
+
                     throw new Error(errorData.error || `Failed to fetch audio data: ${response.status}`);
                 }
 
