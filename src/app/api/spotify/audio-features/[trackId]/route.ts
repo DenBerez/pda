@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-interface Params {
-    trackId: string;
-}
+// Define the params type using the Next.js convention
+type RouteParams = {
+    params: {
+        trackId: string;
+    }
+};
 
 export async function GET(
     request: NextRequest,
-    context: { params: Params }
+    { params }: RouteParams
 ) {
     try {
         // Get the track ID from the URL params
-        const trackId = context.params.trackId;
+        const trackId = params.trackId;
 
         if (!trackId) {
             return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
