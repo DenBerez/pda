@@ -21,9 +21,18 @@ interface SpotifyPlaybackEvent extends CustomEvent {
 }
 
 // Add near the top of the file, before the component
-async function fetchAudioFeatures(trackId: string) {
+async function fetchAudioFeatures(trackId: string, refreshToken?: string) {
     try {
-        const response = await fetch(`/api/spotify/audio-features/${trackId}`);
+        const response = await fetch(`/api/spotify/audio-features/${trackId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                refreshToken: refreshToken
+            })
+        });
+
         if (!response.ok) throw new Error('Failed to fetch audio features');
         return response.json();
     } catch (error) {

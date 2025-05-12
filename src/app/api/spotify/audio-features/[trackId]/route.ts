@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(
+export async function POST(
     request: NextRequest,
     { params }: { params: { trackId: string } }
 ) {
@@ -12,8 +12,12 @@ export async function GET(
             return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
         }
 
-        // Get the refresh token from cookies or query params
-        const refreshToken = request.cookies.get('spotify_refresh_token')?.value ||
+        // Get the request body
+        const body = await request.json().catch(() => ({}));
+
+        // Get the refresh token from body, cookies, or query params
+        const refreshToken = body.refreshToken ||
+            request.cookies.get('spotify_refresh_token')?.value ||
             new URL(request.url).searchParams.get('refreshToken');
 
         // Get client credentials from environment variables
@@ -87,4 +91,12 @@ export async function GET(
         console.error('Error in audio features API:', error);
         return NextResponse.json({ error: 'Failed to fetch audio data' }, { status: 500 });
     }
+}
+
+// Keep the GET method for backward compatibility if needed
+export async function GET(
+    request: NextRequest,
+    { params }: { params: { trackId: string } }
+) {
+    return NextResponse.json({ error: 'Please use POST method for this endpoint' }, { status: 405 });
 } 
