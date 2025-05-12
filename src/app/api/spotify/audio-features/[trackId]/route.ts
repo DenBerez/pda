@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+type Params = {
+    trackId: string;
+};
+
 export async function GET(
     request: NextRequest,
-    { params }: { params: { trackId: string } }
+    { params }: { params: Params }
 ) {
     try {
         // Get the track ID from the URL params
@@ -46,7 +50,7 @@ export async function GET(
         }
 
         const tokenData = await tokenResponse.json();
-        const accessToken = tokenData.access_token; // Fix: Define accessToken
+        const accessToken = tokenData.access_token;
 
         // Fetch audio features for the track
         const featuresResponse = await fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
