@@ -35,6 +35,7 @@ import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeMuteIcon from '@mui/icons-material/VolumeMute';
 import { useSpotifyWebPlayback } from '@/app/hooks/useSpotifyWebPlayback';
 import { useOAuth2Connection } from '@/app/hooks/useOAuth2Connection';
+import AudioVisualizer from '../AudioVisualizer';
 
 // Sample data for demonstration when not connected
 const sampleSpotifyData = {
@@ -103,6 +104,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [username, setUsername] = useState<string | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Use the OAuth2 hook for consistent auth handling
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
@@ -465,7 +467,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     return (
         <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             {/* Content */}
-            <Box sx={{
+            <Box ref={containerRef} sx={{
                 flexGrow: 1,
                 overflow: 'auto',
                 position: 'relative',
@@ -559,6 +561,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                             size="small"
                                         />
                                     </Box>
+                                </Box>
+
+                                <Box sx={{ mt: 2, mb: 2, width: '100%' }}>
+                                    {currentTrack && (
+                                        <AudioVisualizer
+                                            trackId={currentTrack.id}
+                                            isPlaying={isPlaying}
+                                            refreshToken={refreshToken}
+                                        />
+                                    )}
                                 </Box>
 
                                 <Box sx={{ mt: 'auto' }}>
@@ -833,6 +845,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     size="small"
                                                 />
                                             </Box>
+                                        </Box>
+
+                                        <Box sx={{ mt: 2, mb: 2, width: '100%' }}>
+                                            {currentTrack && (
+                                                <AudioVisualizer
+                                                    trackId={currentTrack.id}
+                                                    isPlaying={isPlaying}
+                                                    refreshToken={refreshToken}
+                                                />
+                                            )}
                                         </Box>
 
                                         <Box sx={{ mt: 'auto' }}>

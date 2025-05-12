@@ -130,7 +130,7 @@ const DashboardGrid: React.FC = () => {
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const [forceRefresh, setForceRefresh] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    const [audioVisualization, setAudioVisualization] = useLocalStorage<boolean>('dashboardAudioVisualization', false);
+    // const [audioVisualization, setAudioVisualization] = useLocalStorage<boolean>('dashboardAudioVisualization', false);
     // Use a separate loading check
     const isLocalStorageLoading = false; // Remove or handle loading differently
 
@@ -441,9 +441,9 @@ const DashboardGrid: React.FC = () => {
         };
     }, []);
 
-    const toggleAudioVisualization = useCallback(() => {
-        setAudioVisualization(prev => !prev);
-    }, [setAudioVisualization]);
+    // const toggleAudioVisualization = useCallback(() => {
+    //     setAudioVisualization(prev => !prev);
+    // }, [setAudioVisualization]);
 
     return (
         <ThemeProvider theme={customTheme}>
@@ -613,8 +613,8 @@ const DashboardGrid: React.FC = () => {
                     onChangeBackgroundImage={setBackgroundImage}
                     backgroundOpacity={backgroundOpacity}
                     onChangeBackgroundOpacity={setBackgroundOpacity}
-                    audioVisualization={audioVisualization}
-                    onToggleAudioVisualization={toggleAudioVisualization}
+                // audioVisualization={audioVisualization}
+                // onToggleAudioVisualization={toggleAudioVisualization}
                 />
 
                 {/* Widget Edit Panel */}
@@ -643,7 +643,7 @@ const DashboardGrid: React.FC = () => {
                 )}
 
                 {/* Audio Visualizer */}
-                <DashboardAudioVisualizer enabled={audioVisualization} />
+                {/* <DashboardAudioVisualizer enabled={audioVisualization} /> */}
             </Box>
             <Tooltip title="Settings">
                 <Box
