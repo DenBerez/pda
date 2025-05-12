@@ -32,7 +32,9 @@ export async function GET(request: NextRequest) {
                 'user-read-currently-playing',
                 'user-read-playback-state',
                 'user-modify-playback-state',
-                'user-read-recently-played'
+                'user-read-recently-played',
+                'user-read-audio-features',
+
             ].join(' ');
 
             // Generate a random state value for security

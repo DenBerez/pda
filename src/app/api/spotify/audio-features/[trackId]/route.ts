@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(
+    request: NextRequest,
+    { params }: { params: { trackId: string } }
+) {
     try {
-        // Get the track ID from the URL
-        const trackId = request.nextUrl.searchParams.get('trackId');
+        // Get the track ID from the URL params
+        const trackId = params.trackId;
 
         if (!trackId) {
             return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
         }
 
         const tokenData = await tokenResponse.json();
-        const accessToken = tokenData.access_token;
+        const accessToken = tokenData.access_token; // Fix: Define accessToken
 
         // Fetch audio features for the track
         const featuresResponse = await fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {

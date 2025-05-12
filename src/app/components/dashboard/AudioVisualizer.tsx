@@ -22,9 +22,14 @@ interface SpotifyPlaybackEvent extends CustomEvent {
 
 // Add near the top of the file, before the component
 async function fetchAudioFeatures(trackId: string) {
-    const response = await fetch(`/api/spotify/audio-features/${trackId}`);
-    if (!response.ok) throw new Error('Failed to fetch audio features');
-    return response.json();
+    try {
+        const response = await fetch(`/api/spotify/audio-features/${trackId}`);
+        if (!response.ok) throw new Error('Failed to fetch audio features');
+        return response.json();
+    } catch (error) {
+        console.error('Error fetching audio features:', error);
+        throw error;
+    }
 }
 
 export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerProps) {
