@@ -142,4 +142,140 @@ export async function GET(request: NextRequest) {
         console.error('Spotify API error:', error);
         return NextResponse.json({ error: 'Failed to fetch Spotify data' }, { status: 500 });
     }
+}
+
+export async function POST(request: NextRequest) {
+    try {
+        // Get the request body
+        const body = await request.json().catch(() => ({}));
+
+        // Get the action type from the request body
+        const action = body.action;
+
+        // Get the track ID for audio features/analysis
+        const trackId = body.trackId;
+
+        // Get the refresh token from body, cookies, or query params
+        const refreshToken = body.refreshToken ||
+            request.cookies.get('spotify_refresh_token')?.value;
+
+        // Get client credentials from environment variables
+        const clientId = body.clientId || process.env.SPOTIFY_CLIENT_ID;
+        const clientSecret = body.clientSecret || process.env.SPOTIFY_CLIENT_SECRET;
+
+        if (!clientId || !clientSecret) {
+            return NextResponse.json({ error: 'Spotify credentials not configured' }, { status: 500 });
+        }
+
+        // No refresh token means we need to authenticate
+        if (!refreshToken) {
+            return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+        }
+
+        // Get a new access token using the refresh token
+        const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
+            },
+            body: new URLSearchParams({
+                grant_type: 'refresh_token',
+                refresh_token: refreshToken
+            })
+        });
+
+        if (!tokenResponse.ok) {
+            throw new Error('Failed to refresh Spotify access token');
+        }
+
+        const tokenData = await tokenResponse.json();
+        const accessToken = tokenData.access_token;
+
+        // Handle different actions
+        switch (action) {
+            case 'audio-features':
+                if (!trackId) {
+                    return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
+                }
+
+                // Fetch audio features for the track
+                const featuresResponse = await fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!featuresResponse.ok) {
+                    if (featuresResponse.status === 404) {
+                        return NextResponse.json({ error: 'Track not found' }, { status: 404 });
+                    }
+                    throw new Error(`Failed to fetch audio features: ${featuresResponse.statusText}`);
+                }
+
+                const audioFeatures = await featuresResponse.json();
+                return NextResponse.json({ features: audioFeatures });
+
+            case 'audio-analysis':
+                if (!trackId) {
+                    return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
+                }
+
+                // Fetch audio analysis for the track
+                const analysisResponse = await fetch(`https://api.spotify.com/v1/audio-analysis/${trackId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!analysisResponse.ok) {
+                    if (analysisResponse.status === 404) {
+                        return NextResponse.json({ error: 'Track not found' }, { status: 404 });
+                    }
+                    throw new Error(`Failed to fetch audio analysis: ${analysisResponse.statusText}`);
+                }
+
+                const audioAnalysis = await analysisResponse.json();
+                return NextResponse.json({ analysis: audioAnalysis });
+
+            case 'audio-data':
+                if (!trackId) {
+                    return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
+                }
+
+                // Fetch both audio features and analysis
+                const [featuresResp, analysisResp] = await Promise.all([
+                    fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    }),
+                    fetch(`https://api.spotify.com/v1/audio-analysis/${trackId}`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` }
+                    })
+                ]);
+
+                let features = null;
+                if (featuresResp.ok) {
+                    features = await featuresResp.json();
+                }
+
+                let analysis = null;
+                if (analysisResp.ok) {
+                    analysis = await analysisResp.json();
+                }
+
+                return NextResponse.json({
+                    features,
+                    analysis
+                });
+
+            // Add other actions as needed
+
+            default:
+                return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+        }
+
+    } catch (error) {
+        console.error('Error in Spotify API:', error);
+        return NextResponse.json({ error: 'Failed to process Spotify request' }, { status: 500 });
+    }
 } 
