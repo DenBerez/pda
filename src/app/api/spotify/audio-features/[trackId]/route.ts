@@ -92,11 +92,3 @@ export async function POST(
         return NextResponse.json({ error: 'Failed to fetch audio data' }, { status: 500 });
     }
 }
-
-// Keep the GET method for backward compatibility if needed
-export async function GET(
-    request: NextRequest,
-    { params }: { params: { trackId: string } }
-) {
-    return NextResponse.json({ error: 'Please use POST method for this endpoint' }, { status: 405 });
-} 
