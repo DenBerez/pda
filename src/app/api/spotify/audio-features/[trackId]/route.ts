@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-type RouteParams = {
-    params: {
-        trackId: string;
-    };
-};
-
 export async function POST(
     request: NextRequest,
-    { params }: RouteParams
+    { params }: { params: { trackId: string } }
 ) {
     try {
         // Get the track ID from the URL params
