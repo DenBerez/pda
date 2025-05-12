@@ -263,51 +263,23 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                 const iframes = document.querySelectorAll('iframe');
                 console.log('Iframes found:', iframes.length);
 
-                iframes.forEach((iframe, index) => {
-                    try {
-                        if (iframe.contentDocument) {
-                            const iframeAudio = iframe.contentDocument.querySelectorAll('audio');
-                            console.log(`Audio elements in iframe ${index}:`, iframeAudio.length);
+                // For Spotify Web Playback SDK, we need a different approach
+                // since we can't access the iframe content directly
 
-                            if (iframeAudio.length > 0) {
-                                const audioEl = iframeAudio[0] as HTMLAudioElement;
-                                audioEl.dataset.spotifyPlayer = 'true';
-                                setAudioElement(audioEl);
-                                setIsPlaying(!audioEl.paused);
-                                console.log('Found audio in iframe:', audioEl);
-                            }
-                        }
-                    } catch (err) {
-                        console.log(`Cannot access iframe ${index} content (likely cross-origin)`);
+                // Look for the Spotify iframe specifically
+                const spotifyIframe = document.querySelector('iframe[src*="spotify"]');
+                if (spotifyIframe) {
+                    console.log('Found Spotify iframe:', spotifyIframe);
+
+                    // Since we can't access the iframe content directly due to CORS,
+                    // we'll use the system audio capture as a fallback
+                    if (!audioElement) {
+                        console.log('Will try system audio capture for Spotify iframe');
+                        // The system audio capture will be triggered in the fallback useEffect
                     }
-                });
+                }
             } catch (err) {
                 console.log('Error accessing iframes:', err);
-            }
-
-            // Add more specific selectors for Spotify
-            const spotifyIframe = document.querySelector('iframe[src*="spotify"]');
-            if (spotifyIframe) {
-                console.log('Found Spotify iframe:', spotifyIframe);
-            }
-
-            // Look for elements with Spotify-related classes
-            const spotifyElements = document.querySelectorAll('[class*="spotify"], [id*="spotify"]');
-            console.log('Potential Spotify elements:', spotifyElements.length);
-
-            if (allAudioElements.length > 0) {
-                // Try to find one that's playing or has a source
-                const playingAudio = Array.from(allAudioElements).find(
-                    audio => !audio.paused || audio.src.includes('scdn.co') || audio.src.includes('spotify')
-                );
-
-                if (playingAudio) {
-                    console.log('Found likely Spotify audio:', playingAudio);
-                    // Add the data attribute if it's missing
-                    playingAudio.dataset.spotifyPlayer = 'true';
-                    setAudioElement(playingAudio);
-                    setIsPlaying(true);
-                }
             }
         };
 
@@ -316,7 +288,7 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         const intervalId = setInterval(connectToSpotifyWidgetAudio, 3000);
 
         return () => clearInterval(intervalId);
-    }, [enabled]);
+    }, [enabled, audioElement]);
 
     // Add this useEffect to create a fallback audio analyzer
     useEffect(() => {
@@ -338,31 +310,118 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
             }
         }
 
-        // Try to get system audio (requires user permission)
+        // Try to get system audio with better error handling and fallbacks
         const getSystemAudio = async () => {
             try {
                 console.log('Requesting system audio access...');
-                const stream = await navigator.mediaDevices.getDisplayMedia({
-                    audio: true,
-                    video: false
-                });
 
-                if (stream) {
-                    console.log('Got system audio stream');
-                    sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
-                    sourceNodeRef.current.connect(analyserRef.current!);
+                // First try with more specific constraints
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({
+                        audio: {
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            autoGainControl: false
+                        },
+                        video: false
+                    });
 
-                    // Start visualization
-                    startCanvasVisualization();
-                    return true;
+                    if (stream && stream.getAudioTracks().length > 0) {
+                        console.log('Got system audio stream with specific constraints');
+                        sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
+                        sourceNodeRef.current.connect(analyserRef.current!);
+
+                        // Start visualization
+                        startCanvasVisualization();
+                        return true;
+                    }
+                } catch (specificErr) {
+                    console.log('Specific constraints failed, trying simpler approach:', specificErr);
                 }
+
+                // Try with simpler constraints
+                try {
+                    // Some browsers require video to be true for system audio
+                    const stream = await navigator.mediaDevices.getDisplayMedia({
+                        audio: true,
+                        video: true
+                    });
+
+                    if (stream && stream.getAudioTracks().length > 0) {
+                        console.log('Got system audio stream with video');
+                        sourceNodeRef.current = audioContextRef.current!.createMediaStreamSource(stream);
+                        sourceNodeRef.current.connect(analyserRef.current!);
+
+                        // Start visualization
+                        startCanvasVisualization();
+                        return true;
+                    } else {
+                        console.log('No audio tracks in the stream');
+                    }
+                } catch (err) {
+                    console.error('Failed to get system audio with video:', err);
+                }
+
+                // If all else fails, create a fake visualization
+                console.log('Using fake visualization as last resort');
+                startFakeVisualization();
+                return false;
             } catch (err) {
-                console.error('Failed to get system audio:', err);
+                console.error('All system audio capture methods failed:', err);
+                startFakeVisualization();
+                return false;
             }
-            return false;
         };
 
-        // Function to visualize audio on canvas
+        // Function to create a fake visualization when we can't get real audio
+        const startFakeVisualization = () => {
+            if (!canvasRef.current) return;
+
+            // Show canvas since we're using it as fallback
+            canvasRef.current.style.display = 'block';
+
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+
+            // Set canvas dimensions
+            canvas.width = window.innerWidth;
+            canvas.height = 100;
+
+            // Create fake data that looks like an audio visualization
+            const fakeDataLength = 128;
+            const fakeData = new Uint8Array(fakeDataLength);
+
+            const draw = () => {
+                animationRef.current = requestAnimationFrame(draw);
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Generate some fake data that looks like audio
+                for (let i = 0; i < fakeDataLength; i++) {
+                    // Create a wave-like pattern
+                    fakeData[i] = 50 + Math.sin(Date.now() * 0.001 + i * 0.15) * 30 + Math.random() * 15;
+                }
+
+                // Draw visualization
+                const barWidth = (canvas.width / fakeDataLength) * 2.5;
+                let x = 0;
+
+                for (let i = 0; i < fakeDataLength; i++) {
+                    const barHeight = fakeData[i] / 2;
+
+                    // Use theme colors
+                    ctx.fillStyle = `rgba(100, 100, 255, ${barHeight / 100})`;
+                    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+                    x += barWidth + 1;
+                }
+            };
+
+            draw();
+        };
+
+        // Function to visualize audio on canvas (keep your existing implementation)
         const startCanvasVisualization = () => {
             if (!canvasRef.current || !analyserRef.current) return;
 
@@ -421,7 +480,31 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         };
     }, [enabled, audioElement]);
 
-    if (!enabled || !audioElement) return null;
+    // Add this useEffect to listen for Spotify playback state changes
+    useEffect(() => {
+        if (!enabled) return;
+
+        const handleSpotifyPlaybackChange = (event: CustomEvent) => {
+            console.log('Received Spotify playback state change:', event.detail);
+
+            // If we don't have an audio element and Spotify is playing,
+            // trigger the fallback visualization
+            if (!audioElement && event.detail.spotifyPlaying) {
+                // Force the canvas to be visible
+                if (canvasRef.current) {
+                    canvasRef.current.style.display = 'block';
+                }
+            }
+        };
+
+        window.addEventListener('spotify-playback-state-changed', handleSpotifyPlaybackChange as EventListener);
+
+        return () => {
+            window.removeEventListener('spotify-playback-state-changed', handleSpotifyPlaybackChange as EventListener);
+        };
+    }, [enabled, audioElement]);
+
+    if (!enabled) return null;
 
     return (
         <>
@@ -436,10 +519,10 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                     pointerEvents: 'none',
                     zIndex: 1,
                     opacity: 0.7,
-                    display: 'block' // Always show the WaveSurfer container
+                    display: audioElement ? 'block' : 'none' // Show only if we have an audio element
                 }}
             />
-            {/* Keep the canvas as a fallback but hide it by default */}
+            {/* Canvas is our fallback and will be shown when needed */}
             <canvas
                 ref={canvasRef}
                 style={{
@@ -451,7 +534,7 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
                     pointerEvents: 'none',
                     zIndex: 1,
                     opacity: 0.7,
-                    display: 'none' // Hide by default, could add logic to show if WaveSurfer fails
+                    display: 'none' // Initially hidden, will be shown by the visualization code
                 }}
             />
         </>

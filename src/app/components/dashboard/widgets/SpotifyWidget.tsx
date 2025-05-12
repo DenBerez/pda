@@ -343,28 +343,6 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         </Box>
     );
 
-    // Add this debugging section
-    useEffect(() => {
-        console.log('Spotify connection status:', {
-            accessToken: !!accessToken,
-            refreshToken: !!refreshToken,
-            isConnected: isPlayerConnected,
-            deviceId,
-            currentTrack: !!currentTrack,
-            error: sdkError
-        });
-    }, [accessToken, refreshToken, isPlayerConnected, deviceId, currentTrack, sdkError]);
-
-    useEffect(() => {
-        console.log('Spotify credentials check:', {
-            clientId: process.env.SPOTIFY_CLIENT_ID,
-            clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-            hasRefreshToken: !!refreshToken,
-            envClientId: process.env.SPOTIFY_CLIENT_ID,
-            envClientSecret: process.env.SPOTIFY_CLIENT_SECRET
-        });
-    }, [process.env.SPOTIFY_CLIENT_ID, process.env.SPOTIFY_CLIENT_SECRET, refreshToken]);
-
     // Add this function to fetch user profile
     const fetchUserProfile = useCallback(async () => {
         if (!accessToken) return;
@@ -422,6 +400,24 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             audioRef.current.dataset.spotifyPlayer = 'true';
         }
     }, [audioRef.current]);
+
+    // Add this useEffect to dispatch events when the player state changes
+    useEffect(() => {
+        if (isPlaying && currentTrack) {
+            // Dispatch an event that the visualizer can listen for
+            const event = new CustomEvent('spotify-playback-state-changed', {
+                detail: {
+                    isPlaying,
+                    currentTrack,
+                    // We don't have direct access to the audio element,
+                    // but we can signal that Spotify is playing
+                    spotifyPlaying: true
+                }
+            });
+            window.dispatchEvent(event);
+            console.log('Dispatched spotify-playback-state-changed event');
+        }
+    }, [isPlaying, currentTrack]);
 
     // Loading state
     if (loading) {
