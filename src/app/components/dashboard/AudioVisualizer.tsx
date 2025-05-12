@@ -28,32 +28,17 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
                     })
                 });
 
-                console.log('Response:', response);
-
                 if (!response.ok) {
-                    throw new Error(`Failed to fetch audio data: ${response.status}`);
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Failed to fetch audio data: ${response.status}`);
                 }
 
                 const data = await response.json();
                 console.log('Received audio data:', data);
 
-                if (!data.features || !data.analysis) {
-                    console.warn('Missing audio features or analysis data');
-                }
-
-                // Store the data even if partial
                 audioFeaturesRef.current = {
-                    features: data.features || {
-                        energy: 0.5,
-                        tempo: 120,
-                        danceability: 0.5,
-                        valence: 0.5
-                    },
-                    analysis: data.analysis || {
-                        segments: [{ pitches: Array(12).fill(0.5) }],
-                        beats: [{ start: 0 }],
-                        tatums: [{ start: 0 }]
-                    }
+                    features: data.features,
+                    analysis: data.analysis
                 };
 
                 if (isPlaying) {

@@ -253,28 +253,33 @@ export async function POST(request: NextRequest) {
                     })
                 ]);
 
-                console.log('Audio Features Response:', featuresResp.status);
-                console.log('Audio Analysis Response:', analysisResp.status);
-
                 let features = null;
                 let analysis = null;
+                let errors = [];
 
                 if (featuresResp.ok) {
                     features = await featuresResp.json();
                 } else {
-                    console.error('Failed to fetch audio features:', await featuresResp.text());
+                    const errorText = await featuresResp.text();
+                    errors.push(`Failed to fetch audio features: ${errorText}`);
                 }
 
                 if (analysisResp.ok) {
                     analysis = await analysisResp.json();
                 } else {
-                    console.error('Failed to fetch audio analysis:', await analysisResp.text());
+                    const errorText = await analysisResp.text();
+                    errors.push(`Failed to fetch audio analysis: ${errorText}`);
                 }
 
+                // If both requests failed, return an error
                 if (!features && !analysis) {
-                    throw new Error('Failed to fetch both audio features and analysis');
+                    return NextResponse.json({
+                        error: 'Failed to fetch audio data',
+                        details: errors
+                    }, { status: 500 });
                 }
 
+                // Return whatever data we have, with fallbacks for missing data
                 return NextResponse.json({
                     features: features || {
                         energy: 0.5,
