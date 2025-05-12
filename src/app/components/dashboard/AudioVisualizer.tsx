@@ -17,6 +17,7 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
 
         const fetchAudioData = async () => {
             try {
+                console.log('Fetching audio data for track:', trackId);
                 const response = await fetch('/api/spotify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -27,15 +28,51 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
                     })
                 });
 
-                if (!response.ok) throw new Error('Failed to fetch audio data');
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch audio data: ${response.status}`);
+                }
+
                 const data = await response.json();
-                audioFeaturesRef.current = data;
+                console.log('Received audio data:', data);
+
+                if (!data.features || !data.analysis) {
+                    console.warn('Missing audio features or analysis data');
+                }
+
+                // Store the data even if partial
+                audioFeaturesRef.current = {
+                    features: data.features || {
+                        energy: 0.5,
+                        tempo: 120,
+                        danceability: 0.5,
+                        valence: 0.5
+                    },
+                    analysis: data.analysis || {
+                        segments: [{ pitches: Array(12).fill(0.5) }],
+                        beats: [{ start: 0 }],
+                        tatums: [{ start: 0 }]
+                    }
+                };
 
                 if (isPlaying) {
                     startVisualization();
                 }
             } catch (error) {
                 console.error('Error fetching audio data:', error);
+                // Set fallback data for visualization
+                audioFeaturesRef.current = {
+                    features: {
+                        energy: 0.5,
+                        tempo: 120,
+                        danceability: 0.5,
+                        valence: 0.5
+                    },
+                    analysis: {
+                        segments: [{ pitches: Array(12).fill(0.5) }],
+                        beats: [{ start: 0 }],
+                        tatums: [{ start: 0 }]
+                    }
+                };
             }
         };
 
@@ -60,7 +97,6 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Get parent container dimensions
         const container = canvas.parentElement;
         if (!container) return;
 
@@ -72,44 +108,84 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
 
         if (!features || !analysis) return;
 
-        // Use actual audio features for visualization
         const energy = features.energy || 0.5;
         const tempo = features.tempo || 120;
         const danceability = features.danceability || 0.5;
         const valence = features.valence || 0.5;
         const segments = analysis.segments || [];
+        const beats = analysis.beats || [];
+        const tatums = analysis.tatums || [];
+
+        let lastBeatTime = 0;
+        let currentBeatIndex = 0;
 
         const draw = () => {
             animationRef.current = requestAnimationFrame(draw);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Use actual segment data for visualization
+            // Calculate current time position
             const currentTime = (Date.now() % (tempo * 20)) / 1000;
+
+            // Find current beat
+            const beatDuration = 60 / tempo;
+            if (currentTime - lastBeatTime >= beatDuration) {
+                lastBeatTime = currentTime;
+                currentBeatIndex = (currentBeatIndex + 1) % beats.length;
+            }
+
+            // Get current segment based on time
             const segmentIndex = Math.floor(currentTime * (segments.length / (tempo / 60)));
             const currentSegment = segments[segmentIndex % segments.length];
 
-            const barCount = 64;
+            const barCount = 32;
             const barWidth = canvas.width / barCount;
+            const baseHeight = canvas.height * 0.3;
 
+            // Draw background glow
+            const gradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, canvas.width / 2
+            );
+            gradient.addColorStop(0, `hsla(${valence * 360}, 80%, 50%, 0.2)`);
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw bars
             for (let i = 0; i < barCount; i++) {
                 const segmentPitches = currentSegment?.pitches || Array(12).fill(0.5);
                 const pitchIndex = i % 12;
                 const pitch = segmentPitches[pitchIndex];
 
-                const barHeight = canvas.height * pitch * energy;
+                // Calculate height with beat influence
+                const beatInfluence = Math.sin(currentTime * Math.PI * 2 * (tempo / 60));
+                const heightMultiplier = 1 + (beatInfluence * energy * 0.5);
+                const barHeight = (baseHeight + (canvas.height * pitch * energy)) * heightMultiplier;
 
-                // Color based on valence and energy
-                const hue = valence * 360;
-                const saturation = danceability * 100;
-                const lightness = 50 + (energy * 20);
+                // Dynamic color based on audio features
+                const hue = (valence * 360) + (i * (360 / barCount));
+                const saturation = 70 + (danceability * 30);
+                const lightness = 40 + (energy * 30);
+                ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.8)`;
 
-                ctx.fillStyle = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.7)`;
-                ctx.fillRect(
-                    i * barWidth,
-                    canvas.height - barHeight,
-                    barWidth * 0.9,
-                    barHeight
-                );
+                // Draw bar with rounded corners
+                const x = i * barWidth;
+                const y = canvas.height - barHeight;
+                const width = barWidth * 0.8;
+                const radius = width / 4;
+
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + barHeight - radius);
+                ctx.quadraticCurveTo(x + width, y + barHeight, x + width - radius, y + barHeight);
+                ctx.lineTo(x + radius, y + barHeight);
+                ctx.quadraticCurveTo(x, y + barHeight, x, y + barHeight - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+                ctx.fill();
             }
         };
 
@@ -124,7 +200,8 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken }: Au
                 height: '100px',
                 display: 'block',
                 marginTop: '8px',
-                marginBottom: '8px'
+                marginBottom: '8px',
+                borderRadius: '8px'
             }}
         />
     );

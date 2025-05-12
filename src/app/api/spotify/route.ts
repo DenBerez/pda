@@ -243,40 +243,61 @@ export async function POST(request: NextRequest) {
                     return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
                 }
 
-                // Fetch both audio features and analysis
-                const [featuresResp, analysisResp] = await Promise.all([
-                    fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
-                        headers: { 'Authorization': `Bearer ${accessToken}` }
-                    }),
-                    fetch(`https://api.spotify.com/v1/audio-analysis/${trackId}`, {
-                        headers: { 'Authorization': `Bearer ${accessToken}` }
-                    })
-                ]);
+                try {
+                    // Fetch both audio features and analysis
+                    const [featuresResp, analysisResp] = await Promise.all([
+                        fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
+                            headers: { 'Authorization': `Bearer ${accessToken}` }
+                        }),
+                        fetch(`https://api.spotify.com/v1/audio-analysis/${trackId}`, {
+                            headers: { 'Authorization': `Bearer ${accessToken}` }
+                        })
+                    ]);
 
-                let features = null;
-                if (featuresResp.ok) {
-                    features = await featuresResp.json();
-                }
+                    console.log('Audio Features Response:', featuresResp.status);
+                    console.log('Audio Analysis Response:', analysisResp.status);
 
-                let analysis = null;
-                if (analysisResp.ok) {
-                    analysis = await analysisResp.json();
-                }
+                    let features = null;
+                    let analysis = null;
 
-                console.log('Spotify Audio Analysis Response:', {
-                    features,
-                    analysis: {
-                        segments: analysis?.segments?.length,
-                        sections: analysis?.sections?.length,
-                        beats: analysis?.beats?.length,
-                        tatums: analysis?.tatums?.length
+                    if (featuresResp.ok) {
+                        features = await featuresResp.json();
+                    } else {
+                        console.error('Failed to fetch audio features:', await featuresResp.text());
                     }
-                });
 
-                return NextResponse.json({
-                    features,
-                    analysis
-                });
+                    if (analysisResp.ok) {
+                        analysis = await analysisResp.json();
+                    } else {
+                        console.error('Failed to fetch audio analysis:', await analysisResp.text());
+                    }
+
+                    if (!features && !analysis) {
+                        return NextResponse.json({
+                            error: 'Failed to fetch both audio features and analysis'
+                        }, { status: 500 });
+                    }
+
+                    return NextResponse.json({
+                        features: features || {
+                            energy: 0.5,
+                            tempo: 120,
+                            danceability: 0.5,
+                            valence: 0.5
+                        },
+                        analysis: analysis || {
+                            segments: [{ pitches: Array(12).fill(0.5) }],
+                            beats: [{ start: 0 }],
+                            tatums: [{ start: 0 }]
+                        }
+                    });
+                } catch (error) {
+                    console.error('Error fetching audio data:', error);
+                    return NextResponse.json({
+                        error: 'Failed to fetch audio data',
+                        details: error instanceof Error ? error.message : 'Unknown error'
+                    }, { status: 500 });
+                }
 
             // Add other actions as needed
 
