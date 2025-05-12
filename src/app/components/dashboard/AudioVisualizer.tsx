@@ -13,6 +13,20 @@ interface AudioVisualizerProps {
     enabled: boolean;
 }
 
+interface SpotifyPlaybackEvent extends CustomEvent {
+    detail: {
+        currentTrack?: { id: string };
+        spotifyPlaying: boolean;
+    }
+}
+
+// Add near the top of the file, before the component
+async function fetchAudioFeatures(trackId: string) {
+    const response = await fetch(`/api/spotify/audio-features/${trackId}`);
+    if (!response.ok) throw new Error('Failed to fetch audio features');
+    return response.json();
+}
+
 export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerProps) {
     const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -480,29 +494,110 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         };
     }, [enabled, audioElement]);
 
-    // Add this useEffect to listen for Spotify playback state changes
+    // Add this useEffect to integrate with Spotify events and audio features
     useEffect(() => {
         if (!enabled) return;
 
-        const handleSpotifyPlaybackChange = (event: CustomEvent) => {
+        let audioFeatures: any = null;
+
+        const handleSpotifyPlaybackChange = async (event: CustomEvent) => {
             console.log('Received Spotify playback state change:', event.detail);
 
-            // If we don't have an audio element and Spotify is playing,
-            // trigger the fallback visualization
-            if (!audioElement && event.detail.spotifyPlaying) {
-                // Force the canvas to be visible
+            if (event.detail.currentTrack?.id && event.detail.spotifyPlaying) {
+                // Get audio features for the current track
+                const trackId = event.detail.currentTrack.id;
+                audioFeatures = await fetchAudioFeatures(trackId);
+                console.log('Got audio features:', audioFeatures);
+
+                // Force the canvas to be visible and start enhanced visualization
                 if (canvasRef.current) {
                     canvasRef.current.style.display = 'block';
+                    startEnhancedFakeVisualization(audioFeatures);
+                }
+            } else if (!event.detail.spotifyPlaying) {
+                // Stop visualization when playback stops
+                if (animationRef.current) {
+                    cancelAnimationFrame(animationRef.current);
+                    animationRef.current = null;
+                }
+
+                // Hide canvas
+                if (canvasRef.current) {
+                    canvasRef.current.style.display = 'none';
                 }
             }
         };
 
-        window.addEventListener('spotify-playback-state-changed', handleSpotifyPlaybackChange as EventListener);
+        window.addEventListener('spotify-playback-state-changed',
+            handleSpotifyPlaybackChange as unknown as EventListener);
 
         return () => {
-            window.removeEventListener('spotify-playback-state-changed', handleSpotifyPlaybackChange as EventListener);
+            window.removeEventListener('spotify-playback-state-changed',
+                handleSpotifyPlaybackChange as unknown as EventListener);
+            if (animationRef.current) {
+                cancelAnimationFrame(animationRef.current);
+            }
         };
-    }, [enabled, audioElement]);
+    }, [enabled]);
+
+    // Enhanced fake visualization that responds to track features
+    const startEnhancedFakeVisualization = (audioFeatures: any) => {
+        if (!canvasRef.current) return;
+
+        // Show canvas
+        canvasRef.current.style.display = 'block';
+
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        // Set canvas dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = 100;
+
+        // Use audio features to influence visualization
+        const energy = audioFeatures?.energy || 0.5;
+        const tempo = audioFeatures?.tempo || 120;
+        const danceability = audioFeatures?.danceability || 0.5;
+
+        // Calculate wave parameters based on track features
+        const amplitude = 30 * energy;
+        const frequency = 0.15 * (danceability + 0.5);
+        const speed = tempo / 120 * 0.001;
+
+        const fakeDataLength = 128;
+        const fakeData = new Uint8Array(fakeDataLength);
+
+        const draw = () => {
+            animationRef.current = requestAnimationFrame(draw);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Generate data that responds to the track features
+            for (let i = 0; i < fakeDataLength; i++) {
+                // Create a wave-like pattern influenced by track features
+                fakeData[i] = 50 + Math.sin(Date.now() * speed + i * frequency) * amplitude + Math.random() * 15 * energy;
+            }
+
+            // Draw visualization
+            const barWidth = (canvas.width / fakeDataLength) * 2.5;
+            let x = 0;
+
+            for (let i = 0; i < fakeDataLength; i++) {
+                const barHeight = fakeData[i] / 2;
+
+                // Use theme colors with opacity based on energy
+                ctx.fillStyle = `rgba(100, 100, 255, ${barHeight / 100 * (0.5 + energy / 2)})`;
+                ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+
+                x += barWidth + 1;
+            }
+        };
+
+        draw();
+    };
+
+
 
     if (!enabled) return null;
 
