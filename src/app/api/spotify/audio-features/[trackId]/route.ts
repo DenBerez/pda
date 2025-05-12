@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Define the params type using the Next.js convention
-type RouteParams = {
-    params: {
-        trackId: string;
-    }
-};
-
+// Use the exact type structure that Next.js expects
 export async function GET(
     request: NextRequest,
-    { params }: RouteParams
+    { params }: { params: { trackId: string } }
 ) {
     try {
         // Get the track ID from the URL params
