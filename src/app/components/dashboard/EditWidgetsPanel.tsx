@@ -450,6 +450,25 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     helperText="Select how to display the Spotify player"
                                 />
                             </Box>
+
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Audio Visualizer
+                                </Typography>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={tempWidget?.config?.showVisualizer ?? true}
+                                            onChange={(e) => handleConfigChange({ showVisualizer: e.target.checked })}
+                                            color="primary"
+                                        />
+                                    }
+                                    label="Show audio visualizer"
+                                />
+                                <FormHelperText>
+                                    Display a dynamic visualization of the currently playing track
+                                </FormHelperText>
+                            </Box>
                         </Box>
                     )}
 

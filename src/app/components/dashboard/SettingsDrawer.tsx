@@ -302,7 +302,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         />
 
                         {/* Audio Visualization Toggle */}
-                        <FormControlLabel
+                        {/* <FormControlLabel
                             control={
                                 <Switch
                                     checked={audioVisualization}
@@ -320,7 +320,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                         />
                         <FormHelperText>
                             Visualize system audio with a wavy glow effect in your theme color
-                        </FormHelperText>
+                        </FormHelperText> */}
 
                         {/* Color Theme Selection */}
                         <Box sx={{ mt: 2 }}>

@@ -83,7 +83,13 @@ const sampleSpotifyData = {
 };
 
 interface SpotifyWidgetProps {
-    widget: Widget;
+    widget: Widget & {
+        config?: {
+            showVisualizer?: boolean;
+            layoutOption?: LayoutOptionType;
+            refreshToken?: string;
+        };
+    };
     editMode: boolean;
     onUpdateWidget: (widget: Widget) => void;
 }
@@ -564,7 +570,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                 </Box>
 
                                 <Box sx={{ mt: 2, mb: 2, width: '100%' }}>
-                                    {currentTrack && (
+                                    {currentTrack && widget.config?.showVisualizer !== false && (
                                         <AudioVisualizer
                                             trackId={currentTrack.id}
                                             isPlaying={isPlaying}
@@ -848,7 +854,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         </Box>
 
                                         <Box sx={{ mt: 2, mb: 2, width: '100%' }}>
-                                            {currentTrack && (
+                                            {currentTrack && widget.config?.showVisualizer !== false && (
                                                 <AudioVisualizer
                                                     trackId={currentTrack.id}
                                                     isPlaying={isPlaying}

@@ -263,6 +263,16 @@ export async function POST(request: NextRequest) {
                     analysis = await analysisResp.json();
                 }
 
+                console.log('Spotify Audio Analysis Response:', {
+                    features,
+                    analysis: {
+                        segments: analysis?.segments?.length,
+                        sections: analysis?.sections?.length,
+                        beats: analysis?.beats?.length,
+                        tatums: analysis?.tatums?.length
+                    }
+                });
+
                 return NextResponse.json({
                     features,
                     analysis
