@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Use the exact type structure that Next.js expects
 export async function GET(
     request: NextRequest,
     { params }: { params: { trackId: string } }
@@ -13,8 +12,9 @@ export async function GET(
             return NextResponse.json({ error: 'Track ID is required' }, { status: 400 });
         }
 
-        // Get the refresh token from cookies
-        const refreshToken = request.cookies.get('spotify_refresh_token')?.value;
+        // Get the refresh token from cookies or query params
+        const refreshToken = request.cookies.get('spotify_refresh_token')?.value ||
+            new URL(request.url).searchParams.get('refreshToken');
 
         // Get client credentials from environment variables
         const clientId = process.env.SPOTIFY_CLIENT_ID;
