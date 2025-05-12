@@ -36,7 +36,12 @@ async function fetchAudioFeatures(trackId: string, refreshToken?: string) {
         });
 
         if (!response.ok) throw new Error('Failed to fetch audio data');
-        return response.json();
+        const data = await response.json();
+
+        // Log the response to help with debugging
+        console.log('Audio features response:', data);
+
+        return data;
     } catch (error) {
         console.error('Error fetching audio data:', error);
         throw error;
@@ -216,11 +221,17 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
         const energy = audioFeatures?.features?.energy || 0.5;
         const tempo = audioFeatures?.features?.tempo || 120;
         const danceability = audioFeatures?.features?.danceability || 0.5;
+        const valence = audioFeatures?.features?.valence || 0.5; // Happiness/positivity
 
         // Calculate wave parameters based on track features
         const amplitude = 30 * energy;
         const frequency = 0.15 * (danceability + 0.5);
         const speed = tempo / 120 * 0.001;
+
+        // Choose colors based on valence (happiness)
+        const baseColor = valence > 0.5
+            ? [100, 100, 255] // Blue for positive songs
+            : [255, 100, 100]; // Red for negative songs
 
         const fakeDataLength = 128;
         const fakeData = new Uint8Array(fakeDataLength);
@@ -243,8 +254,8 @@ export default function DashboardAudioVisualizer({ enabled }: AudioVisualizerPro
             for (let i = 0; i < fakeDataLength; i++) {
                 const barHeight = fakeData[i] / 2;
 
-                // Use theme colors with opacity based on energy
-                ctx.fillStyle = `rgba(100, 100, 255, ${barHeight / 100 * (0.5 + energy / 2)})`;
+                // Use colors based on track features
+                ctx.fillStyle = `rgba(${baseColor[0]}, ${baseColor[1]}, ${baseColor[2]}, ${barHeight / 100 * (0.5 + energy / 2)})`;
                 ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
 
                 x += barWidth + 1;
