@@ -111,6 +111,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [username, setUsername] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
 
     // Use the OAuth2 hook for consistent auth handling
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
@@ -138,7 +140,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         setShuffle,
         setRepeatMode,
         transferPlayback,
-        setVolume: setPlayerVolume
+        setVolume: setPlayerVolume,
+        player
     } = useSpotifyWebPlayback({
         accessToken: accessToken || null,
         refreshToken,
@@ -380,52 +383,35 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         }
     }, [accessToken, fetchUserProfile]);
 
-    // In SpotifyWidget.tsx, verify this code is executing
+    // Initialize Web Audio API components
     useEffect(() => {
-        if (audioRef.current) {
-            console.log('Setting up Spotify player for visualizer', audioRef.current);
-            // Mark this as a Spotify player for the visualizer to find
-            audioRef.current.dataset.spotifyPlayer = 'true';
-
-            // Dispatch an event to notify the visualizer
-            const event = new CustomEvent('spotify-player-ready', {
-                detail: { audioElement: audioRef.current }
-            });
-            window.dispatchEvent(event);
+        if (!audioContextRef.current) {
+            audioContextRef.current = new AudioContext();
+            analyserRef.current = audioContextRef.current.createAnalyser();
+            analyserRef.current.fftSize = 2048;
         }
-    }, [audioRef.current]);
 
-    // Add this after creating the audio element in playPreview function
+        return () => {
+            if (audioContextRef.current) {
+                audioContextRef.current.close();
+                audioContextRef.current = null;
+            }
+        };
+    }, []);
+
+    // Connect to Spotify player when it's ready
     useEffect(() => {
-        if (audioRef.current) {
-            // Dispatch a custom event with the audio element
-            const event = new CustomEvent('spotify-audio-element', {
-                detail: { audioElement: audioRef.current }
-            });
-            window.dispatchEvent(event);
+        if (player && audioContextRef.current && analyserRef.current) {
+            // Get the audio element that Spotify creates
+            const audioElement = document.querySelector('[data-spotify-player="true"]');
 
-            // Also add a data attribute for detection
-            audioRef.current.dataset.spotifyPlayer = 'true';
+            if (audioElement instanceof HTMLMediaElement) {
+                const source = audioContextRef.current.createMediaElementSource(audioElement);
+                source.connect(analyserRef.current);
+                analyserRef.current.connect(audioContextRef.current.destination);
+            }
         }
-    }, [audioRef.current]);
-
-    // Add this useEffect to dispatch events when the player state changes
-    useEffect(() => {
-        if (isPlaying && currentTrack) {
-            // Dispatch an event that the visualizer can listen for
-            const event = new CustomEvent('spotify-playback-state-changed', {
-                detail: {
-                    isPlaying,
-                    currentTrack,
-                    // We don't have direct access to the audio element,
-                    // but we can signal that Spotify is playing
-                    spotifyPlaying: true
-                }
-            });
-            window.dispatchEvent(event);
-            console.log('Dispatched spotify-playback-state-changed event');
-        }
-    }, [isPlaying, currentTrack]);
+    }, [player]);
 
     // Loading state
     if (loading) {

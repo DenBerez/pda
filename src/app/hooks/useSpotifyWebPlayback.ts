@@ -439,6 +439,7 @@ export const useSpotifyWebPlayback = ({
 
     return {
         ...state,
+        player: playerRef.current,
         play,
         pause,
         togglePlay,
