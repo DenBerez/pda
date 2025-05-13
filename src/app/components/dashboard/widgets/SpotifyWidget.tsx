@@ -113,6 +113,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const containerRef = useRef<HTMLDivElement>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
+    const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
 
     // Use the OAuth2 hook for consistent auth handling
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
@@ -383,35 +384,55 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         }
     }, [accessToken, fetchUserProfile]);
 
-    // Initialize Web Audio API components
+    // Initialize Web Audio API when the player is ready
     useEffect(() => {
-        if (!audioContextRef.current) {
-            audioContextRef.current = new AudioContext();
-            analyserRef.current = audioContextRef.current.createAnalyser();
-            analyserRef.current.fftSize = 2048;
-        }
+        if (!isPlayerConnected) return;
+
+        const initializeAudio = () => {
+            // Create Audio Context
+            if (!audioContextRef.current) {
+                audioContextRef.current = new AudioContext();
+                analyserRef.current = audioContextRef.current.createAnalyser();
+                analyserRef.current.fftSize = 256; // Smaller size for better performance
+            }
+
+            // Find the Spotify audio element
+            const audioElement = document.querySelector('audio[data-testid="spotify-player"]');
+
+            if (audioElement && !sourceNodeRef.current) {
+                console.log('Found Spotify audio element, connecting to analyzer');
+                sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElement as HTMLAudioElement);
+                if (sourceNodeRef.current && analyserRef.current && audioContextRef.current) {
+                    sourceNodeRef.current.connect(analyserRef.current);
+                    analyserRef.current.connect(audioContextRef.current.destination);
+                }
+            }
+        };
+
+        // Try to initialize immediately
+        initializeAudio();
+
+        // Also try again after a short delay to ensure the audio element is ready
+        const timeoutId = setTimeout(initializeAudio, 1000);
 
         return () => {
+            clearTimeout(timeoutId);
+            if (sourceNodeRef.current) {
+                sourceNodeRef.current.disconnect();
+                sourceNodeRef.current = null;
+            }
             if (audioContextRef.current) {
                 audioContextRef.current.close();
                 audioContextRef.current = null;
             }
         };
-    }, []);
+    }, [isPlayerConnected]);
 
-    // Connect to Spotify player when it's ready
     useEffect(() => {
-        if (player && audioContextRef.current && analyserRef.current) {
-            // Get the audio element that Spotify creates
-            const audioElement = document.querySelector('[data-spotify-player="true"]');
-
-            if (audioElement instanceof HTMLMediaElement) {
-                const source = audioContextRef.current.createMediaElementSource(audioElement);
-                source.connect(analyserRef.current);
-                analyserRef.current.connect(audioContextRef.current.destination);
-            }
+        if (analyserRef.current) {
+            console.log('Analyzer node created and ready');
         }
-    }, [player]);
+    }, [analyserRef.current]);
 
     // Loading state
     if (loading) {
@@ -561,6 +582,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                             trackId={currentTrack.id}
                                             isPlaying={isPlaying}
                                             refreshToken={refreshToken}
+                                            analyserNode={analyserRef.current}
                                         />
                                     )}
                                 </Box>
@@ -845,6 +867,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     trackId={currentTrack.id}
                                                     isPlaying={isPlaying}
                                                     refreshToken={refreshToken}
+                                                    analyserNode={analyserRef.current}
                                                 />
                                             )}
                                         </Box>

@@ -20,6 +20,10 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken, anal
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        // Set canvas size to match display size
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+
         const bufferLength = analyserNode.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
 
@@ -28,17 +32,23 @@ export default function AudioVisualizer({ trackId, isPlaying, refreshToken, anal
 
             analyserNode.getByteFrequencyData(dataArray);
 
-            ctx.fillStyle = 'rgb(0, 0, 0)';
+            // Clear with semi-transparent black for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const barWidth = (canvas.width / bufferLength) * 2.5;
-            let barHeight;
             let x = 0;
 
             for (let i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i] / 2;
+                const percent = dataArray[i] / 255;
+                const barHeight = (canvas.height * percent) * 0.8;
 
-                ctx.fillStyle = `rgb(${barHeight + 100},50,50)`;
+                // Create gradient for bars
+                const gradient = ctx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
+                gradient.addColorStop(0, '#1DB954'); // Spotify green
+                gradient.addColorStop(1, '#1ed760'); // Lighter green
+
+                ctx.fillStyle = gradient;
                 ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
 
                 x += barWidth + 1;
