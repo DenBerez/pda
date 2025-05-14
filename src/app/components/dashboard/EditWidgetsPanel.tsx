@@ -921,19 +921,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 Date/Time Configuration
                             </Typography>
 
-                            <FormControl fullWidth margin="normal" size="small">
-                                <InputLabel id="layout-option-label">Layout Style</InputLabel>
-                                <Select
-                                    labelId="layout-option-label"
-                                    value={tempWidget?.config?.layoutOption || 'normal'}
-                                    label="Layout Style"
-                                    onChange={(e) => handleConfigChange({ layoutOption: e.target.value })}
-                                >
-                                    <MenuItem value="basic">Basic</MenuItem>
-                                    <MenuItem value="normal">Normal</MenuItem>
-                                    <MenuItem value="detailed">Detailed</MenuItem>
-                                </Select>
-                            </FormControl>
+
 
                             <FormControl fullWidth margin="normal" size="small">
                                 <InputLabel id="time-format-label">Time Format</InputLabel>
@@ -957,6 +945,17 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 }
                                 label="Show Seconds"
                             />
+
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                    Layout Style
+                                </Typography>
+                                <LayoutStyleSelector
+                                    value={tempWidget?.config?.layoutOption || 'normal'}
+                                    onChange={(newValue) => handleConfigChange({ layoutOption: newValue })}
+                                    helperText="Select how to display the Date/Time widget"
+                                />
+                            </Box>
                         </Box>
                     )}
                 </Box>

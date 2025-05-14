@@ -77,26 +77,17 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
             height: '100%',
             p: 3
         }}>
-            <Paper elevation={2} sx={{
-                p: 3,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                bgcolor: 'background.default',
-                height: '100%',
-                justifyContent: 'center'
-            }}>
-                <AccessTimeIcon sx={{ fontSize: 40, mb: 2, color: theme.palette.primary.main }} />
-                <Typography variant="h2" sx={{ fontWeight: 'medium', mb: 1 }}>
-                    {formatTime()}
+
+            <AccessTimeIcon sx={{ fontSize: 40, mb: 2, color: theme.palette.primary.main }} />
+            <Typography variant="h2" sx={{ fontWeight: 'medium', mb: 1 }}>
+                {formatTime()}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                <CalendarTodayIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                <Typography variant="h6">
+                    {formatDate()}
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                    <CalendarTodayIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-                    <Typography variant="h6">
-                        {formatDate()}
-                    </Typography>
-                </Box>
-            </Paper>
+            </Box>
         </Box>
     );
 
@@ -109,39 +100,31 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
             p: 3,
             gap: 2
         }}>
-            <Paper elevation={2} sx={{
-                p: 3,
-                flex: 1,
+
+            <AccessTimeIcon sx={{ fontSize: 40, mb: 2, color: theme.palette.primary.main }} />
+            <Typography variant="h2" sx={{ fontWeight: 'medium', mb: 1 }}>
+                {formatTime()}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                <CalendarTodayIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+                <Typography variant="h6">
+                    {formatDate()}
+                </Typography>
+            </Box>
+            <Box sx={{
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                bgcolor: 'background.default'
+                mt: 2,
+                color: theme.palette.text.secondary
             }}>
-                <AccessTimeIcon sx={{ fontSize: 40, mb: 2, color: theme.palette.primary.main }} />
-                <Typography variant="h2" sx={{ fontWeight: 'medium', mb: 1 }}>
-                    {formatTime()}
+                <PublicIcon sx={{ mr: 1 }} />
+                <Typography variant="body1">
+                    {timezone}
                 </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                    <CalendarTodayIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
-                    <Typography variant="h6">
-                        {formatDate()}
-                    </Typography>
-                </Box>
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    mt: 2,
-                    color: theme.palette.text.secondary
-                }}>
-                    <PublicIcon sx={{ mr: 1 }} />
-                    <Typography variant="body1">
-                        {timezone}
-                    </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                    Week {getWeekNumber(currentDateTime)} of {currentDateTime.getFullYear()}
-                </Typography>
-            </Paper>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Week {getWeekNumber(currentDateTime)} of {currentDateTime.getFullYear()}
+            </Typography>
         </Box>
     );
 
