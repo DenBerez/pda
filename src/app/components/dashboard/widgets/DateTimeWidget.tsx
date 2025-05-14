@@ -15,14 +15,12 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
     const [currentDateTime, setCurrentDateTime] = useState(new Date());
     const theme = useTheme();
 
-    // Get layout option from widget config or default to 'normal'
     const layoutOption = widget.config?.layoutOption || 'normal';
-    const timeFormat = widget.config?.timeFormat || '24h'; // '12h' or '24h'
+    const timeFormat = widget.config?.timeFormat || '24h';
     const showSeconds = widget.config?.showSeconds !== false;
-    const timezone = widget.config?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const timezone = widget.config?.timezone || 'auto';
 
     useEffect(() => {
-        // Update time every second
         const intervalId = setInterval(() => {
             setCurrentDateTime(new Date());
         }, 1000);
@@ -35,7 +33,8 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
             hour: 'numeric',
             minute: '2-digit',
             second: showSeconds ? '2-digit' : undefined,
-            hour12: timeFormat === '12h'
+            hour12: timeFormat === '12h',
+            timeZone: timezone === 'auto' ? undefined : timezone
         };
         return currentDateTime.toLocaleTimeString(undefined, options);
     };
@@ -45,7 +44,8 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
             weekday: layoutOption === 'basic' ? 'short' : 'long',
             year: 'numeric',
             month: layoutOption === 'basic' ? 'short' : 'long',
-            day: 'numeric'
+            day: 'numeric',
+            timeZone: timezone === 'auto' ? undefined : timezone
         };
         return currentDateTime.toLocaleDateString(undefined, options);
     };

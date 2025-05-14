@@ -936,7 +936,30 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 </Select>
                             </FormControl>
 
-                            <FormControlLabel
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="timezone-label">Timezone</InputLabel>
+                                <Select
+                                    labelId="timezone-label"
+                                    value={tempWidget?.config?.timezone || 'auto'}
+                                    label="Timezone"
+                                    onChange={(e) => handleConfigChange({ timezone: e.target.value })}
+                                >
+                                    <MenuItem value="auto">Auto (System Timezone)</MenuItem>
+                                    <MenuItem value="UTC">UTC</MenuItem>
+                                    <MenuItem value="America/New_York">New York (EST/EDT)</MenuItem>
+                                    <MenuItem value="America/Los_Angeles">Los Angeles (PST/PDT)</MenuItem>
+                                    <MenuItem value="Europe/London">London (GMT/BST)</MenuItem>
+                                    <MenuItem value="Europe/Paris">Paris (CET/CEST)</MenuItem>
+                                    <MenuItem value="Asia/Tokyo">Tokyo (JST)</MenuItem>
+                                    <MenuItem value="Asia/Shanghai">Shanghai (CST)</MenuItem>
+                                    <MenuItem value="Australia/Sydney">Sydney (AEST/AEDT)</MenuItem>
+                                </Select>
+                                <FormHelperText>
+                                    Select 'Auto' to use your system timezone
+                                </FormHelperText>
+                            </FormControl>
+
+                            <FormControlLabel sx={{ ml: 0.5 }}
                                 control={
                                     <Switch
                                         checked={tempWidget?.config?.showSeconds !== false}
