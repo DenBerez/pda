@@ -36,6 +36,8 @@ import VolumeMuteIcon from '@mui/icons-material/VolumeMute';
 import { useSpotifyWebPlayback } from '@/app/hooks/useSpotifyWebPlayback';
 import { useOAuth2Connection } from '@/app/hooks/useOAuth2Connection';
 import AudioVisualizer from '../AudioVisualizer';
+import { alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 
 // Sample data for demonstration when not connected
 const sampleSpotifyData = {
@@ -114,6 +116,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+    const theme = useTheme();
 
     // Use the OAuth2 hook for consistent auth handling
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
@@ -389,31 +392,34 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         if (!isPlayerConnected) return;
 
         const initializeAudio = () => {
-            // Create Audio Context
-            if (!audioContextRef.current) {
-                audioContextRef.current = new AudioContext();
-                analyserRef.current = audioContextRef.current.createAnalyser();
-                analyserRef.current.fftSize = 256; // Smaller size for better performance
-            }
+            try {
+                // Create Audio Context
+                if (!audioContextRef.current) {
+                    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+                    analyserRef.current = audioContextRef.current.createAnalyser();
+                    analyserRef.current.fftSize = 256;
+                }
 
-            // Find the Spotify audio element
-            const audioElement = document.querySelector('audio[data-testid="spotify-player"]');
+                // Find the Spotify audio element
+                const audioElements = document.querySelectorAll('audio');
+                const spotifyAudio = Array.from(audioElements).find(el =>
+                    el.src.includes('spotify') || el.getAttribute('data-testid')?.includes('spotify')
+                );
 
-            if (audioElement && !sourceNodeRef.current) {
-                console.log('Found Spotify audio element, connecting to analyzer');
-                sourceNodeRef.current = audioContextRef.current.createMediaElementSource(audioElement as HTMLAudioElement);
-                if (sourceNodeRef.current && analyserRef.current && audioContextRef.current) {
+                if (spotifyAudio && !sourceNodeRef.current && audioContextRef.current && analyserRef.current) {
+                    console.log('Found Spotify audio element, connecting to analyzer');
+                    sourceNodeRef.current = audioContextRef.current.createMediaElementSource(spotifyAudio);
                     sourceNodeRef.current.connect(analyserRef.current);
                     analyserRef.current.connect(audioContextRef.current.destination);
                 }
+            } catch (error) {
+                console.error('Error initializing audio:', error);
             }
         };
 
-        // Try to initialize immediately
+        // Try to initialize immediately and after a delay
         initializeAudio();
-
-        // Also try again after a short delay to ensure the audio element is ready
-        const timeoutId = setTimeout(initializeAudio, 1000);
+        const timeoutId = setTimeout(initializeAudio, 2000);
 
         return () => {
             clearTimeout(timeoutId);
@@ -534,65 +540,105 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                             <Box sx={{
                                 display: 'flex',
                                 flexDirection: 'column',
-                                mb: 3
+                                mb: 3,
+                                position: 'relative',
+                                '&::after': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    background: `linear-gradient(180deg, 
+                                        ${alpha(theme.palette.background.paper, 0)} 0%, 
+                                        ${alpha(theme.palette.background.paper, 0.8)} 100%)`,
+                                    pointerEvents: 'none',
+                                    opacity: 0.8,
+                                    transition: 'opacity 0.3s ease'
+                                }
                             }}>
                                 <Box sx={{
                                     display: 'flex',
                                     mb: 3,
-                                    alignItems: 'center'
+                                    alignItems: 'center',
+                                    gap: 3
                                 }}>
                                     <Avatar
                                         src={currentTrack.album.images?.[0]?.url}
                                         alt={currentTrack.name}
                                         variant="rounded"
                                         sx={{
-                                            width: 150,
-                                            height: 150,
-                                            mr: 3
+                                            width: 180,
+                                            height: 180,
+                                            boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+                                            transform: 'perspective(1000px) rotateY(-10deg)',
+                                            transition: 'transform 0.3s ease',
+                                            '&:hover': {
+                                                transform: 'perspective(1000px) rotateY(0deg)'
+                                            }
                                         }}
                                     >
                                         <MusicNoteIcon sx={{ fontSize: 40 }} />
                                     </Avatar>
-                                    <Box>
+
+                                    <Box sx={{ flex: 1 }}>
                                         <Typography
-                                            variant="h6"
+                                            variant="h5"
                                             gutterBottom
+                                            sx={{
+                                                fontWeight: 600,
+                                                background: `linear-gradient(90deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.text.primary, 0.7)} 100%)`,
+                                                backgroundClip: 'text',
+                                                WebkitBackgroundClip: 'text',
+                                                WebkitTextFillColor: 'transparent'
+                                            }}
                                         >
                                             {currentTrack.name}
                                         </Typography>
+
                                         <Typography
-                                            variant="body1"
+                                            variant="subtitle1"
+                                            sx={{
+                                                color: alpha(theme.palette.text.primary, 0.8),
+                                                fontWeight: 500
+                                            }}
                                         >
-                                            {currentTrack.artists.map((artist: any) => artist.name).join(', ')}
+                                            {currentTrack.artists.map((artist: { name: string }) => artist.name).join(', ')}
                                         </Typography>
-                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                            sx={{ mb: 2 }}
+                                        >
                                             {currentTrack.album.name}
                                         </Typography>
+
                                         <Chip
-                                            label={isPlaying ? "Playing" : "Paused"}
+                                            label={isPlaying ? "Now Playing" : "Paused"}
                                             color={isPlaying ? "primary" : "default"}
                                             size="small"
+                                            sx={{
+                                                borderRadius: '6px',
+                                                '& .MuiChip-label': {
+                                                    px: 2
+                                                }
+                                            }}
                                         />
                                     </Box>
                                 </Box>
 
-                                <Box sx={{ mt: 2, mb: 2, width: '100%' }}>
-                                    {currentTrack && widget.config?.showVisualizer !== false && (
-                                        <AudioVisualizer
-                                            trackId={currentTrack.id}
-                                            isPlaying={isPlaying}
-                                            refreshToken={refreshToken}
-                                            analyserNode={analyserRef.current}
-                                        />
-                                    )}
-                                </Box>
-
-                                <Box sx={{ mt: 'auto' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                                        <Typography variant="caption">
+                                <Box sx={{ mt: 2, mb: 3 }}>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        mb: 1
+                                    }}>
+                                        <Typography variant="caption" color="text.secondary">
                                             {formatDuration(position)}
                                         </Typography>
-                                        <Typography variant="caption">
+                                        <Typography variant="caption" color="text.secondary">
                                             {formatDuration(duration)}
                                         </Typography>
                                     </Box>
@@ -602,48 +648,77 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         min={0}
                                         max={duration}
                                         onChange={handleSeekChange}
-                                        aria-labelledby="continuous-slider"
-                                    />
-
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 2, width: '100%' }}>
-                                        <IconButton>
-                                            {getVolumeIcon()}
-                                        </IconButton>
-                                        <Slider
-                                            value={volume}
-                                            onChange={handleVolumeChange}
-                                            aria-labelledby="volume-slider"
-                                            sx={{ ml: 2, flexGrow: 1 }}
-                                        />
-                                    </Box>
-
-                                    <Stack
-                                        direction="row"
-                                        spacing={1}
-                                        justifyContent="center"
-                                        alignItems="center"
-                                        sx={{ mt: 2 }}
-                                    >
-                                        <IconButton onClick={previousTrack}>
-                                            <SkipPreviousIcon />
-                                        </IconButton>
-                                        <IconButton
-                                            onClick={togglePlay}
-                                            sx={{
-                                                bgcolor: 'primary.main',
-                                                color: 'primary.contrastText',
-                                                '&:hover': {
-                                                    bgcolor: 'primary.dark',
+                                        sx={{
+                                            '& .MuiSlider-thumb': {
+                                                width: 12,
+                                                height: 12,
+                                                transition: 'width 0.2s, height 0.2s',
+                                                '&:hover, &.Mui-active': {
+                                                    width: 16,
+                                                    height: 16
                                                 }
-                                            }}
-                                        >
-                                            {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-                                        </IconButton>
-                                        <IconButton onClick={nextTrack}>
-                                            <SkipNextIcon />
-                                        </IconButton>
-                                    </Stack>
+                                            },
+                                            '& .MuiSlider-track': {
+                                                background: `linear-gradient(90deg, 
+                                                    ${theme.palette.primary.main} 0%, 
+                                                    ${theme.palette.primary.light} 100%)`
+                                            }
+                                        }}
+                                    />
                                 </Box>
+
+                                <Stack
+                                    direction="row"
+                                    spacing={2}
+                                    justifyContent="center"
+                                    alignItems="center"
+                                    sx={{ mt: 'auto' }}
+                                >
+                                    <IconButton
+                                        onClick={previousTrack}
+                                        sx={{
+                                            color: alpha(theme.palette.text.primary, 0.7),
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                color: theme.palette.text.primary,
+                                                transform: 'scale(1.1)'
+                                            }
+                                        }}
+                                    >
+                                        <SkipPreviousIcon />
+                                    </IconButton>
+
+                                    <IconButton
+                                        onClick={togglePlay}
+                                        sx={{
+                                            bgcolor: theme.palette.primary.main,
+                                            color: theme.palette.primary.contrastText,
+                                            width: 56,
+                                            height: 56,
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                bgcolor: theme.palette.primary.dark,
+                                                transform: 'scale(1.1)'
+                                            }
+                                        }}
+                                    >
+                                        {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                                    </IconButton>
+
+                                    <IconButton
+                                        onClick={nextTrack}
+                                        sx={{
+                                            color: alpha(theme.palette.text.primary, 0.7),
+                                            transition: 'all 0.2s ease',
+                                            '&:hover': {
+                                                color: theme.palette.text.primary,
+                                                transform: 'scale(1.1)'
+                                            }
+                                        }}
+                                    >
+                                        <SkipNextIcon />
+                                    </IconButton>
+                                </Stack>
                             </Box>
                         ) : (
                             <Box sx={{ p: 2, textAlign: 'center', mb: 3 }}>
@@ -846,7 +921,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 <Typography
                                                     variant={layoutOption === 'compact' ? 'body2' : 'body1'}
                                                 >
-                                                    {currentTrack.artists.map((artist: any) => artist.name).join(', ')}
+                                                    {currentTrack.artists.map((artist: { name: string }) => artist.name).join(', ')}
                                                 </Typography>
                                                 {layoutOption !== 'compact' && (
                                                     <Typography variant="body2" color="text.secondary" gutterBottom>
