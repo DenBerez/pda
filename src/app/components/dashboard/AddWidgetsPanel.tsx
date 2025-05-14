@@ -63,6 +63,7 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
         // Information widgets
         { type: 'weather', label: 'Weather', icon: <Thermostat />, category: 'information' },
         { type: 'quote', label: 'Quote', icon: <FormatQuoteIcon />, category: 'information' },
+        { type: 'datetime', label: 'Date/Time', icon: <AccessTimeIcon />, category: 'information' },
         // { type: 'news', label: 'News', icon: <PublicIcon />, category: 'information' },
 
         // Productivity widgets
