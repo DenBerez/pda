@@ -35,7 +35,6 @@ import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeMuteIcon from '@mui/icons-material/VolumeMute';
 import { useSpotifyWebPlayback } from '@/app/hooks/useSpotifyWebPlayback';
 import { useOAuth2Connection } from '@/app/hooks/useOAuth2Connection';
-import AudioVisualizer from '../AudioVisualizer';
 import { alpha } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 
@@ -87,7 +86,6 @@ const sampleSpotifyData = {
 interface SpotifyWidgetProps {
     widget: Widget & {
         config?: {
-            showVisualizer?: boolean;
             layoutOption?: LayoutOptionType;
             refreshToken?: string;
         };
@@ -113,9 +111,6 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [username, setUsername] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const audioContextRef = useRef<AudioContext | null>(null);
-    const analyserRef = useRef<AnalyserNode | null>(null);
-    const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
     const theme = useTheme();
 
     // Use the OAuth2 hook for consistent auth handling
@@ -386,59 +381,6 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             fetchUserProfile();
         }
     }, [accessToken, fetchUserProfile]);
-
-    // Initialize Web Audio API when the player is ready
-    useEffect(() => {
-        if (!isPlayerConnected) return;
-
-        const initializeAudio = () => {
-            try {
-                // Create Audio Context
-                if (!audioContextRef.current) {
-                    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-                    analyserRef.current = audioContextRef.current.createAnalyser();
-                    analyserRef.current.fftSize = 256;
-                }
-
-                // Find the Spotify audio element
-                const audioElements = document.querySelectorAll('audio');
-                const spotifyAudio = Array.from(audioElements).find(el =>
-                    el.src.includes('spotify') || el.getAttribute('data-testid')?.includes('spotify')
-                );
-
-                if (spotifyAudio && !sourceNodeRef.current && audioContextRef.current && analyserRef.current) {
-                    console.log('Found Spotify audio element, connecting to analyzer');
-                    sourceNodeRef.current = audioContextRef.current.createMediaElementSource(spotifyAudio);
-                    sourceNodeRef.current.connect(analyserRef.current);
-                    analyserRef.current.connect(audioContextRef.current.destination);
-                }
-            } catch (error) {
-                console.error('Error initializing audio:', error);
-            }
-        };
-
-        // Try to initialize immediately and after a delay
-        initializeAudio();
-        const timeoutId = setTimeout(initializeAudio, 2000);
-
-        return () => {
-            clearTimeout(timeoutId);
-            if (sourceNodeRef.current) {
-                sourceNodeRef.current.disconnect();
-                sourceNodeRef.current = null;
-            }
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
-            }
-        };
-    }, [isPlayerConnected]);
-
-    useEffect(() => {
-        if (analyserRef.current) {
-            console.log('Analyzer node created and ready');
-        }
-    }, [analyserRef.current]);
 
     // Loading state
     if (loading) {
@@ -937,14 +879,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         </Box>
 
                                         <Box sx={{ mt: 2, mb: 2, width: '100%' }}>
-                                            {currentTrack && widget.config?.showVisualizer !== false && (
-                                                <AudioVisualizer
-                                                    trackId={currentTrack.id}
-                                                    isPlaying={isPlaying}
-                                                    refreshToken={refreshToken}
-                                                    analyserNode={analyserRef.current}
-                                                />
-                                            )}
+                                            {/* Remove audio visualizer */}
                                         </Box>
 
                                         <Box sx={{ mt: 'auto' }}>

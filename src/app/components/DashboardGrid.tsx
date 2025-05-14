@@ -27,14 +27,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import Tour from './dashboard/Tour';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import DashboardAudioVisualizer from './dashboard/AudioVisualizer';
 
-// Add at the top of the file
-declare global {
-    interface Window {
-        webkitAudioContext: typeof AudioContext;
-    }
-}
+
 
 // Default widgets for initial setup
 const defaultWidgets: Widget[] = [
@@ -130,7 +124,6 @@ const DashboardGrid: React.FC = () => {
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const [forceRefresh, setForceRefresh] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    // const [audioVisualization, setAudioVisualization] = useLocalStorage<boolean>('dashboardAudioVisualization', false);
     // Use a separate loading check
     const isLocalStorageLoading = false; // Remove or handle loading differently
 
@@ -199,32 +192,44 @@ const DashboardGrid: React.FC = () => {
         // Only update if we have a valid layout
         if (!currentLayout || currentLayout.length === 0) return;
 
-        setLayouts(allLayouts);
+        // Get current breakpoint
+        const currentBreakpoint = getCurrentBreakpoint();
 
-        // Update widget positions based on the new layout
-        setWidgets((prevWidgets: Widget[]) => {
-            // Create a map of layout items by ID for quick lookup
-            const layoutMap = new Map(
-                currentLayout.map((item: LayoutItem) => [item.i, item])
-            );
+        // Update layouts while preserving other breakpoint layouts
+        setLayouts(prevLayouts => ({
+            ...prevLayouts,
+            [currentBreakpoint]: currentLayout
+        }));
 
-            // Update each widget with its new position from the layout
-            const updatedWidgets = prevWidgets.map(widget => {
-                const layoutItem = layoutMap.get(widget.id);
-                if (layoutItem) {
-                    return {
-                        ...widget,
-                        x: layoutItem.x,
-                        y: layoutItem.y,
-                        w: layoutItem.w,
-                        h: layoutItem.h
-                    };
-                }
-                return widget;
+        // Only update widget positions if user is in edit mode
+        // This prevents saving position changes during regular responsive adjustments
+        if (editMode) {
+            setWidgets((prevWidgets: Widget[]) => {
+                const layoutMap = new Map(
+                    currentLayout.map((item: LayoutItem) => [item.i, item])
+                );
+
+                return prevWidgets.map(widget => {
+                    const layoutItem = layoutMap.get(widget.id);
+                    if (layoutItem) {
+                        return {
+                            ...widget,
+                            // Store positions for current breakpoint
+                            layouts: {
+                                ...widget.layouts,
+                                [currentBreakpoint]: {
+                                    x: layoutItem.x,
+                                    y: layoutItem.y,
+                                    w: layoutItem.w,
+                                    h: layoutItem.h
+                                }
+                            }
+                        };
+                    }
+                    return widget;
+                });
             });
-
-            return updatedWidgets;
-        });
+        }
     };
 
     // Add a new widget
@@ -441,9 +446,15 @@ const DashboardGrid: React.FC = () => {
         };
     }, []);
 
-    // const toggleAudioVisualization = useCallback(() => {
-    //     setAudioVisualization(prev => !prev);
-    // }, [setAudioVisualization]);
+
+    const getCurrentBreakpoint = () => {
+        const width = window.innerWidth;
+        if (width >= 1200) return 'lg';
+        if (width >= 996) return 'md';
+        if (width >= 768) return 'sm';
+        if (width >= 480) return 'xs';
+        return 'xxs';
+    };
 
     return (
         <ThemeProvider theme={customTheme}>
@@ -613,8 +624,7 @@ const DashboardGrid: React.FC = () => {
                     onChangeBackgroundImage={setBackgroundImage}
                     backgroundOpacity={backgroundOpacity}
                     onChangeBackgroundOpacity={setBackgroundOpacity}
-                // audioVisualization={audioVisualization}
-                // onToggleAudioVisualization={toggleAudioVisualization}
+
                 />
 
                 {/* Widget Edit Panel */}
@@ -642,8 +652,7 @@ const DashboardGrid: React.FC = () => {
                     />
                 )}
 
-                {/* Audio Visualizer */}
-                {/* <DashboardAudioVisualizer enabled={audioVisualization} /> */}
+
             </Box>
             <Tooltip title="Settings">
                 <Box

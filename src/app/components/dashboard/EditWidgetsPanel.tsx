@@ -451,24 +451,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 />
                             </Box>
 
-                            <Box sx={{ mt: 2 }}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                    Audio Visualizer
-                                </Typography>
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={tempWidget?.config?.showVisualizer ?? true}
-                                            onChange={(e) => handleConfigChange({ showVisualizer: e.target.checked })}
-                                            color="primary"
-                                        />
-                                    }
-                                    label="Show audio visualizer"
-                                />
-                                <FormHelperText>
-                                    Display a dynamic visualization of the currently playing track
-                                </FormHelperText>
-                            </Box>
+
                         </Box>
                     )}
 

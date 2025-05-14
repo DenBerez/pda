@@ -24,6 +24,9 @@ export interface Widget {
         [key: string]: any;
     };
     content?: string;
+    layouts?: {
+        [breakpoint: string]: WidgetLayout;
+    };
 }
 
 export interface DashboardSettings {
@@ -93,4 +96,11 @@ export interface SpotifyConfig {
     refreshToken?: string;
     refreshInterval?: number;
     layoutOption?: 'compact' | 'normal' | 'detailed';
+}
+
+interface WidgetLayout {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
 }
