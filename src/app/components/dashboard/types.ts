@@ -1,4 +1,4 @@
-export type WidgetType = 'text' | 'custom' | 'weather' | 'email' | 'social' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow' | 'spotify' | 'quote';
+export type WidgetType = 'text' | 'custom' | 'datetime' | 'weather' | 'email' | 'social' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow' | 'spotify' | 'quote';
 
 export interface Widget {
     id: string;

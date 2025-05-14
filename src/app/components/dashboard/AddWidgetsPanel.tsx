@@ -14,6 +14,7 @@ import AddIcon from '@mui/icons-material/Add';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import Thermostat from '@mui/icons-material/Thermostat';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import Email from '@mui/icons-material/Email';
 import PublicIcon from '@mui/icons-material/Public';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
@@ -31,7 +32,7 @@ interface AddWidgetsPanelProps {
 
 // Define widget data structure for easier management
 interface WidgetInfo {
-    type: 'weather' | 'email' | 'social' | 'custom' | 'text' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow' | 'spotify' | 'quote';
+    type: 'weather' | 'email' | 'social' | 'custom' | 'datetime' | 'text' | 'calendar' | 'news' | 'music' | 'photos' | 'slideshow' | 'spotify' | 'quote';
     label: string;
     icon: React.ReactNode;
     category: 'information' | 'productivity' | 'media';

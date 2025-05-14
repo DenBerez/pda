@@ -194,11 +194,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     // Fetch recent tracks with optimized loading
     const fetchRecentTracks = useCallback(async () => {
         if (!isConnected) {
+            // Don't clear existing tracks, just skip the fetch
             setLoading(false);
             return;
         }
 
-        // Use a delayed loading state to prevent flickering on quick loads
         if (loadingTimeoutRef.current) {
             clearTimeout(loadingTimeoutRef.current);
         }
@@ -206,7 +206,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         loadingTimeoutRef.current = setTimeout(() => {
             if (!initialLoadComplete) return;
             setLoading(true);
-        }, 500); // Only show loading state if fetch takes more than 500ms
+        }, 500);
 
         try {
             const params = new URLSearchParams({
@@ -220,10 +220,14 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             }
 
             const data = await response.json();
-            setRecentTracks(data.recentTracks || []);
+            if (data.recentTracks && data.recentTracks.length > 0) {
+                setRecentTracks(data.recentTracks);
+            }
+            // Don't clear tracks if the response is empty
         } catch (err) {
             console.error('Error fetching recent tracks:', err);
             setError('Failed to load recent tracks');
+            // Don't clear existing tracks on error
         } finally {
             if (loadingTimeoutRef.current) {
                 clearTimeout(loadingTimeoutRef.current);
@@ -238,8 +242,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         if (initialLoadComplete && isConnected) {
             fetchRecentTracks();
 
-            const intervalId = setInterval(fetchRecentTracks, 30000); // 30 seconds
-            return () => clearInterval(intervalId);
+            // Fetch less frequently to avoid race conditions
+            const intervalId = setInterval(fetchRecentTracks, 60000); // 60 seconds
+
+            // Add a small delay before first fetch to ensure stable connection
+            const initialFetchTimeout = setTimeout(() => {
+                fetchRecentTracks();
+            }, 2000);
+
+            return () => {
+                clearInterval(intervalId);
+                clearTimeout(initialFetchTimeout);
+            };
         }
     }, [fetchRecentTracks, isConnected, initialLoadComplete]);
 
@@ -483,21 +497,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                 display: 'flex',
                                 flexDirection: 'column',
                                 mb: 3,
-                                position: 'relative',
-                                '&::after': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    background: `linear-gradient(180deg, 
-                                        ${alpha(theme.palette.background.paper, 0)} 0%, 
-                                        ${alpha(theme.palette.background.paper, 0.8)} 100%)`,
-                                    pointerEvents: 'none',
-                                    opacity: 0.8,
-                                    transition: 'opacity 0.3s ease'
-                                }
+
                             }}>
                                 <Box sx={{
                                     display: 'flex',

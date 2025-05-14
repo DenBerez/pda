@@ -914,6 +914,51 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                             </FormControl>
                         </Box>
                     )}
+
+                    {widget?.type === 'datetime' && (
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                                Date/Time Configuration
+                            </Typography>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="layout-option-label">Layout Style</InputLabel>
+                                <Select
+                                    labelId="layout-option-label"
+                                    value={tempWidget?.config?.layoutOption || 'normal'}
+                                    label="Layout Style"
+                                    onChange={(e) => handleConfigChange({ layoutOption: e.target.value })}
+                                >
+                                    <MenuItem value="basic">Basic</MenuItem>
+                                    <MenuItem value="normal">Normal</MenuItem>
+                                    <MenuItem value="detailed">Detailed</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <FormControl fullWidth margin="normal" size="small">
+                                <InputLabel id="time-format-label">Time Format</InputLabel>
+                                <Select
+                                    labelId="time-format-label"
+                                    value={tempWidget?.config?.timeFormat || '24h'}
+                                    label="Time Format"
+                                    onChange={(e) => handleConfigChange({ timeFormat: e.target.value })}
+                                >
+                                    <MenuItem value="12h">12-hour</MenuItem>
+                                    <MenuItem value="24h">24-hour</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={tempWidget?.config?.showSeconds !== false}
+                                        onChange={(e) => handleConfigChange({ showSeconds: e.target.checked })}
+                                    />
+                                }
+                                label="Show Seconds"
+                            />
+                        </Box>
+                    )}
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>

@@ -14,6 +14,7 @@ import { Widget } from './types';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { useTheme } from '@mui/material/styles';
+import DateTimeWidget from './widgets/DateTimeWidget';
 
 interface WidgetContentProps {
     widget: Widget;
@@ -64,6 +65,13 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
                         // Pass the edit panel state
                         showEditPanel={showTextEditPanel}
                         setShowEditPanel={setShowTextEditPanel}
+                    />
+                );
+            case 'datetime':
+                return (
+                    <DateTimeWidget
+                        widget={widget}
+                        editMode={editMode}
                     />
                 );
             case 'weather':
