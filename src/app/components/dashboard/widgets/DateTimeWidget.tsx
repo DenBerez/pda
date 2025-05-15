@@ -28,6 +28,7 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
         return () => clearInterval(intervalId);
     }, []);
 
+
     const formatTime = () => {
         const options: Intl.DateTimeFormatOptions = {
             hour: 'numeric',
