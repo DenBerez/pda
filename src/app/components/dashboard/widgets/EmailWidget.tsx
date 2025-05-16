@@ -29,6 +29,7 @@ import LayoutStyleSelector from '../LayoutStyle';
 import { useOAuth2Connection } from '../../../hooks/useOAuth2Connection';
 import CloseIcon from '@mui/icons-material/Close';
 import ReplyIcon from '@mui/icons-material/Reply';
+import EmailIcon from '@mui/icons-material/Email';
 
 interface Email {
     id: string;
@@ -450,10 +451,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                                 </Button>
                             </>
                         )}
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                            {!isConnected &&
-                                "For demo purposes, you'll see mock email data if no account is connected."}
-                        </Typography>
+
                     </Box>
 
                     <FormControl fullWidth margin="normal" size="small">
@@ -473,24 +471,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 </>
             ) : (
                 <>
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        label="Email Address"
-                        size="small"
-                        value={emailAddress}
-                        onChange={(e) => setEmailAddress(e.target.value)}
-                    />
-                    <TextField
-                        fullWidth
-                        margin="normal"
-                        label="Password"
-                        type="password"
-                        size="small"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        helperText="For demo purposes, leave empty to use mock data"
-                    />
+
                 </>
             )}
 
@@ -555,19 +536,13 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 </Box>
             ) : !isConnected && provider === 'gmail' ? (
                 <Box sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="h6" gutterBottom>
+                        Gmail Not Connected
+                    </Typography>
                     <Typography variant="body2" sx={{ mb: 2 }}>
-                        Connect your Gmail account to display your emails.
+                        Edit this widget to connect your Gmail account and display your emails.
                     </Typography>
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={connect}
-                    >
-                        Connect Gmail Account
-                    </Button>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        For demo purposes, you'll see mock email data if no account is connected.
-                    </Typography>
+
                 </Box>
             ) : emails.length === 0 ? (
                 <Box sx={{ p: 2, textAlign: 'center' }}>
@@ -1068,7 +1043,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     if (!refreshToken && !emailAddress) {
         return (
             <Box sx={{ p: 3, textAlign: 'center' }}>
-                <MarkEmailUnreadIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                <EmailIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
                 <Typography variant="h6" gutterBottom>Email Not Connected</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     Edit this widget to connect your email account and display your inbox and recent messages.

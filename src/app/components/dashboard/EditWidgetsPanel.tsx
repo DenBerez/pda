@@ -444,8 +444,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 onConnect={() => openAuthPopup('/api/spotify/auth', 'spotify-auth-window')}
                                 onDisconnect={() => handleConfigChange({ refreshToken: '' })}
                                 disconnectedMessage="Connect your Spotify account to display your currently playing music and recently played tracks."
-                                helperText={!tempWidget?.config?.refreshToken ?
-                                    "For demo purposes, you'll see mock data if no account is connected." : undefined}
+
                             />
 
                             <Box sx={{ mt: 2 }}>
@@ -541,8 +540,6 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 onConnect={() => openAuthPopup('/api/email/auth', 'gmail-auth-window')}
                                 onDisconnect={() => handleEmailConfigChange({ refreshToken: '' })}
                                 disconnectedMessage="Connect your Gmail account to display your emails."
-                                helperText={!tempWidget?.config?.refreshToken ?
-                                    "For demo purposes, you'll see mock email data if no account is connected." : undefined}
                             />
 
                             <FormControl fullWidth margin="normal" size="small">
@@ -745,8 +742,6 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 onConnect={() => openAuthPopup('/api/calendar/auth', 'google-calendar-auth-window')}
                                 onDisconnect={() => handleConfigChange({ calendarRefreshToken: '' })}
                                 disconnectedMessage="Connect your Google Calendar account to display your events."
-                                helperText={!tempWidget?.config?.calendarRefreshToken ?
-                                    "For demo purposes, you'll see mock calendar data if no account is connected." : undefined}
                             />
 
                             <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
