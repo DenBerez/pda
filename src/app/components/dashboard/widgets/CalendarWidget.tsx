@@ -86,17 +86,25 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
         setError(null);
 
         try {
+            // Get the start of the current month
+            const startOfMonth = new Date(currentYear, currentMonth, 1);
+            // Get the current datetime
+            const now = new Date();
+
+            // Use the later of the two dates as timeMin
+            const timeMin = startOfMonth < now ? now : startOfMonth;
+
             const params = new URLSearchParams({
                 maxResults: maxEvents.toString(),
                 month: currentMonth.toString(),
-                year: currentYear.toString()
+                year: currentYear.toString(),
+                timeMin: timeMin.toISOString()
             });
 
             if (refreshToken) {
                 params.append('refreshToken', refreshToken);
             }
 
-            // console.log('Fetching calendar events with params:', params.toString());
             const response = await fetch(`/api/calendar?${params.toString()}`);
 
             if (!response.ok) {
@@ -104,11 +112,9 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
             }
 
             const data = await response.json();
-            // console.log('Calendar API response:', data);
 
             if (data.events && Array.isArray(data.events)) {
                 setEvents(data.events);
-                // console.log(`Loaded ${data.events.length} events`);
             } else {
                 console.warn('No events array in response:', data);
                 setEvents([]);

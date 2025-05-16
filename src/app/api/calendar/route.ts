@@ -30,11 +30,9 @@ const fetchGoogleCalendarEvents = async (refreshToken: string, maxResults = 10, 
         const auth = await setupCalendarAuth(refreshToken);
         const calendar = google.calendar({ version: 'v3', auth });
 
-        // If no timeMin is provided, use the start of the current day
+        // If no timeMin is provided, use the current datetime
         if (!timeMin) {
-            const now = new Date();
-            now.setHours(0, 0, 0, 0);
-            timeMin = now.toISOString();
+            timeMin = new Date().toISOString();
         }
 
         const response = await calendar.events.list({
@@ -48,7 +46,6 @@ const fetchGoogleCalendarEvents = async (refreshToken: string, maxResults = 10, 
         return response.data.items || [];
     } catch (error) {
         console.error('Error fetching Google Calendar events:', error);
-        // Check for token-related errors
         if (error instanceof Error &&
             (error.message.includes('invalid_grant') ||
                 error.message.includes('token') ||
