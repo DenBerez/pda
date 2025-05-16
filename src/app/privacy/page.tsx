@@ -9,7 +9,8 @@ export default function PrivacyPolicy() {
                 backgroundColor: 'background.paper',
                 borderRadius: 2,
                 p: 4,
-                mb: 4
+                mb: 4,
+                color: 'white'
             }}>
                 {/* Privacy Policy Content */}
                 <div dangerouslySetInnerHTML={{

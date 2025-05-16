@@ -640,21 +640,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 </List>
             )}
 
-            <Box sx={{
-                p: 1.5,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                justifyContent: 'center'
-            }}>
-                <Button
-                    size="small"
-                    onClick={toggleConfiguration}
-                    startIcon={<Settings />}
-                >
-                    Configure Email
-                </Button>
-            </Box>
+
         </>
     );
 
@@ -917,20 +903,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 </Box>
             )}
 
-            <Box sx={{
-                p: 2,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                justifyContent: 'center'
-            }}>
-                <Button
-                    onClick={toggleConfiguration}
-                    startIcon={<Settings />}
-                >
-                    Configure Email
-                </Button>
-            </Box>
+
         </>
     );
 
