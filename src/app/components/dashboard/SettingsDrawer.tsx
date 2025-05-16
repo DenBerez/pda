@@ -556,6 +556,21 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             >
                                 dennis.m.berezin@gmail.com
                             </Button>
+
+                            {/* Add Privacy Policy Link */}
+                            <Button
+                                variant="text"
+                                fullWidth
+                                sx={{
+                                    mt: 1,
+                                    textTransform: 'none',
+                                    justifyContent: 'flex-start',
+                                    fontSize: '0.875rem'
+                                }}
+                                href="/privacy"
+                            >
+                                Privacy Policy
+                            </Button>
                         </Box>
                     </Paper>
 
