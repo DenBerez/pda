@@ -1050,6 +1050,19 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         );
     };
 
+    // Not connected state
+    if (!refreshToken && !emailAddress) {
+        return (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+                <MarkEmailUnreadIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" gutterBottom>Email Not Connected</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Edit this widget to connect your email account and display your inbox and recent messages.
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
         <Box sx={{
             height: '100%',
