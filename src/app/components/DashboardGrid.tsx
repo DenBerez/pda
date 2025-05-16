@@ -102,7 +102,7 @@ let lastBeatTime = 0;
 const DashboardGrid: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [widgets, setWidgets] = useLocalStorage<Widget[]>('dashboardWidgets', defaultWidgets);
-    const [layouts, setLayouts] = useLocalStorage<Layouts>('dashboardLayouts', {});
+    const [layouts, setLayouts] = useState<Layouts>({});
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -130,22 +130,17 @@ const DashboardGrid: React.FC = () => {
     // Initialize layouts based on widgets
     useEffect(() => {
         if (!isLocalStorageLoading && widgets) {
-            // Initialize layouts from widgets' stored layouts or fallback to default positions
-            const initialLayouts: Layouts = {};
-            const breakpoints = ['lg', 'md', 'sm', 'xs', 'xxs'];
-
-            breakpoints.forEach(breakpoint => {
-                initialLayouts[breakpoint] = widgets.map((widget: Widget) => ({
+            const initialLayouts = {
+                lg: widgets.map((widget: Widget) => ({
                     i: widget.id,
-                    x: widget.layouts?.[breakpoint]?.x ?? widget.x,
-                    y: widget.layouts?.[breakpoint]?.y ?? widget.y,
-                    w: widget.layouts?.[breakpoint]?.w ?? widget.w,
-                    h: widget.layouts?.[breakpoint]?.h ?? widget.h,
+                    x: widget.x,
+                    y: widget.y,
+                    w: widget.w,
+                    h: widget.h,
                     minW: widget.minW || 2,
                     minH: widget.minH || 2,
-                }));
-            });
-
+                })),
+            };
             setLayouts(initialLayouts);
 
             // Check for tour status
@@ -164,7 +159,7 @@ const DashboardGrid: React.FC = () => {
                 setInitialLoadComplete(true);
             }, 300);
         }
-    }, [widgets, tourShownThisSession, isTourActive, isLocalStorageLoading, setLayouts]);
+    }, [widgets, tourShownThisSession, isTourActive, isLocalStorageLoading]);
 
     // Remove a widget
     const removeWidget = useCallback((idToRemove: string) => {
@@ -200,13 +195,14 @@ const DashboardGrid: React.FC = () => {
         // Get current breakpoint
         const currentBreakpoint = getCurrentBreakpoint();
 
-        // Update layouts in localStorage
+        // Update layouts while preserving other breakpoint layouts
         setLayouts(prevLayouts => ({
             ...prevLayouts,
             [currentBreakpoint]: currentLayout
         }));
 
         // Only update widget positions if user is in edit mode
+        // This prevents saving position changes during regular responsive adjustments
         if (editMode) {
             setWidgets((prevWidgets: Widget[]) => {
                 const layoutMap = new Map(
@@ -218,12 +214,7 @@ const DashboardGrid: React.FC = () => {
                     if (layoutItem) {
                         return {
                             ...widget,
-                            // Update base position properties
-                            x: layoutItem.x,
-                            y: layoutItem.y,
-                            w: layoutItem.w,
-                            h: layoutItem.h,
-                            // Store layouts for all breakpoints
+                            // Store positions for current breakpoint
                             layouts: {
                                 ...widget.layouts,
                                 [currentBreakpoint]: {
@@ -556,7 +547,152 @@ const DashboardGrid: React.FC = () => {
                     }
                     
                 `}</style>
+
+                {/* <DashboardHeader /> */}
+
+                {editMode && (
+                    <AddWidgetsPanel addWidget={addWidget} />
+                )}
+
+                {widgets.length === 0 ? (
+                    <EmptyDashboard />
+                ) : (
+                    <>
+                        <GridLayout
+                            widgets={widgets}
+                            editMode={editMode}
+                            isMobile={isMobile}
+                            onLayoutChange={handleLayoutChange}
+                        >
+                            {widgets.map(widget => (
+                                <div key={widget.id}>
+                                    <WidgetContent
+                                        widget={widget}
+                                        editMode={editMode}
+                                        onDelete={handleOpenDeleteDialog}
+                                        onUpdateContent={updateWidgetContent}
+                                        onUpdateWidget={updateWidget}
+                                        onEdit={handleOpenEditPanel}
+                                    />
+                                </div>
+                            ))}
+                        </GridLayout>
+                    </>
+                )}
+
+                {/* Floating Action Button for Settings */}
+
+
+                {/* Delete Confirmation Dialog */}
+                <DeleteConfirmationDialog
+                    open={deleteDialogOpen}
+                    onClose={handleCloseDeleteDialog}
+                    onConfirm={handleConfirmDelete}
+                />
+
+                {/* Settings Drawer */}
+                <SettingsDrawer
+                    open={settingsOpen}
+                    onClose={toggleSettings}
+                    mode={mode}
+                    toggleColorMode={toggleColorMode}
+                    editMode={editMode}
+                    toggleEditMode={toggleEditMode}
+                    onResetToDefault={() => {
+                        if (window.confirm('Reset dashboard to default widgets?')) {
+                            setWidgets(defaultWidgets);
+                            setSettingsOpen(false);
+                        }
+                    }}
+                    onClearWidgets={() => {
+                        if (window.confirm('Clear all widgets? This cannot be undone.')) {
+                            setWidgets([]);
+                            setSettingsOpen(false);
+                        }
+                    }}
+                    fullscreen={isFullscreen}
+                    toggleFullscreen={toggleFullscreen}
+                    gridSnap={gridSnap}
+                    setGridSnap={setGridSnap}
+                    onApplyTemplate={onApplyTemplate}
+                    restartTour={restartTour}
+                    primaryColor={primaryColor}
+                    onChangePrimaryColor={handleChangePrimaryColor}
+                    fontFamily={fontFamily}
+                    onChangeFontFamily={(font) => setFontFamily(font)}
+                    backgroundImage={backgroundImage}
+                    onChangeBackgroundImage={setBackgroundImage}
+                    backgroundOpacity={backgroundOpacity}
+                    onChangeBackgroundOpacity={setBackgroundOpacity}
+
+                />
+
+                {/* Widget Edit Panel */}
+                <WidgetEditPanel
+                    open={editPanelOpen}
+                    widget={activeWidget}
+                    onClose={handleCloseEditPanel}
+                    onSave={updateWidget}
+                >
+
+                    {/* Add more widget-specific edit content here */}
+                </WidgetEditPanel>
+
+                {showTour && (
+                    <Tour
+                        isOpen={showTour}
+                        onRequestClose={handleTourClose}
+                        editMode={editMode}
+                        setEditMode={setEditMode}
+                        widgets={widgets}
+                        setWidgets={setWidgets}
+                        defaultWidgets={defaultWidgets}
+                        settingsOpen={settingsOpen}
+                        setSettingsOpen={setSettingsOpen}
+                    />
+                )}
+
+
             </Box>
+            <Tooltip title="Settings">
+                <Box
+                    // ref={settingsButtonRef}
+                    sx={{
+                        position: 'fixed',
+                        bottom: { xs: 16, sm: 20 },
+                        right: { xs: 32, sm: 40 },
+                        zIndex: 1200,
+                        opacity: showSettingsButton && !settingsOpen ? 1 : 0,
+                        visibility: showSettingsButton && !settingsOpen ? 'visible' : 'hidden',
+                        transition: 'opacity 0.3s ease-in-out, visibility 0.3s ease-in-out',
+                        pointerEvents: showSettingsButton && !settingsOpen ? 'auto' : 'none',
+                        transform: 'translateZ(0)',
+                        willChange: 'opacity, visibility',
+                        '& > *': {
+                            transform: 'translateZ(0)'
+                        }
+                    }}
+                >
+                    <Fab
+                        size="medium"
+                        color="primary"
+                        aria-label="settings"
+                        onClick={toggleSettings}
+                        className="settings-button"
+                        sx={{
+                            transition: 'box-shadow 0.3s ease-in-out, transform 0.2s ease',
+                            boxShadow: showSettingsButton ? '0 0 15px rgba(25, 118, 210, 0.6), 0 4px 10px rgba(0,0,0,0.3)' : '0 4px 10px rgba(0,0,0,0.2)',
+                            transform: showSettingsButton ? 'scale(1.1)' : 'scale(1)',
+                            '&:hover': {
+                                transform: 'scale(1.15)',
+                                boxShadow: '0 0 20px rgba(25, 118, 210, 0.8), 0 6px 14px rgba(0,0,0,0.25)'
+                            }
+                        }}
+                    >
+                        <SettingsIcon />
+                    </Fab>
+                </Box>
+            </Tooltip>
         </ThemeProvider>
     );
 };
