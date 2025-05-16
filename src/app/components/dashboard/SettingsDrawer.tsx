@@ -301,26 +301,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             }
                         />
 
-                        {/* Audio Visualization Toggle */}
-                        {/* <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={audioVisualization}
-                                    onChange={onToggleAudioVisualization}
-                                    color="primary"
-                                />
-                            }
-                            label={
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                    <MusicNoteIcon fontSize="small" sx={{ mr: 1 }} />
-                                    Audio Visualization
 
-                                </Box>
-                            }
-                        />
-                        <FormHelperText>
-                            Visualize system audio with a wavy glow effect in your theme color
-                        </FormHelperText> */}
 
                         {/* Color Theme Selection */}
                         <Box sx={{ mt: 2 }}>
@@ -528,6 +509,53 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             <FormHelperText>
                                 Background image will be applied with a subtle overlay to maintain readability
                             </FormHelperText>
+                        </Box>
+                    </Paper>
+
+                    {/* Feedback Section */}
+                    <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, bgcolor: 'background.default' }}>
+                        <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
+                            Help Shape the Future
+                        </Typography>
+
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="body2" color="text.secondary" paragraph>
+                                I'd love to hear your feedback and ideas for new features! Some upcoming premium features include:
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                                {['AI Assistant', 'Data Analytics', 'Import/Export', 'Custom Widgets'].map((feature) => (
+                                    <Chip
+                                        key={feature}
+                                        label={feature}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                            borderColor: 'primary.main',
+                                            color: 'primary.main'
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+
+                            <Typography variant="body2" color="text.secondary">
+                                Reach out with suggestions or feedback:
+                            </Typography>
+
+                            <Button
+                                variant="text"
+                                fullWidth
+                                sx={{
+                                    mt: 1,
+                                    textTransform: 'none',
+                                    justifyContent: 'flex-start',
+                                    fontFamily: 'monospace',
+                                    fontSize: '0.875rem'
+                                }}
+                                onClick={() => window.location.href = 'mailto:dennis.m.berezin@gmail.com'}
+                            >
+                                dennis.m.berezin@gmail.com
+                            </Button>
                         </Box>
                     </Paper>
 
