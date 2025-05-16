@@ -1,5 +1,5 @@
 // src/app/hooks/useOAuth2Connection.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Widget } from '../components/dashboard/types';
 
 interface OAuth2Config {
@@ -40,18 +40,19 @@ export const useOAuth2Connection = ({
         );
     };
 
-    const disconnect = () => {
+    const disconnect = useCallback(() => {
         setRefreshToken('');
         if (onUpdateWidget) {
             onUpdateWidget({
                 ...widget,
                 config: {
                     ...widget.config,
-                    refreshToken: ''
+                    refreshToken: '',
+                    email: ''
                 }
             });
         }
-    };
+    }, [widget, onUpdateWidget]);
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {

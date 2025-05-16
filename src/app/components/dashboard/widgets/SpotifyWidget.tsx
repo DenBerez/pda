@@ -359,11 +359,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                 bottom: 16,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                bgcolor: 'background.paper',
                 px: 2,
                 py: 1,
                 borderRadius: 2,
-                boxShadow: 1,
                 zIndex: 10
             }}
         >
@@ -643,19 +641,18 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
                                     <IconButton
                                         onClick={togglePlay}
+                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                         sx={{
-                                            bgcolor: theme.palette.primary.main,
                                             color: theme.palette.primary.contrastText,
-                                            width: 56,
-                                            height: 56,
-                                            transition: 'all 0.2s ease',
                                             '&:hover': {
-                                                bgcolor: theme.palette.primary.dark,
-                                                transform: 'scale(1.1)'
+                                                transform: 'scale(1.05)'
                                             }
                                         }}
                                     >
-                                        {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                                        {isPlaying ?
+                                            <PauseIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} /> :
+                                            <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
+                                        }
                                     </IconButton>
 
                                     <IconButton
@@ -998,10 +995,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     onClick={togglePlay}
                                                     size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                                     sx={{
-                                                        bgcolor: 'primary.main',
-                                                        color: 'primary.contrastText',
+                                                        color: theme.palette.primary.contrastText,
                                                         '&:hover': {
-                                                            bgcolor: 'primary.dark',
+                                                            transform: 'scale(1.05)'
                                                         }
                                                     }}
                                                 >

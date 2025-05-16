@@ -286,7 +286,15 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
     }, [handleConfigChange]);
 
     const handleEmailConfigChange = useCallback((config: any) => {
-        handleConfigChange(config);
+        // If disconnecting, clear both refreshToken and email
+        if (config.hasOwnProperty('refreshToken') && !config.refreshToken) {
+            handleConfigChange({
+                ...config,
+                email: ''
+            });
+        } else {
+            handleConfigChange(config);
+        }
     }, [handleConfigChange]);
 
     const handleFontSizeChange = useCallback((newFontSize: string) => {

@@ -73,6 +73,12 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
         setError(null);
 
         try {
+            // If not connected to Gmail, don't show error
+            if (provider === 'gmail' && !isConnected) {
+                setLoading(false);
+                return;
+            }
+
             // Build the query parameters
             const params = new URLSearchParams({
                 provider,
@@ -143,10 +149,12 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     useEffect(() => {
         const handleAuthMessage = (event: MessageEvent) => {
             if (event.data?.type === 'GMAIL_AUTH_SUCCESS' &&
-                event.data?.widgetId === widget.id &&
-                event.data?.email) {
+                event.data?.widgetId === widget.id) {
 
-                setEmailAddress(event.data.email);
+                // Update email address if provided
+                if (event.data?.email) {
+                    setEmailAddress(event.data.email);
+                }
 
                 // Update widget config
                 if (onUpdateWidget) {
@@ -154,16 +162,20 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                         ...widget,
                         config: {
                             ...widget.config,
-                            email: event.data.email
+                            email: event.data?.email || '',
+                            refreshToken: event.data?.refreshToken || ''
                         }
                     });
                 }
+
+                // Trigger immediate email fetch
+                fetchEmails();
             }
         };
 
         window.addEventListener('message', handleAuthMessage);
         return () => window.removeEventListener('message', handleAuthMessage);
-    }, [widget.id, onUpdateWidget]);
+    }, [widget.id, onUpdateWidget, fetchEmails]);
 
     // Fetch emails on component mount and when configuration changes
     useEffect(() => {
@@ -541,19 +553,21 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                 <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                     <CircularProgress size={24} />
                 </Box>
-            ) : error ? (
+            ) : !isConnected && provider === 'gmail' ? (
                 <Box sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography color="error" variant="body2">
-                        {error}
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        Connect your Gmail account to display your emails.
                     </Typography>
                     <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={toggleConfiguration}
-                        sx={{ mt: 1 }}
+                        variant="contained"
+                        color="primary"
+                        onClick={connect}
                     >
-                        Configure
+                        Connect Gmail Account
                     </Button>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        For demo purposes, you'll see mock email data if no account is connected.
+                    </Typography>
                 </Box>
             ) : emails.length === 0 ? (
                 <Box sx={{ p: 2, textAlign: 'center' }}>
