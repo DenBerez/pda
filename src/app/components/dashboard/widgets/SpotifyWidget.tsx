@@ -83,18 +83,19 @@ const sampleSpotifyData = {
     ]
 };
 
+// Add this type at the top of the file
+type LayoutOption = 'compact' | 'normal' | 'detailed';
+
 interface SpotifyWidgetProps {
     widget: Widget & {
         config?: {
-            layoutOption?: LayoutOptionType;
+            layoutOption?: LayoutOption;
             refreshToken?: string;
         };
     };
     editMode: boolean;
     onUpdateWidget: (widget: Widget) => void;
 }
-
-type LayoutOptionType = 'compact' | 'detailed' | 'normal';
 
 const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdateWidget }) => {
     const [recentTracks, setRecentTracks] = useState<any[]>([]);
@@ -149,6 +150,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
     // Get layout option from widget config or default to 'normal'
     const layoutOption = widget.config?.layoutOption || 'normal';
+
+    // Add type guard function
+    const isCompactLayout = (layout: string): layout is 'compact' => layout === 'compact';
 
     // Fetch initial access token
     useEffect(() => {
@@ -440,31 +444,38 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
     // Normal layout
     return (
-        <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Paper sx={{
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            bgcolor: 'transparent',
+            boxShadow: 'none'
+        }}>
             {/* Content */}
             <Box ref={containerRef} sx={{
                 flexGrow: 1,
                 overflow: 'auto',
                 position: 'relative',
                 // Apply different padding based on layout option
-                p: layoutOption === 'compact' ? 1 : 2
+                p: isCompactLayout(layoutOption) ? 1 : 2
             }}>
                 {/* Toggle button with styling based on layout option */}
                 {layoutOption !== 'detailed' && (
                     <Box sx={{
                         position: 'absolute',
-                        top: layoutOption === 'compact' ? 4 : 8,
-                        right: layoutOption === 'compact' ? 4 : 8,
+                        top: isCompactLayout(layoutOption) ? 4 : 8,
+                        right: isCompactLayout(layoutOption) ? 4 : 8,
                         zIndex: 2
                     }}>
                         <Tooltip title={showRecent ? "Show Player" : "Show History"}>
                             <IconButton
                                 onClick={toggleView}
-                                size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                             >
                                 {showRecent ?
-                                    <MusicNoteIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> :
-                                    <AccessTimeIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                    <MusicNoteIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} /> :
+                                    <AccessTimeIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                 }
                             </IconButton>
                         </Tooltip>
@@ -510,14 +521,11 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         alt={currentTrack.name}
                                         variant="rounded"
                                         sx={{
-                                            width: 180,
-                                            height: 180,
-                                            boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-                                            transform: 'perspective(1000px) rotateY(-10deg)',
-                                            transition: 'transform 0.3s ease',
-                                            '&:hover': {
-                                                transform: 'perspective(1000px) rotateY(0deg)'
-                                            }
+                                            width: isCompactLayout(layoutOption) ? 48 : 120,
+                                            height: isCompactLayout(layoutOption) ? 48 : 120,
+                                            mr: isCompactLayout(layoutOption) ? 1 : 3,
+                                            boxShadow: isCompactLayout(layoutOption) ? 1 : 3,
+                                            borderRadius: 1
                                         }}
                                     >
                                         <MusicNoteIcon sx={{ fontSize: 40 }} />
@@ -525,24 +533,27 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
                                     <Box sx={{ flex: 1 }}>
                                         <Typography
-                                            variant="h5"
-                                            gutterBottom
+                                            variant={isCompactLayout(layoutOption) ? 'body1' : 'h6'}
                                             sx={{
-                                                fontWeight: 600,
-                                                background: `linear-gradient(90deg, ${theme.palette.text.primary} 0%, ${alpha(theme.palette.text.primary, 0.7)} 100%)`,
-                                                backgroundClip: 'text',
-                                                WebkitBackgroundClip: 'text',
-                                                WebkitTextFillColor: 'transparent'
+                                                fontWeight: 'medium',
+                                                mb: 0.5,
+                                                lineHeight: isCompactLayout(layoutOption) ? 1.2 : 1.5,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
                                             }}
                                         >
                                             {currentTrack.name}
                                         </Typography>
 
                                         <Typography
-                                            variant="subtitle1"
+                                            variant={isCompactLayout(layoutOption) ? 'caption' : 'body1'}
                                             sx={{
-                                                color: alpha(theme.palette.text.primary, 0.8),
-                                                fontWeight: 500
+                                                color: 'text.secondary',
+                                                lineHeight: isCompactLayout(layoutOption) ? 1.2 : 1.5,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
                                             }}
                                         >
                                             {currentTrack.artists.map((artist: { name: string }) => artist.name).join(', ')}
@@ -590,20 +601,20 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         min={0}
                                         max={duration}
                                         onChange={handleSeekChange}
+                                        aria-labelledby="continuous-slider"
+                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                         sx={{
-                                            '& .MuiSlider-thumb': {
-                                                width: 12,
-                                                height: 12,
-                                                transition: 'width 0.2s, height 0.2s',
-                                                '&:hover, &.Mui-active': {
-                                                    width: 16,
-                                                    height: 16
-                                                }
-                                            },
                                             '& .MuiSlider-track': {
                                                 background: `linear-gradient(90deg, 
                                                     ${theme.palette.primary.main} 0%, 
                                                     ${theme.palette.primary.light} 100%)`
+                                            },
+                                            '& .MuiSlider-thumb': {
+                                                width: isCompactLayout(layoutOption) ? 8 : 12,
+                                                height: isCompactLayout(layoutOption) ? 8 : 12,
+                                                '&:hover, &.Mui-active': {
+                                                    boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`
+                                                }
                                             }
                                         }}
                                     />
@@ -661,6 +672,31 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         <SkipNextIcon />
                                     </IconButton>
                                 </Stack>
+
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    mt: 2,
+                                    width: '100%'
+                                }}>
+                                    <IconButton size="medium">
+                                        {getVolumeIcon()}
+                                    </IconButton>
+                                    <Slider
+                                        value={volume}
+                                        onChange={handleVolumeChange}
+                                        aria-labelledby="volume-slider"
+                                        sx={{
+                                            ml: 2,
+                                            flexGrow: 1,
+                                            '& .MuiSlider-track': {
+                                                background: `linear-gradient(90deg, 
+                                                    ${theme.palette.primary.main} 0%, 
+                                                    ${theme.palette.primary.light} 100%)`
+                                            }
+                                        }}
+                                    />
+                                </Box>
                             </Box>
                         ) : (
                             <Box sx={{ p: 2, textAlign: 'center', mb: 3 }}>
@@ -753,9 +789,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                     <>
                         {showRecent ? (
                             <List sx={{
-                                mt: layoutOption === 'compact' ? 0 : 2,
+                                mt: isCompactLayout(layoutOption) ? 0 : 2,
                                 // Adjust spacing for compact layout
-                                '& .MuiListItem-root': layoutOption === 'compact' ? {
+                                '& .MuiListItem-root': isCompactLayout(layoutOption) ? {
                                     py: 0.5
                                 } : {}
                             }}>
@@ -770,17 +806,17 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                             edge="end"
                                                             onClick={() => playPreview(item.track.preview_url)}
                                                             sx={{ mr: 1 }}
-                                                            size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                            size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                                         >
-                                                            <PlayArrowIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                            <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                                         </IconButton>
                                                     )}
                                                     <IconButton
                                                         edge="end"
                                                         onClick={() => openInSpotify(item.track.uri)}
-                                                        size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                                     >
-                                                        <LaunchIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                        <LaunchIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                                     </IconButton>
                                                 </Box>
                                             }
@@ -790,7 +826,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     src={item.track.album.images?.[0]?.url}
                                                     alt={item.track.name}
                                                     variant="rounded"
-                                                    sx={layoutOption === 'compact' ? { width: 32, height: 32 } : {}}
+                                                    sx={isCompactLayout(layoutOption) ? { width: 32, height: 32 } : {}}
                                                 >
                                                     <MusicNoteIcon />
                                                 </Avatar>
@@ -813,16 +849,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     </>
                                                 }
                                                 primaryTypographyProps={{
-                                                    variant: layoutOption === 'compact' ? 'body2' : 'body1'
+                                                    variant: isCompactLayout(layoutOption) ? 'body2' : 'body1'
                                                 }}
                                                 secondaryTypographyProps={{
-                                                    variant: layoutOption === 'compact' ? 'caption' : 'body2'
+                                                    variant: isCompactLayout(layoutOption) ? 'caption' : 'body2'
                                                 }}
                                             />
                                         </ListItem>
                                     ))
                                 ) : (
-                                    <Typography variant={layoutOption === 'compact' ? 'body2' : 'body1'} sx={{ p: 2 }}>
+                                    <Typography variant={isCompactLayout(layoutOption) ? 'body2' : 'body1'} sx={{ p: 2 }}>
                                         No recent tracks found
                                     </Typography>
                                 )}
@@ -834,11 +870,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         display: 'flex',
                                         flexDirection: 'column',
                                         height: '100%',
-                                        pt: layoutOption === 'compact' ? 0 : 2
+                                        pt: isCompactLayout(layoutOption) ? 1 : 2,
+                                        px: isCompactLayout(layoutOption) ? 1 : 2,
+                                        gap: isCompactLayout(layoutOption) ? 0.5 : 1
                                     }}>
                                         <Box sx={{
                                             display: 'flex',
-                                            mb: layoutOption === 'compact' ? 1 : 3,
+                                            mb: isCompactLayout(layoutOption) ? 1 : 3,
                                             alignItems: 'center'
                                         }}>
                                             <Avatar
@@ -846,35 +884,41 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 alt={currentTrack.name}
                                                 variant="rounded"
                                                 sx={{
-                                                    width: layoutOption === 'compact' ? 60 : 120,
-                                                    height: layoutOption === 'compact' ? 60 : 120,
-                                                    mr: layoutOption === 'compact' ? 1 : 3
+                                                    width: isCompactLayout(layoutOption) ? 48 : 120,
+                                                    height: isCompactLayout(layoutOption) ? 48 : 120,
+                                                    mr: isCompactLayout(layoutOption) ? 1 : 3,
+                                                    boxShadow: isCompactLayout(layoutOption) ? 1 : 3,
+                                                    borderRadius: 1
                                                 }}
                                             >
-                                                <MusicNoteIcon sx={{ fontSize: layoutOption === 'compact' ? 24 : 40 }} />
+                                                <MusicNoteIcon sx={{ fontSize: isCompactLayout(layoutOption) ? 24 : 40 }} />
                                             </Avatar>
                                             <Box>
                                                 <Typography
-                                                    variant={layoutOption === 'compact' ? 'subtitle1' : 'h6'}
-                                                    gutterBottom
+                                                    variant={isCompactLayout(layoutOption) ? 'body1' : 'h6'}
+                                                    sx={{
+                                                        fontWeight: 'medium',
+                                                        mb: 0.5,
+                                                        lineHeight: isCompactLayout(layoutOption) ? 1.2 : 1.5,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}
                                                 >
                                                     {currentTrack.name}
                                                 </Typography>
                                                 <Typography
-                                                    variant={layoutOption === 'compact' ? 'body2' : 'body1'}
+                                                    variant={isCompactLayout(layoutOption) ? 'caption' : 'body1'}
+                                                    sx={{
+                                                        color: 'text.secondary',
+                                                        lineHeight: isCompactLayout(layoutOption) ? 1.2 : 1.5,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}
                                                 >
                                                     {currentTrack.artists.map((artist: { name: string }) => artist.name).join(', ')}
                                                 </Typography>
-                                                {layoutOption !== 'compact' && (
-                                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                        {currentTrack.album.name}
-                                                    </Typography>
-                                                )}
-                                                <Chip
-                                                    label={isPlaying ? "Playing" : "Paused"}
-                                                    color={isPlaying ? "primary" : "default"}
-                                                    size="small"
-                                                />
                                             </Box>
                                         </Box>
 
@@ -898,7 +942,21 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 max={duration}
                                                 onChange={handleSeekChange}
                                                 aria-labelledby="continuous-slider"
-                                                size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                                sx={{
+                                                    '& .MuiSlider-track': {
+                                                        background: `linear-gradient(90deg, 
+                                                            ${theme.palette.primary.main} 0%, 
+                                                            ${theme.palette.primary.light} 100%)`
+                                                    },
+                                                    '& .MuiSlider-thumb': {
+                                                        width: isCompactLayout(layoutOption) ? 8 : 12,
+                                                        height: isCompactLayout(layoutOption) ? 8 : 12,
+                                                        '&:hover, &.Mui-active': {
+                                                            boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`
+                                                        }
+                                                    }
+                                                }}
                                             />
 
                                             <Box sx={{
@@ -906,12 +964,12 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 alignItems: 'center',
                                                 mt: 2,
                                                 width: '100%',
-                                                ...(layoutOption === 'compact' ? {
+                                                ...(isCompactLayout(layoutOption) ? {
                                                     mt: 1,
                                                     mb: 1
                                                 } : {})
                                             }}>
-                                                <IconButton size={layoutOption === 'compact' ? 'small' : 'medium'}>
+                                                <IconButton size={isCompactLayout(layoutOption) ? 'small' : 'medium'}>
                                                     {getVolumeIcon()}
                                                 </IconButton>
                                                 <Slider
@@ -919,7 +977,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     onChange={handleVolumeChange}
                                                     aria-labelledby="volume-slider"
                                                     sx={{ ml: 2, flexGrow: 1 }}
-                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                    size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                                 />
                                             </Box>
 
@@ -928,17 +986,17 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 spacing={1}
                                                 justifyContent="center"
                                                 alignItems="center"
-                                                sx={{ mt: layoutOption === 'compact' ? 1 : 2 }}
+                                                sx={{ mt: isCompactLayout(layoutOption) ? 1 : 2 }}
                                             >
                                                 <IconButton
                                                     onClick={previousTrack}
-                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                    size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                                 >
-                                                    <SkipPreviousIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                    <SkipPreviousIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                                 </IconButton>
                                                 <IconButton
                                                     onClick={togglePlay}
-                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                    size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                                     sx={{
                                                         bgcolor: 'primary.main',
                                                         color: 'primary.contrastText',
@@ -948,15 +1006,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     }}
                                                 >
                                                     {isPlaying ?
-                                                        <PauseIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} /> :
-                                                        <PlayArrowIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                        <PauseIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} /> :
+                                                        <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                                     }
                                                 </IconButton>
                                                 <IconButton
                                                     onClick={nextTrack}
-                                                    size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                    size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                                 >
-                                                    <SkipNextIcon fontSize={layoutOption === 'compact' ? 'small' : 'medium'} />
+                                                    <SkipNextIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                                 </IconButton>
                                             </Stack>
                                         </Box>
@@ -964,12 +1022,12 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                 ) : (
                                     <Box sx={{ p: 2, textAlign: 'center' }}>
                                         <MusicNoteIcon sx={{
-                                            fontSize: layoutOption === 'compact' ? 40 : 60,
+                                            fontSize: isCompactLayout(layoutOption) ? 40 : 60,
                                             color: 'text.secondary',
                                             mb: 2
                                         }} />
                                         <Typography
-                                            variant={layoutOption === 'compact' ? 'subtitle1' : 'h6'}
+                                            variant={isCompactLayout(layoutOption) ? 'subtitle1' : 'h6'}
                                             gutterBottom
                                         >
                                             {isPlayerConnected ? 'No track playing' : 'Connect to start playing'}
@@ -980,13 +1038,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 onClick={handleTransferPlayback}
                                                 disabled={isTransferringPlayback}
                                                 sx={{ mt: 2 }}
-                                                size={layoutOption === 'compact' ? 'small' : 'medium'}
+                                                size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                             >
                                                 Transfer Playback to This Device
                                             </Button>
                                         ) : (
                                             <Typography
-                                                variant={layoutOption === 'compact' ? 'caption' : 'body2'}
+                                                variant={isCompactLayout(layoutOption) ? 'caption' : 'body2'}
                                                 color="text.secondary"
                                             >
                                                 Waiting for Spotify connection...

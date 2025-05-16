@@ -51,7 +51,7 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
         return currentDateTime.toLocaleDateString(undefined, options);
     };
 
-    // Basic layout - just time and date
+    // Basic layout - clean and minimal
     const renderBasicLayout = () => (
         <Box sx={{
             display: 'flex',
@@ -59,18 +59,30 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
             alignItems: 'center',
             justifyContent: 'center',
             height: '100%',
-            p: 2
+            p: 3,
+            textAlign: 'center'
         }}>
-            <Typography variant="h3" sx={{ fontWeight: 'medium' }}>
+            <Typography
+                variant="h2"
+                sx={{
+                    fontWeight: 'medium',
+                    letterSpacing: '-0.02em',
+                    mb: 1
+                }}
+            >
                 {formatTime()}
             </Typography>
-            <Typography variant="subtitle1" color="text.secondary">
+            <Typography
+                variant="h6"
+                color="text.secondary"
+                sx={{ letterSpacing: '0.02em' }}
+            >
                 {formatDate()}
             </Typography>
         </Box>
     );
 
-    // Normal layout - includes icons and more spacing
+    // Normal layout - balanced and elegant
     const renderNormalLayout = () => (
         <Box sx={{
             display: 'flex',
@@ -78,13 +90,36 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
             height: '100%',
             p: 3
         }}>
-
-            <AccessTimeIcon sx={{ fontSize: 40, mb: 2, color: theme.palette.primary.main }} />
-            <Typography variant="h2" sx={{ fontWeight: 'medium', mb: 1 }}>
+            <Box sx={{ mb: 2 }}>
+                <AccessTimeIcon
+                    sx={{
+                        fontSize: 32,
+                        color: 'primary.main'
+                    }}
+                />
+            </Box>
+            <Typography
+                variant="h2"
+                sx={{
+                    fontWeight: 'medium',
+                    letterSpacing: '-0.02em',
+                    mb: 2
+                }}
+            >
                 {formatTime()}
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                <CalendarTodayIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+            <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                mt: 'auto'
+            }}>
+                <CalendarTodayIcon
+                    sx={{
+                        mr: 1.5,
+                        color: 'primary.main',
+                        fontSize: 20
+                    }}
+                />
                 <Typography variant="h6">
                     {formatDate()}
                 </Typography>
@@ -92,7 +127,7 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
         </Box>
     );
 
-    // Detailed layout - includes timezone and additional information
+    // Detailed layout - rich and informative
     const renderDetailedLayout = () => (
         <Box sx={{
             display: 'flex',
@@ -101,29 +136,72 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
             p: 3,
             gap: 2
         }}>
+            <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 2,
+                mb: 1
+            }}>
+                <AccessTimeIcon
+                    sx={{
+                        fontSize: 40,
+                        color: 'primary.main'
+                    }}
+                />
+                <Typography
+                    variant="h6"
+                    color="text.secondary"
+                    sx={{ fontWeight: 'medium' }}
+                >
+                    Current Time
+                </Typography>
+            </Box>
 
-            <AccessTimeIcon sx={{ fontSize: 40, mb: 2, color: theme.palette.primary.main }} />
-            <Typography variant="h2" sx={{ fontWeight: 'medium', mb: 1 }}>
+            <Typography
+                variant="h2"
+                sx={{
+                    fontWeight: 'medium',
+                    letterSpacing: '-0.02em',
+                    mb: 2
+                }}
+            >
                 {formatTime()}
             </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                <CalendarTodayIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
+
+            <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5,
+                py: 1
+            }}>
+                <CalendarTodayIcon sx={{ color: 'primary.main' }} />
                 <Typography variant="h6">
                     {formatDate()}
                 </Typography>
             </Box>
+
             <Box sx={{
                 display: 'flex',
                 alignItems: 'center',
-                mt: 2,
-                color: theme.palette.text.secondary
+                gap: 1.5,
+                color: 'text.secondary'
             }}>
-                <PublicIcon sx={{ mr: 1 }} />
+                <PublicIcon />
                 <Typography variant="body1">
-                    {timezone}
+                    {timezone === 'auto' ? 'Local Timezone' : timezone}
                 </Typography>
             </Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+
+            <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                    mt: 'auto',
+                    pt: 1,
+                    borderTop: '1px solid',
+                    borderColor: 'divider'
+                }}
+            >
                 Week {getWeekNumber(currentDateTime)} of {currentDateTime.getFullYear()}
             </Typography>
         </Box>
