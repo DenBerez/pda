@@ -834,7 +834,16 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                         disabled={!tempWidget?.config?.calendarRefreshToken}
                                     />
                                 }
-                                label="Show Events"
+                                label={
+                                    <Box component="span" sx={{ color: !tempWidget?.config?.calendarRefreshToken ? 'text.disabled' : 'inherit' }}>
+                                        Show Events
+                                        {!tempWidget?.config?.calendarRefreshToken && (
+                                            <Typography variant="caption" display="block" color="text.disabled">
+                                                Connect Google Calendar to enable events
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                }
                             />
 
                             {tempWidget?.config?.showCalendarGrid !== false && (
