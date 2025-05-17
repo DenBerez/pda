@@ -37,6 +37,7 @@ import { useSpotifyWebPlayback } from '@/app/hooks/useSpotifyWebPlayback';
 import { useOAuth2Connection } from '@/app/hooks/useOAuth2Connection';
 import { alpha } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
+import { Theme } from '@mui/material/styles';
 
 // Sample data for demonstration when not connected
 const sampleSpotifyData = {
@@ -99,6 +100,14 @@ interface SpotifyWidgetProps {
     };
     editMode: boolean;
     onUpdateWidget: (widget: Widget) => void;
+}
+
+interface VolumeControlProps {
+    theme: Theme;
+    volume: number;
+    showVolumeControls: boolean;
+    handleVolumeChange: (event: Event, newValue: number | number[]) => void;
+    getVolumeIcon: () => React.ReactElement;
 }
 
 const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdateWidget }) => {
@@ -638,67 +647,53 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
                                 <Stack
                                     direction="row"
-                                    spacing={2}
+                                    spacing={1}
                                     justifyContent="center"
                                     alignItems="center"
                                     sx={{
-                                        mt: isCompactLayout(layoutOption) ? 1 : 2,
+                                        mt: 1,
                                         background: alpha(theme.palette.background.paper, 0.5),
-                                        borderRadius: 3,
-                                        padding: 1,
-                                        backdropFilter: 'blur(5px)'
+                                        borderRadius: 2,
+                                        padding: 0.5,
+                                        backdropFilter: 'blur(5px)',
+                                        minHeight: 40
                                     }}
                                 >
                                     <IconButton
                                         onClick={previousTrack}
-                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                        size="small"
                                         sx={{
                                             color: alpha(theme.palette.text.primary, 0.7),
-                                            transition: 'all 0.2s ease',
-                                            '&:hover': {
-                                                color: theme.palette.text.primary,
-                                                transform: 'scale(1.1) translateZ(0)'
-                                            }
+                                            padding: 0.5
                                         }}
                                     >
-                                        <SkipPreviousIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
+                                        <SkipPreviousIcon fontSize="small" />
                                     </IconButton>
 
                                     <IconButton
                                         onClick={togglePlay}
-                                        size={isCompactLayout(layoutOption) ? 'medium' : 'large'}
+                                        size="small"
                                         sx={{
                                             color: theme.palette.primary.main,
                                             background: alpha(theme.palette.primary.main, 0.1),
-                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            padding: 1,
                                             '&:hover': {
-                                                background: alpha(theme.palette.primary.main, 0.2),
-                                                transform: 'scale(1.1) translateZ(0)'
-                                            },
-                                            '&:active': {
-                                                transform: 'scale(0.95) translateZ(0)'
+                                                background: alpha(theme.palette.primary.main, 0.2)
                                             }
                                         }}
                                     >
-                                        {isPlaying ?
-                                            <PauseIcon fontSize={isCompactLayout(layoutOption) ? 'medium' : 'large'} /> :
-                                            <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'medium' : 'large'} />
-                                        }
+                                        {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
                                     </IconButton>
 
                                     <IconButton
                                         onClick={nextTrack}
-                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                        size="small"
                                         sx={{
                                             color: alpha(theme.palette.text.primary, 0.7),
-                                            transition: 'all 0.2s ease',
-                                            '&:hover': {
-                                                color: theme.palette.text.primary,
-                                                transform: 'scale(1.1) translateZ(0)'
-                                            }
+                                            padding: 0.5
                                         }}
                                     >
-                                        <SkipNextIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
+                                        <SkipNextIcon fontSize="small" />
                                     </IconButton>
                                 </Stack>
 
@@ -712,33 +707,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                         mb: 1
                                     } : {})
                                 }}>
-                                    <Box
-                                        onMouseEnter={() => setShowVolumeControls(true)}
-                                        onMouseLeave={() => setShowVolumeControls(false)}
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            flex: 1,
-                                        }}
-                                    >
-                                        <IconButton size={isCompactLayout(layoutOption) ? 'small' : 'medium'}>
-                                            {getVolumeIcon()}
-                                        </IconButton>
-                                        <Slider
-                                            value={volume}
-                                            onChange={handleVolumeChange}
-                                            aria-labelledby="volume-slider"
-                                            size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
-                                            sx={{
-                                                ml: 2,
-                                                flexGrow: 1,
-                                                opacity: showVolumeControls ? 1 : 0,
-                                                transition: 'opacity 0.2s ease-in-out',
-                                                visibility: showVolumeControls ? 'visible' : 'hidden',
-                                                width: showVolumeControls ? '100%' : 0,
-                                            }}
-                                        />
-                                    </Box>
+                                    <VolumeControl
+                                        theme={theme}
+                                        volume={volume}
+                                        showVolumeControls={showVolumeControls}
+                                        handleVolumeChange={handleVolumeChange}
+                                        getVolumeIcon={getVolumeIcon}
+                                    />
                                 </Box>
                             </Box>
                         ) : (
@@ -1029,98 +1004,64 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     mb: 1
                                                 } : {})
                                             }}>
-                                                <Box
-                                                    onMouseEnter={() => setShowVolumeControls(true)}
-                                                    onMouseLeave={() => setShowVolumeControls(false)}
-                                                    sx={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        flex: 1,
-                                                    }}
-                                                >
-                                                    <IconButton size={isCompactLayout(layoutOption) ? 'small' : 'medium'}>
-                                                        {getVolumeIcon()}
-                                                    </IconButton>
-                                                    <Slider
-                                                        value={volume}
-                                                        onChange={handleVolumeChange}
-                                                        aria-labelledby="volume-slider"
-                                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
-                                                        sx={{
-                                                            ml: 2,
-                                                            flexGrow: 1,
-                                                            opacity: showVolumeControls ? 1 : 0,
-                                                            transition: 'opacity 0.2s ease-in-out',
-                                                            visibility: showVolumeControls ? 'visible' : 'hidden',
-                                                            width: showVolumeControls ? '100%' : 0,
-                                                        }}
-                                                    />
-                                                </Box>
+                                                <VolumeControl
+                                                    theme={theme}
+                                                    volume={volume}
+                                                    showVolumeControls={showVolumeControls}
+                                                    handleVolumeChange={handleVolumeChange}
+                                                    getVolumeIcon={getVolumeIcon}
+                                                />
                                             </Box>
 
                                             <Stack
                                                 direction="row"
-                                                spacing={2}
+                                                spacing={1}
                                                 justifyContent="center"
                                                 alignItems="center"
                                                 sx={{
-                                                    mt: isCompactLayout(layoutOption) ? 1 : 2,
+                                                    mt: 1,
                                                     background: alpha(theme.palette.background.paper, 0.5),
-                                                    borderRadius: 3,
-                                                    padding: 1,
-                                                    backdropFilter: 'blur(5px)'
+                                                    borderRadius: 2,
+                                                    padding: 0.5,
+                                                    backdropFilter: 'blur(5px)',
+                                                    minHeight: 40
                                                 }}
                                             >
                                                 <IconButton
                                                     onClick={previousTrack}
-                                                    size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                                    size="small"
                                                     sx={{
                                                         color: alpha(theme.palette.text.primary, 0.7),
-                                                        transition: 'all 0.2s ease',
-                                                        '&:hover': {
-                                                            color: theme.palette.text.primary,
-                                                            transform: 'scale(1.1) translateZ(0)'
-                                                        }
+                                                        padding: 0.5
                                                     }}
                                                 >
-                                                    <SkipPreviousIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
+                                                    <SkipPreviousIcon fontSize="small" />
                                                 </IconButton>
 
                                                 <IconButton
                                                     onClick={togglePlay}
-                                                    size={isCompactLayout(layoutOption) ? 'medium' : 'large'}
+                                                    size="small"
                                                     sx={{
                                                         color: theme.palette.primary.main,
                                                         background: alpha(theme.palette.primary.main, 0.1),
-                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        padding: 1,
                                                         '&:hover': {
-                                                            background: alpha(theme.palette.primary.main, 0.2),
-                                                            transform: 'scale(1.1) translateZ(0)'
-                                                        },
-                                                        '&:active': {
-                                                            transform: 'scale(0.95) translateZ(0)'
+                                                            background: alpha(theme.palette.primary.main, 0.2)
                                                         }
                                                     }}
                                                 >
-                                                    {isPlaying ?
-                                                        <PauseIcon fontSize={isCompactLayout(layoutOption) ? 'medium' : 'large'} /> :
-                                                        <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'medium' : 'large'} />
-                                                    }
+                                                    {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
                                                 </IconButton>
 
                                                 <IconButton
                                                     onClick={nextTrack}
-                                                    size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                                    size="small"
                                                     sx={{
                                                         color: alpha(theme.palette.text.primary, 0.7),
-                                                        transition: 'all 0.2s ease',
-                                                        '&:hover': {
-                                                            color: theme.palette.text.primary,
-                                                            transform: 'scale(1.1) translateZ(0)'
-                                                        }
+                                                        padding: 0.5
                                                     }}
                                                 >
-                                                    <SkipNextIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
+                                                    <SkipNextIcon fontSize="small" />
                                                 </IconButton>
                                             </Stack>
                                         </Box>
@@ -1175,8 +1116,65 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                     sx={{ mt: 1 }}
                 />
             )}
+
+            <Box sx={{ position: 'relative' }}>
+                <VolumeControl
+                    theme={theme}
+                    volume={volume}
+                    showVolumeControls={showVolumeControls}
+                    handleVolumeChange={handleVolumeChange}
+                    getVolumeIcon={getVolumeIcon}
+                />
+            </Box>
         </>
     );
 };
+
+const VolumeControl: React.FC<VolumeControlProps> = ({
+    theme,
+    volume,
+    showVolumeControls,
+    handleVolumeChange,
+    getVolumeIcon
+}) => (
+    <Box
+        sx={{
+            position: 'absolute',
+            right: 16,
+            bottom: 72,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            background: alpha(theme.palette.background.paper, 0.95),
+            borderRadius: 2,
+            padding: 1,
+            boxShadow: theme.shadows[4],
+            opacity: showVolumeControls ? 1 : 0,
+            visibility: showVolumeControls ? 'visible' : 'hidden',
+            transition: 'all 0.2s ease-in-out',
+            zIndex: 10,
+        }}
+    >
+        <Slider
+            value={volume}
+            onChange={handleVolumeChange}
+            orientation="vertical"
+            size="small"
+            sx={{
+                height: 100,
+                '& .MuiSlider-thumb': {
+                    width: 12,
+                    height: 12,
+                    '&:hover': {
+                        boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`
+                    }
+                }
+            }}
+        />
+        <IconButton size="small" sx={{ mt: 1 }}>
+            {getVolumeIcon()}
+        </IconButton>
+    </Box>
+);
 
 export default SpotifyWidget; 
