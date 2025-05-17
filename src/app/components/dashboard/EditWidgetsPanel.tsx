@@ -299,8 +299,20 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
 
     const handleFontSizeChange = useCallback((newFontSize: string) => {
         setFontSize(newFontSize);
-        handleConfigChange({ fontSize: newFontSize });
-    }, [handleConfigChange]);
+        if (tempWidget) {
+            const contentRaw = convertToRaw(editorState.getCurrentContent());
+            const updatedWidget = {
+                ...tempWidget,
+                content: JSON.stringify(contentRaw),
+                config: {
+                    ...tempWidget.config,
+                    fontSize: newFontSize
+                }
+            };
+            setTempWidget(updatedWidget);
+            onSave(updatedWidget);
+        }
+    }, [tempWidget, editorState, onSave]);
 
     useEffect(() => {
         // Listen for messages from the auth windows
@@ -702,21 +714,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                             </Typography>
                             <Box sx={{ mb: 2 }}>
                                 <TextFormattingToolbar />
-                                <FormControl fullWidth size="small" sx={{ mt: 1 }}>
-                                    <InputLabel id="font-size-select-label">Font Size</InputLabel>
-                                    <Select
-                                        labelId="font-size-select-label"
-                                        value={fontSize}
-                                        label="Font Size"
-                                        onChange={(e) => handleFontSizeChange(e.target.value)}
-                                    >
-                                        <MenuItem value="x-small">X-Small</MenuItem>
-                                        <MenuItem value="small">Small</MenuItem>
-                                        <MenuItem value="medium">Medium</MenuItem>
-                                        <MenuItem value="large">Large</MenuItem>
-                                        <MenuItem value="x-large">X-Large</MenuItem>
-                                    </Select>
-                                </FormControl>
+
                             </Box>
                             <Paper
                                 elevation={1}
@@ -729,6 +727,12 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     borderColor: 'divider',
                                     borderRadius: 1,
                                     bgcolor: 'background.paper',
+                                    '& .DraftEditor-root': {
+                                        height: '100%',
+                                        '& .DraftEditor-editorContainer': {
+                                            height: '100%',
+                                        }
+                                    },
                                 }}
                             >
                                 <Box
@@ -736,15 +740,38 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                         flexGrow: 1,
                                         overflow: 'auto',
                                         p: 2,
-                                        '& .DraftEditor-root': {
-                                            height: '100%',
-                                        },
                                         '& .public-DraftEditor-content': {
                                             minHeight: '200px',
+                                            height: '100%',
                                             fontSize: fontSize === "x-small" ? "0.75rem" :
                                                 fontSize === "small" ? "0.875rem" :
                                                     fontSize === "large" ? "1.25rem" :
                                                         fontSize === "x-large" ? "1.5rem" : "1rem",
+                                            '& blockquote': {
+                                                borderLeft: '3px solid',
+                                                borderColor: 'divider',
+                                                paddingLeft: '1rem',
+                                                margin: '1rem 0',
+                                                fontStyle: 'italic',
+                                            },
+                                            '& pre': {
+                                                backgroundColor: 'action.hover',
+                                                padding: '1rem',
+                                                borderRadius: '4px',
+                                                fontFamily: 'monospace',
+                                                overflowX: 'auto',
+                                            },
+                                            '& ul, & ol': {
+                                                paddingLeft: '1.5rem',
+                                                marginBottom: '1rem',
+                                            },
+                                            '& li': {
+                                                marginBottom: '0.25rem',
+                                            },
+                                            '& p': {
+                                                marginBottom: '1rem',
+                                                lineHeight: 1.6,
+                                            }
                                         }
                                     }}
                                 >

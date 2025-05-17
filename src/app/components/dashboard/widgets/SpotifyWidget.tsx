@@ -106,13 +106,14 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [isTransferringPlayback, setIsTransferringPlayback] = useState(false);
-    const [volume, setVolume] = useState<number>(20);
+    const [volume, setVolume] = useState<number>(5);
     const [showVolumeSlider, setShowVolumeSlider] = useState(false);
     const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const [username, setUsername] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const theme = useTheme();
+    const [showVolumeControls, setShowVolumeControls] = useState(false);
 
     // Use the OAuth2 hook for consistent auth handling
     const { refreshToken, isConnected, connect, disconnect } = useOAuth2Connection({
@@ -674,25 +675,39 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                     display: 'flex',
                                     alignItems: 'center',
                                     mt: 2,
-                                    width: '100%'
+                                    width: '100%',
+                                    ...(isCompactLayout(layoutOption) ? {
+                                        mt: 1,
+                                        mb: 1
+                                    } : {})
                                 }}>
-                                    <IconButton size="medium">
-                                        {getVolumeIcon()}
-                                    </IconButton>
-                                    <Slider
-                                        value={volume}
-                                        onChange={handleVolumeChange}
-                                        aria-labelledby="volume-slider"
+                                    <Box
+                                        onMouseEnter={() => setShowVolumeControls(true)}
+                                        onMouseLeave={() => setShowVolumeControls(false)}
                                         sx={{
-                                            ml: 2,
-                                            flexGrow: 1,
-                                            '& .MuiSlider-track': {
-                                                background: `linear-gradient(90deg, 
-                                                    ${theme.palette.primary.main} 0%, 
-                                                    ${theme.palette.primary.light} 100%)`
-                                            }
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            flex: 1,
                                         }}
-                                    />
+                                    >
+                                        <IconButton size={isCompactLayout(layoutOption) ? 'small' : 'medium'}>
+                                            {getVolumeIcon()}
+                                        </IconButton>
+                                        <Slider
+                                            value={volume}
+                                            onChange={handleVolumeChange}
+                                            aria-labelledby="volume-slider"
+                                            size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                            sx={{
+                                                ml: 2,
+                                                flexGrow: 1,
+                                                opacity: showVolumeControls ? 1 : 0,
+                                                transition: 'opacity 0.2s ease-in-out',
+                                                visibility: showVolumeControls ? 'visible' : 'hidden',
+                                                width: showVolumeControls ? '100%' : 0,
+                                            }}
+                                        />
+                                    </Box>
                                 </Box>
                             </Box>
                         ) : (
@@ -966,16 +981,33 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     mb: 1
                                                 } : {})
                                             }}>
-                                                <IconButton size={isCompactLayout(layoutOption) ? 'small' : 'medium'}>
-                                                    {getVolumeIcon()}
-                                                </IconButton>
-                                                <Slider
-                                                    value={volume}
-                                                    onChange={handleVolumeChange}
-                                                    aria-labelledby="volume-slider"
-                                                    sx={{ ml: 2, flexGrow: 1 }}
-                                                    size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
-                                                />
+                                                <Box
+                                                    onMouseEnter={() => setShowVolumeControls(true)}
+                                                    onMouseLeave={() => setShowVolumeControls(false)}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        flex: 1,
+                                                    }}
+                                                >
+                                                    <IconButton size={isCompactLayout(layoutOption) ? 'small' : 'medium'}>
+                                                        {getVolumeIcon()}
+                                                    </IconButton>
+                                                    <Slider
+                                                        value={volume}
+                                                        onChange={handleVolumeChange}
+                                                        aria-labelledby="volume-slider"
+                                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                                        sx={{
+                                                            ml: 2,
+                                                            flexGrow: 1,
+                                                            opacity: showVolumeControls ? 1 : 0,
+                                                            transition: 'opacity 0.2s ease-in-out',
+                                                            visibility: showVolumeControls ? 'visible' : 'hidden',
+                                                            width: showVolumeControls ? '100%' : 0,
+                                                        }}
+                                                    />
+                                                </Box>
                                             </Box>
 
                                             <Stack
