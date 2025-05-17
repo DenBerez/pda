@@ -41,8 +41,8 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
         }}>
             <Box sx={{ display: 'flex', mb: 3, alignItems: 'center' }}>
                 <Avatar
-                    src={currentTrack.album.images?.[0]?.url}
-                    alt={currentTrack.name}
+                    src={currentTrack?.album?.images?.[0]?.url}
+                    alt={currentTrack?.name || 'Track'}
                     variant="rounded"
                     sx={{
                         width: 48,

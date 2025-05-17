@@ -43,8 +43,8 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
                     >
                         <ListItemAvatar>
                             <Avatar
-                                src={track.album.images?.[0]?.url}
-                                alt={track.name}
+                                src={track?.album?.images?.[0]?.url}
+                                alt={track?.name || 'Track'}
                                 variant="rounded"
                                 sx={{ width: 32, height: 32 }}
                             >

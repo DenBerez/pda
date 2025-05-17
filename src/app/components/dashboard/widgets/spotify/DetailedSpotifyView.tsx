@@ -34,7 +34,7 @@ const DetailedSpotifyView: React.FC<SpotifyViewProps> = ({
                     gap: 3
                 }}>
                     <Avatar
-                        src={currentTrack?.album.images?.[0]?.url}
+                        src={currentTrack?.album?.images?.[0]?.url}
                         alt={currentTrack?.name}
                         variant="rounded"
                         sx={{
