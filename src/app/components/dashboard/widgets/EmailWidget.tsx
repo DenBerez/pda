@@ -169,14 +169,21 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
                     });
                 }
 
-                // Trigger immediate email fetch
-                fetchEmails();
+                // Reset loading state and trigger immediate fetch
+                setLoading(true);
+                setError(null);
+
+                // Small delay to ensure token is properly set
+                setTimeout(() => {
+                    fetchEmails();
+                    fetchUserProfile();
+                }, 100);
             }
         };
 
         window.addEventListener('message', handleAuthMessage);
         return () => window.removeEventListener('message', handleAuthMessage);
-    }, [widget.id, onUpdateWidget, fetchEmails]);
+    }, [widget.id, onUpdateWidget]);
 
     // Fetch emails on component mount and when configuration changes
     useEffect(() => {
@@ -192,6 +199,23 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
 
         return () => clearInterval(intervalId);
     }, [editMode, provider, refreshToken, emailAddress, password, refreshInterval]);
+
+    // Add this near the top of the component with other useEffects
+    useEffect(() => {
+        // Reset widget state when connection status changes
+        if (!isConnected) {
+            setEmails([]);
+            setError(null);
+            setEmailAddress('');
+            setLoadingEmailId(null);
+            setSelectedEmail(null);
+            setDialogOpen(false);
+        } else {
+            // When connected, fetch emails and user profile
+            fetchEmails();
+            fetchUserProfile();
+        }
+    }, [isConnected]);
 
     // Format date to a more readable format
     const formatDate = (dateString: string) => {
