@@ -168,7 +168,7 @@ const Tour: React.FC<TourProps> = ({
             text: `
                 <div>
                     <p>Grab any widget's bottom-right corner to resize it. Each widget can be adjusted to show more or less content.</p>
-                    <p>This is only available in edit mode - let's try toggling it off and on.</p>
+                    <p>This feature is only available in edit mode.</p>
                 </div>
             `,
             attachTo: {
@@ -177,25 +177,12 @@ const Tour: React.FC<TourProps> = ({
             },
             beforeShowPromise: () => {
                 return new Promise<void>(resolve => {
-                    // First ensure edit mode is on and wait a moment
+                    // Ensure edit mode is enabled
                     if (!editMode) {
                         setEditMode(true);
-                        setTimeout(() => {
-                            // Then toggle it off to demonstrate the difference
-                            setEditMode(false);
-                            setTimeout(() => {
-                                // Finally, turn it back on
-                                setEditMode(true);
-                                setTimeout(resolve, 500);
-                            }, 1500);
-                        }, 1500);
+                        setTimeout(() => resolve(), 500);
                     } else {
-                        // If already in edit mode, toggle off and on
-                        setEditMode(false);
-                        setTimeout(() => {
-                            setEditMode(true);
-                            setTimeout(resolve, 500);
-                        }, 1500);
+                        resolve();
                     }
                 });
             },
@@ -241,6 +228,60 @@ const Tour: React.FC<TourProps> = ({
         });
 
         tourRef.current.addStep({
+            id: 'edit-mode',
+            title: 'Edit Mode',
+            text: `
+                <div>
+                    <p>Toggle edit mode to lock your widgets in place or make changes to your layout.</p>
+                    <p>Let's try toggling it off and on to see the difference.</p>
+                </div>
+            `,
+            attachTo: {
+                element: '.edit-mode-toggle',
+                on: 'left'
+            },
+            beforeShowPromise: () => {
+                return new Promise<void>(resolve => {
+                    // Open the settings drawer if it's not already open
+                    if (!settingsOpen) {
+                        setSettingsOpen(true);
+                        setTimeout(() => {
+                            // First ensure edit mode is on and wait a moment
+                            if (!editMode) {
+                                setEditMode(true);
+                                setTimeout(() => {
+                                    // Then toggle it off to demonstrate the difference
+                                    setEditMode(false);
+                                    setTimeout(() => {
+                                        // Finally, turn it back on
+                                        setEditMode(true);
+                                        setTimeout(resolve, 500);
+                                    }, 1500);
+                                }, 1500);
+                            } else {
+                                // If already in edit mode, toggle off and on
+                                setEditMode(false);
+                                setTimeout(() => {
+                                    setEditMode(true);
+                                    setTimeout(resolve, 500);
+                                }, 1500);
+                            }
+                        }, 500);
+                    } else {
+                        resolve();
+                    }
+                });
+            },
+            buttons: [
+                {
+                    text: 'Next',
+                    action: () => tourRef.current?.next(),
+                    classes: 'shepherd-button-primary'
+                }
+            ]
+        });
+
+        tourRef.current.addStep({
             id: 'settings-button',
             title: 'Dashboard Settings',
             text: `
@@ -262,39 +303,6 @@ const Tour: React.FC<TourProps> = ({
                         // Force a reflow to ensure the class is applied
                         void (settingsButton as HTMLElement).offsetWidth;
                         setTimeout(() => resolve(), 300);
-                    } else {
-                        resolve();
-                    }
-                });
-            },
-            buttons: [
-                {
-                    text: 'Next',
-                    action: () => tourRef.current?.next(),
-                    classes: 'shepherd-button-primary'
-                }
-            ]
-        });
-
-        tourRef.current.addStep({
-            id: 'edit-mode',
-            title: 'Edit Mode',
-            text: `
-                <div>
-                    <p>Toggle edit mode to lock your widgets in place or make changes to your layout.</p>
-                </div>
-            `,
-            attachTo: {
-                element: '.edit-mode-toggle',
-                on: 'left'
-            },
-            beforeShowPromise: () => {
-                return new Promise<void>(resolve => {
-                    // Open the settings drawer if it's not already open
-                    if (!settingsOpen) {
-                        setSettingsOpen(true);
-                        // Give it a moment to open before resolving
-                        setTimeout(() => resolve(), 500);
                     } else {
                         resolve();
                     }
