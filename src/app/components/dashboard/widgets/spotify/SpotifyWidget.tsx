@@ -43,57 +43,10 @@ import CompactSpotifyView from './CompactSpotifyView'
 import NormalSpotifyView from './NormalSpotifyView'
 import DetailedSpotifyView from './DetailedSpotifyView'
 
-// Sample data for demonstration when not connected
-const sampleSpotifyData = {
-    isPlaying: true,
-    currentTrack: {
-        name: "Bohemian Rhapsody",
-        album: {
-            name: "A Night at the Opera",
-            images: [{ url: "https://upload.wikimedia.org/wikipedia/en/4/4d/Queen_A_Night_At_The_Opera.png" }]
-        },
-        artists: [{ name: "Queen" }],
-        duration_ms: 354947,
-        preview_url: "https://p.scdn.co/mp3-preview/6d00d0aafe0a9b02a2b2c1156e9262d6cd39bd85?cid=774b29d4f13844c495f206cafdad9c86"
-    },
-    recentTracks: [
-        {
-            track: {
-                id: "recent1",
-                name: "Hotel California",
-                album: {
-                    name: "Hotel California",
-                    images: [{ url: "https://upload.wikimedia.org/wikipedia/en/4/49/Hotelcalifornia.jpg" }]
-                },
-                artists: [{ name: "Eagles" }],
-                duration_ms: 391375,
-                preview_url: "https://p.scdn.co/mp3-preview/d9b4b8df6c6a4f65c3ab0931e1e7cb0c7f2d6b73?cid=774b29d4f13844c495f206cafdad9c86"
-            },
-            played_at: "2023-10-15T12:22:45Z"
-        },
-        {
-            track: {
-                id: "recent2",
-                name: "Imagine",
-                album: {
-                    name: "Imagine",
-                    images: [{ url: "https://upload.wikimedia.org/wikipedia/en/6/69/ImagineCover.jpg" }]
-                },
-                artists: [{ name: "John Lennon" }],
-                duration_ms: 183000,
-                preview_url: null
-            },
-            played_at: "2023-10-15T12:18:12Z"
-        }
-    ]
-};
 
 // Add this type at the top of the file
 type LayoutOption = 'compact' | 'normal' | 'detailed';
 
-interface SpotifyArtist {
-    name: string;
-}
 
 interface VolumeControlProps {
     theme: Theme;
@@ -143,7 +96,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         if (!refreshToken) return;
 
         try {
-            const response = await fetch(`/api/spotify/recent?refreshToken=${encodeURIComponent(refreshToken)}`);
+            const response = await fetch(`/api/spotify?action=recent&refreshToken=${encodeURIComponent(refreshToken)}`);
             if (!response.ok) throw new Error('Failed to fetch recent tracks');
             const data = await response.json();
             setRecentTracks(data.recentTracks || []);
