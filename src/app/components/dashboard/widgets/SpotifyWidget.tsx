@@ -695,6 +695,63 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                     >
                                         <SkipNextIcon fontSize="small" />
                                     </IconButton>
+
+                                    {/* Add volume control */}
+                                    <Box
+                                        sx={{
+                                            position: 'relative',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            ml: 2
+                                        }}
+                                        onMouseEnter={() => setShowVolumeControls(true)}
+                                        onMouseLeave={() => setShowVolumeControls(false)}
+                                    >
+                                        <IconButton
+                                            size="small"
+                                            sx={{
+                                                color: alpha(theme.palette.text.primary, 0.7),
+                                                padding: 0.5
+                                            }}
+                                        >
+                                            {getVolumeIcon()}
+                                        </IconButton>
+
+                                        <Box
+                                            sx={{
+                                                position: 'absolute',
+                                                bottom: '100%',
+                                                left: '50%',
+                                                transform: 'translateX(-50%)',
+                                                background: alpha(theme.palette.background.paper, 0.95),
+                                                borderRadius: 1,
+                                                padding: 1,
+                                                boxShadow: theme.shadows[4],
+                                                opacity: showVolumeControls ? 1 : 0,
+                                                visibility: showVolumeControls ? 'visible' : 'hidden',
+                                                transition: 'all 0.2s ease-in-out',
+                                                zIndex: 10,
+                                                mb: 1
+                                            }}
+                                        >
+                                            <Slider
+                                                value={volume}
+                                                onChange={handleVolumeChange}
+                                                orientation="vertical"
+                                                size="small"
+                                                sx={{
+                                                    height: 100,
+                                                    '& .MuiSlider-thumb': {
+                                                        width: 12,
+                                                        height: 12,
+                                                        '&:hover': {
+                                                            boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                        </Box>
+                                    </Box>
                                 </Stack>
 
                                 <Box sx={{
@@ -1004,66 +1061,115 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     mb: 1
                                                 } : {})
                                             }}>
-                                                <VolumeControl
-                                                    theme={theme}
-                                                    volume={volume}
-                                                    showVolumeControls={showVolumeControls}
-                                                    handleVolumeChange={handleVolumeChange}
-                                                    getVolumeIcon={getVolumeIcon}
-                                                />
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={1}
+                                                    justifyContent="center"
+                                                    alignItems="center"
+                                                    sx={{
+                                                        mt: 1,
+                                                        background: alpha(theme.palette.background.paper, 0.5),
+                                                        borderRadius: 2,
+                                                        padding: 0.5,
+                                                        backdropFilter: 'blur(5px)',
+                                                        minHeight: 40
+                                                    }}
+                                                >
+                                                    <IconButton
+                                                        onClick={previousTrack}
+                                                        size="small"
+                                                        sx={{
+                                                            color: alpha(theme.palette.text.primary, 0.7),
+                                                            padding: 0.5
+                                                        }}
+                                                    >
+                                                        <SkipPreviousIcon fontSize="small" />
+                                                    </IconButton>
+
+                                                    <IconButton
+                                                        onClick={togglePlay}
+                                                        size="small"
+                                                        sx={{
+                                                            color: theme.palette.primary.main,
+                                                            background: alpha(theme.palette.primary.main, 0.1),
+                                                            padding: 1,
+                                                            '&:hover': {
+                                                                background: alpha(theme.palette.primary.main, 0.2)
+                                                            }
+                                                        }}
+                                                    >
+                                                        {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+                                                    </IconButton>
+
+                                                    <IconButton
+                                                        onClick={nextTrack}
+                                                        size="small"
+                                                        sx={{
+                                                            color: alpha(theme.palette.text.primary, 0.7),
+                                                            padding: 0.5
+                                                        }}
+                                                    >
+                                                        <SkipNextIcon fontSize="small" />
+                                                    </IconButton>
+
+                                                    {/* Add volume control */}
+                                                    <Box
+                                                        sx={{
+                                                            position: 'relative',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            ml: 2
+                                                        }}
+                                                        onMouseEnter={() => setShowVolumeControls(true)}
+                                                        onMouseLeave={() => setShowVolumeControls(false)}
+                                                    >
+                                                        <IconButton
+                                                            size="small"
+                                                            sx={{
+                                                                color: alpha(theme.palette.text.primary, 0.7),
+                                                                padding: 0.5
+                                                            }}
+                                                        >
+                                                            {getVolumeIcon()}
+                                                        </IconButton>
+
+                                                        <Box
+                                                            sx={{
+                                                                position: 'absolute',
+                                                                bottom: '100%',
+                                                                left: '50%',
+                                                                transform: 'translateX(-50%)',
+                                                                background: alpha(theme.palette.background.paper, 0.95),
+                                                                borderRadius: 1,
+                                                                padding: 1,
+                                                                boxShadow: theme.shadows[4],
+                                                                opacity: showVolumeControls ? 1 : 0,
+                                                                visibility: showVolumeControls ? 'visible' : 'hidden',
+                                                                transition: 'all 0.2s ease-in-out',
+                                                                zIndex: 10,
+                                                                mb: 1
+                                                            }}
+                                                        >
+                                                            <Slider
+                                                                value={volume}
+                                                                onChange={handleVolumeChange}
+                                                                orientation="vertical"
+                                                                size="small"
+                                                                sx={{
+                                                                    height: 100,
+                                                                    '& .MuiSlider-thumb': {
+                                                                        width: 12,
+                                                                        height: 12,
+                                                                        '&:hover': {
+                                                                            boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                    </Box>
+                                                </Stack>
                                             </Box>
-
-                                            <Stack
-                                                direction="row"
-                                                spacing={1}
-                                                justifyContent="center"
-                                                alignItems="center"
-                                                sx={{
-                                                    mt: 1,
-                                                    background: alpha(theme.palette.background.paper, 0.5),
-                                                    borderRadius: 2,
-                                                    padding: 0.5,
-                                                    backdropFilter: 'blur(5px)',
-                                                    minHeight: 40
-                                                }}
-                                            >
-                                                <IconButton
-                                                    onClick={previousTrack}
-                                                    size="small"
-                                                    sx={{
-                                                        color: alpha(theme.palette.text.primary, 0.7),
-                                                        padding: 0.5
-                                                    }}
-                                                >
-                                                    <SkipPreviousIcon fontSize="small" />
-                                                </IconButton>
-
-                                                <IconButton
-                                                    onClick={togglePlay}
-                                                    size="small"
-                                                    sx={{
-                                                        color: theme.palette.primary.main,
-                                                        background: alpha(theme.palette.primary.main, 0.1),
-                                                        padding: 1,
-                                                        '&:hover': {
-                                                            background: alpha(theme.palette.primary.main, 0.2)
-                                                        }
-                                                    }}
-                                                >
-                                                    {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-                                                </IconButton>
-
-                                                <IconButton
-                                                    onClick={nextTrack}
-                                                    size="small"
-                                                    sx={{
-                                                        color: alpha(theme.palette.text.primary, 0.7),
-                                                        padding: 0.5
-                                                    }}
-                                                >
-                                                    <SkipNextIcon fontSize="small" />
-                                                </IconButton>
-                                            </Stack>
                                         </Box>
                                     </Box>
                                 ) : (
