@@ -33,7 +33,7 @@ import ColorLensIcon from '@mui/icons-material/ColorLens';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import EmailIcon from '@mui/icons-material/Email';
 import ArticleIcon from '@mui/icons-material/Article';
-import ConfirmationDialog from './components/DeleteConfirmationDialog';
+import ConfirmationDialog from './reusable/DeleteConfirmationDialog';
 
 interface SettingsDrawerProps {
     open: boolean;

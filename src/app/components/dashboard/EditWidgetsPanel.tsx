@@ -48,8 +48,8 @@ import CodeIcon from '@mui/icons-material/Code';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda';
-import LayoutStyleSelector from './components/LayoutStyle';
-import AccountConnectionBox from './components/AccountConnectionBox';
+import LayoutStyleSelector from './reusable/LayoutStyle';
+import AccountConnectionBox from './reusable/AccountConnectionBox';
 import { quoteCategories } from '../../data/quotes';
 import { SelectChangeEvent } from '@mui/material';
 
