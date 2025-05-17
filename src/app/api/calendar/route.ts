@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
         const month = searchParams.get('month');
         const year = searchParams.get('year');
 
-        let events = [];
+        let events: any[] = [];
 
         // If month and year are provided, calculate the timeMin for that month
         let calculatedTimeMin = timeMin;
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
 
         // For development or when no token is provided, return mock data
         if (process.env.NODE_ENV === 'development' || !refreshToken) {
-            events = generateMockEvents(maxResults);
+            // events = generateMockEvents(maxResults);
         } else {
             // Use actual Google Calendar API with the provided refresh token
             events = await fetchGoogleCalendarEvents(refreshToken, maxResults, calculatedTimeMin);
