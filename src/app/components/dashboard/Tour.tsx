@@ -168,19 +168,34 @@ const Tour: React.FC<TourProps> = ({
             text: `
                 <div>
                     <p>Grab any widget's bottom-right corner to resize it. Each widget can be adjusted to show more or less content.</p>
+                    <p>This is only available in edit mode - let's try toggling it off and on.</p>
                 </div>
             `,
             attachTo: {
-                element: '.react-grid-item:first-child .react-resizable-handle',
-                on: 'right'
+                element: '.react-grid-item:first-child',
+                on: 'bottom-end'
             },
             beforeShowPromise: () => {
                 return new Promise<void>(resolve => {
+                    // First ensure edit mode is on and wait a moment
                     if (!editMode) {
                         setEditMode(true);
-                        setTimeout(() => resolve(), 500);
+                        setTimeout(() => {
+                            // Then toggle it off to demonstrate the difference
+                            setEditMode(false);
+                            setTimeout(() => {
+                                // Finally, turn it back on
+                                setEditMode(true);
+                                setTimeout(resolve, 500);
+                            }, 1500);
+                        }, 1500);
                     } else {
-                        resolve();
+                        // If already in edit mode, toggle off and on
+                        setEditMode(false);
+                        setTimeout(() => {
+                            setEditMode(true);
+                            setTimeout(resolve, 500);
+                        }, 1500);
                     }
                 });
             },
@@ -488,6 +503,18 @@ const Tour: React.FC<TourProps> = ({
             
             .shepherd-element[data-popper-placement^='right'] {
                 transform-origin: left center;
+            }
+
+            /* Add specific highlighting for resize handle during tour */
+            .tour-highlight .react-resizable-handle {
+                background-color: var(--shepherd-primary);
+                opacity: 0.7;
+                border-radius: 0 0 4px 0;
+                transition: opacity 0.2s ease;
+            }
+
+            .tour-highlight .react-resizable-handle:hover {
+                opacity: 1;
             }
         `;
         document.head.appendChild(style);

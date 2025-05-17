@@ -30,6 +30,8 @@ import DeleteIcon from '@mui/icons-material/DeleteOutline';
 import RestoreIcon from '@mui/icons-material/RestoreOutlined';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
+import EmailIcon from '@mui/icons-material/Email';
+import ArticleIcon from '@mui/icons-material/Article';
 
 interface SettingsDrawerProps {
     open: boolean;
@@ -543,30 +545,36 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                             </Typography>
 
                             <Button
-                                variant="text"
+                                variant="outlined"
+                                color="primary"
                                 fullWidth
                                 sx={{
-                                    mt: 1,
+                                    mt: 1.5,
+                                    mb: 1,
                                     textTransform: 'none',
                                     justifyContent: 'flex-start',
                                     fontFamily: 'monospace',
                                     fontSize: '0.875rem'
                                 }}
+                                startIcon={<EmailIcon />}
                                 onClick={() => window.location.href = 'mailto:dennis.m.berezin@gmail.com'}
                             >
                                 dennis.m.berezin@gmail.com
                             </Button>
 
-                            {/* Add Privacy Policy Link */}
                             <Button
                                 variant="text"
+                                color="primary"
                                 fullWidth
                                 sx={{
-                                    mt: 1,
                                     textTransform: 'none',
                                     justifyContent: 'flex-start',
-                                    fontSize: '0.875rem'
+                                    fontSize: '0.875rem',
+                                    '&:hover': {
+                                        backgroundColor: 'action.hover'
+                                    }
                                 }}
+                                startIcon={<ArticleIcon />}
                                 href="/privacy"
                             >
                                 Privacy Policy
