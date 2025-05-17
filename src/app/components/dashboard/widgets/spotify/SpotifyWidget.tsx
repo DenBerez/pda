@@ -143,7 +143,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         if (!refreshToken) return;
 
         try {
-            const response = await fetch('/api/spotify/recent');
+            const response = await fetch(`/api/spotify/recent?refreshToken=${encodeURIComponent(refreshToken)}`);
             if (!response.ok) throw new Error('Failed to fetch recent tracks');
             const data = await response.json();
             setRecentTracks(data.recentTracks || []);
