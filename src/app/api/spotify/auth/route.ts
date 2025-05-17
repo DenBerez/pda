@@ -33,7 +33,9 @@ export async function GET(request: NextRequest) {
                 'user-read-playback-state',
                 'user-modify-playback-state',
                 'user-read-recently-played',
-                'audio-features'
+                'audio-features',
+                'audio-analysis'
+
 
             ].join(' ');
 
