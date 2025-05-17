@@ -43,6 +43,7 @@ export interface SpotifyViewProps {
     formatDuration: (ms: number) => string;
     toggleView: () => void;
     theme: Theme;
+    showTransferButton: boolean;
 }
 
 export interface SpotifyWidgetProps {

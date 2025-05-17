@@ -242,7 +242,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         openInSpotify,
         formatDuration,
         toggleView,
-        theme
+        theme,
+        showTransferButton: !currentTrack && isPlayerConnected
     };
 
     return (

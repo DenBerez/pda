@@ -1,4 +1,4 @@
-import { Box, Avatar, Typography, IconButton, Slider, Stack, Chip, List, ListItem, ListItemAvatar, ListItemText } from '@mui/material';
+import { Box, Avatar, Typography, IconButton, Slider, Stack, Chip, List, ListItem, ListItemAvatar, ListItemText, Button } from '@mui/material';
 import { SpotifyViewProps } from './types';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -7,6 +7,7 @@ import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import LaunchIcon from '@mui/icons-material/Launch';
 import { alpha } from '@mui/material/styles';
+import DevicesIcon from '@mui/icons-material/Devices';
 
 const DetailedSpotifyView: React.FC<SpotifyViewProps> = ({
     currentTrack,
@@ -21,8 +22,83 @@ const DetailedSpotifyView: React.FC<SpotifyViewProps> = ({
     playPreview,
     openInSpotify,
     formatDuration,
-    theme
+    theme,
+    isPlayerConnected,
+    handleTransferPlayback,
+    showTransferButton
 }) => {
+    if (!currentTrack && showTransferButton) {
+        return (
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                gap: 3,
+                p: 3
+            }}>
+                <Box sx={{ textAlign: 'center' }}>
+                    <MusicNoteIcon
+                        sx={{
+                            fontSize: 48,
+                            color: 'text.secondary',
+                            mb: 2,
+                            opacity: 0.7
+                        }}
+                    />
+                    <Typography
+                        variant="h6"
+                        color="text.secondary"
+                        gutterBottom
+                    >
+                        No Active Playback
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 3 }}
+                    >
+                        Start playing music on any device to control playback from here
+                    </Typography>
+                </Box>
+                <Button
+                    variant="contained"
+                    startIcon={<DevicesIcon />}
+                    onClick={handleTransferPlayback}
+                    sx={{
+                        px: 3,
+                        py: 1,
+                        borderRadius: 2,
+                        background: `linear-gradient(45deg, 
+                            ${theme.palette.primary.main} 0%, 
+                            ${theme.palette.primary.light} 100%)`
+                    }}
+                >
+                    Transfer Playback to Browser
+                </Button>
+            </Box>
+        );
+    }
+
+    if (!currentTrack) {
+        return (
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                p: 3
+            }}>
+                <MusicNoteIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary">
+                    No track playing
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             {/* Player section */}

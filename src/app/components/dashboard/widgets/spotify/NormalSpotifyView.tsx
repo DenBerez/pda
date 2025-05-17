@@ -1,4 +1,4 @@
-import { Box, Avatar, Typography, IconButton, Slider, Stack } from '@mui/material';
+import { Box, Avatar, Typography, IconButton, Slider, Stack, Button } from '@mui/material';
 import { SpotifyViewProps } from './types';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -6,6 +6,7 @@ import SkipNextIcon from '@mui/icons-material/SkipNext';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { alpha } from '@mui/material/styles';
+import DevicesIcon from '@mui/icons-material/Devices';
 
 const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
     currentTrack,
@@ -17,8 +18,35 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
     nextTrack,
     handleSeekChange,
     formatDuration,
-    theme
+    theme,
+    isPlayerConnected,
+    handleTransferPlayback,
+    showTransferButton
 }) => {
+    if (!currentTrack && showTransferButton) {
+        return (
+            <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 2,
+                p: 2
+            }}>
+                <Typography variant="body1" color="text.secondary">
+                    No track playing
+                </Typography>
+                <Button
+                    variant="contained"
+                    startIcon={<DevicesIcon />}
+                    onClick={handleTransferPlayback}
+                    sx={{ mt: 1 }}
+                >
+                    Transfer Playback to Browser
+                </Button>
+            </Box>
+        );
+    }
+
     if (!currentTrack) {
         return (
             <Box sx={{ p: 2, textAlign: 'center' }}>
