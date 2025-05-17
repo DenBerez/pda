@@ -585,6 +585,8 @@ const DashboardGrid: React.FC = () => {
 
                 {/* Delete Confirmation Dialog */}
                 <DeleteConfirmationDialog
+                    title="Delete Widget"
+                    message="Are you sure you want to delete this widget? This action cannot be undone."
                     open={deleteDialogOpen}
                     onClose={handleCloseDeleteDialog}
                     onConfirm={handleConfirmDelete}

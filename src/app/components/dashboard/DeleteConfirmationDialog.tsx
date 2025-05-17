@@ -11,16 +11,24 @@ import {
 } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
-interface DeleteConfirmationDialogProps {
+interface ConfirmationDialogProps {
     open: boolean;
     onClose: () => void;
     onConfirm: () => void;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
 }
 
-const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
+const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     open,
     onClose,
-    onConfirm
+    onConfirm,
+    title,
+    message,
+    confirmText = 'Confirm',
+    cancelText = 'Cancel'
 }) => {
     return (
         <Dialog
@@ -43,16 +51,16 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <WarningAmberIcon color="error" />
                     <Typography variant="h6" component="span" fontWeight="medium">
-                        Remove Widget?
+                        {title}
                     </Typography>
                 </Box>
             </DialogTitle>
             <DialogContent>
                 <DialogContentText id="alert-dialog-description" sx={{ mb: 1 }}>
-                    Are you sure you want to remove this widget? This action cannot be undone.
+                    {message}
                 </DialogContentText>
             </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 3 }}>
+            <DialogActions sx={{ p: 2, gap: 1 }}>
                 <Button
                     onClick={onClose}
                     variant="outlined"
@@ -61,7 +69,7 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
                         borderRadius: '8px'
                     }}
                 >
-                    Cancel
+                    {cancelText}
                 </Button>
                 <Button
                     onClick={onConfirm}
@@ -73,11 +81,11 @@ const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> = ({
                         borderRadius: '8px'
                     }}
                 >
-                    Remove
+                    {confirmText}
                 </Button>
             </DialogActions>
         </Dialog>
     );
 };
 
-export default DeleteConfirmationDialog; 
+export default ConfirmationDialog; 

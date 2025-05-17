@@ -16,7 +16,8 @@ import {
     Grid,
     Tooltip,
     Chip,
-    FormHelperText
+    FormHelperText,
+    Popover
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { DarkMode, LightMode } from '@mui/icons-material';
@@ -32,6 +33,7 @@ import ColorLensIcon from '@mui/icons-material/ColorLens';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import EmailIcon from '@mui/icons-material/Email';
 import ArticleIcon from '@mui/icons-material/Article';
+import ConfirmationDialog from './DeleteConfirmationDialog';
 
 interface SettingsDrawerProps {
     open: boolean;
@@ -92,6 +94,17 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
     // Add state for custom color picker
     const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
     const [customColor, setCustomColor] = useState(primaryColor);
+
+    // Add state for the popover
+    const [infoAnchorEl, setInfoAnchorEl] = useState<null | HTMLElement>(null);
+
+    // Add these state variables inside the component
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<{
+        title: string;
+        message: string;
+        onConfirm: () => void;
+    } | null>(null);
 
     // Available templates
     const templates = [
@@ -157,6 +170,12 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
 
         // Force a reflow by accessing offsetHeight
         document.body.offsetHeight;
+    };
+
+    // Add this helper function inside the component
+    const showConfirmDialog = (title: string, message: string, onConfirm: () => void) => {
+        setConfirmAction({ title, message, onConfirm });
+        setConfirmDialogOpen(true);
     };
 
     return (
@@ -508,9 +527,7 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                 </Box>
                             </Box>
 
-                            <FormHelperText>
-                                Background image will be applied with a subtle overlay to maintain readability
-                            </FormHelperText>
+
                         </Box>
                     </Paper>
 
@@ -595,7 +612,15 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                     color="primary"
                                     fullWidth
                                     startIcon={<RestoreIcon />}
-                                    onClick={onResetToDefault}
+                                    onClick={() => showConfirmDialog(
+                                        'Reset to Default?',
+                                        'This will restore the default dashboard layout and widgets. This action cannot be undone.',
+                                        () => {
+                                            onResetToDefault();
+                                            onClose();
+                                            setConfirmDialogOpen(false);
+                                        }
+                                    )}
                                 >
                                     Reset to Default
                                 </Button>
@@ -622,7 +647,15 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                                     color="error"
                                     startIcon={<DeleteIcon />}
                                     fullWidth
-                                    onClick={onClearWidgets}
+                                    onClick={() => showConfirmDialog(
+                                        'Clear All Widgets?',
+                                        'Are you sure you want to remove all widgets? This action cannot be undone.',
+                                        () => {
+                                            onClearWidgets();
+                                            onClose();
+                                            setConfirmDialogOpen(false);
+                                        }
+                                    )}
                                 >
                                     Clear All Widgets
                                 </Button>
@@ -636,13 +669,125 @@ const SettingsDrawer: React.FC<SettingsDrawerProps> = ({
                     p: 2,
                     borderTop: 1,
                     borderColor: 'divider',
-                    textAlign: 'center'
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1
                 }}>
                     <Typography variant="caption" color="text.secondary">
                         Dashboard v1.0.0
                     </Typography>
+                    <Tooltip title="About & Feedback">
+                        <IconButton
+                            size="small"
+                            onClick={(e) => setInfoAnchorEl(e.currentTarget)}
+                            sx={{
+                                opacity: 0.7,
+                                '&:hover': { opacity: 1 }
+                            }}
+                        >
+                            <HelpOutlineIcon fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
                 </Box>
             </Box>
+
+            <Popover
+                open={Boolean(infoAnchorEl)}
+                anchorEl={infoAnchorEl}
+                onClose={() => setInfoAnchorEl(null)}
+                anchorOrigin={{
+                    vertical: 'top',
+                    horizontal: 'center',
+                }}
+                transformOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'center',
+                }}
+                PaperProps={{
+                    sx: {
+                        mt: -1,
+                        width: 320,
+                        p: 2,
+                        '& .MuiTypography-root': {
+                            fontFamily: 'inherit'
+                        }
+                    }
+                }}
+            >
+                <Typography variant="h6" fontWeight="medium" gutterBottom>
+                    Help Shape the Future
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary" paragraph>
+                    I'd love to hear your feedback and ideas for new features! Some upcoming premium features include:
+                </Typography>
+
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+                    {['AI Assistant', 'Data Analytics', 'Import/Export', 'Custom Widgets'].map((feature) => (
+                        <Chip
+                            key={feature}
+                            label={feature}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                                borderColor: 'primary.main',
+                                color: 'primary.main'
+                            }}
+                        />
+                    ))}
+                </Box>
+
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Reach out with suggestions or feedback:
+                </Typography>
+
+                <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                    sx={{
+                        mt: 1.5,
+                        mb: 1,
+                        textTransform: 'none',
+                        justifyContent: 'flex-start',
+                        fontFamily: 'monospace',
+                        fontSize: '0.875rem'
+                    }}
+                    startIcon={<EmailIcon />}
+                    onClick={() => window.location.href = 'mailto:dennis.m.berezin@gmail.com'}
+                >
+                    dennis.m.berezin@gmail.com
+                </Button>
+
+                <Button
+                    variant="text"
+                    color="primary"
+                    fullWidth
+                    sx={{
+                        textTransform: 'none',
+                        justifyContent: 'flex-start',
+                        fontSize: '0.875rem',
+                        '&:hover': {
+                            backgroundColor: 'action.hover'
+                        }
+                    }}
+                    startIcon={<ArticleIcon />}
+                    href="/privacy"
+                >
+                    Privacy Policy
+                </Button>
+            </Popover>
+
+            {confirmAction && (
+                <ConfirmationDialog
+                    open={confirmDialogOpen}
+                    onClose={() => setConfirmDialogOpen(false)}
+                    onConfirm={confirmAction.onConfirm}
+                    title={confirmAction.title}
+                    message={confirmAction.message}
+                />
+            )}
         </Drawer>
     );
 };
