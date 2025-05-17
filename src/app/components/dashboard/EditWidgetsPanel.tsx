@@ -831,6 +831,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     <Switch
                                         checked={tempWidget?.config?.showEvents !== false}
                                         onChange={(e) => handleConfigChange({ showEvents: e.target.checked })}
+                                        disabled={!tempWidget?.config?.calendarRefreshToken}
                                     />
                                 }
                                 label="Show Events"
@@ -920,18 +921,20 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 <Chip
                                     label="All Categories"
                                     onClick={() => {
-                                        // If not all categories are selected, select all
-                                        // If all are selected, do nothing (prevent deselecting all)
                                         const allCategoryValues = quoteCategories
                                             .filter(cat => cat.value !== 'all')
                                             .map(cat => cat.value);
 
-                                        const currentCategories = tempWidget?.config?.categories || ['all'];
-                                        const hasAllExceptAll = allCategoryValues.every(cat =>
+                                        const currentCategories = tempWidget?.config?.categories || [];
+                                        const hasAllCategories = allCategoryValues.every(cat =>
                                             currentCategories.includes(cat)
                                         );
 
-                                        if (!hasAllExceptAll) {
+                                        // If all categories are selected, deselect all except one (prevent empty selection)
+                                        // If not all are selected, select all
+                                        if (hasAllCategories) {
+                                            handleConfigChange({ categories: ['inspirational'] }); // Keep one default category
+                                        } else {
                                             handleConfigChange({ categories: allCategoryValues });
                                         }
                                     }}

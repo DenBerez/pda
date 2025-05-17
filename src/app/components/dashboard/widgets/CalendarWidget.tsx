@@ -413,7 +413,7 @@ const CalendarWidget: React.FC<CalendarWidgetProps> = ({ widget, editMode }) => 
             )}
 
             {/* Events List */}
-            {showEvents && (
+            {showEvents && widget.config?.calendarRefreshToken && (
                 <Box sx={{
                     mt: showCalendarGrid ? 2 : 0,
                     flexGrow: 1,
