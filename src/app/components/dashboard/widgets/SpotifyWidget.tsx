@@ -86,6 +86,10 @@ const sampleSpotifyData = {
 // Add this type at the top of the file
 type LayoutOption = 'compact' | 'normal' | 'detailed';
 
+interface SpotifyArtist {
+    name: string;
+}
+
 interface SpotifyWidgetProps {
     widget: Widget & {
         config?: {
@@ -449,7 +453,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             flexDirection: 'column',
             overflow: 'hidden',
             bgcolor: 'transparent',
-            boxShadow: 'none'
+            boxShadow: 'none',
+            backdropFilter: 'blur(8px)',
+            borderRadius: 2,
+            transition: 'all 0.3s ease-in-out',
+            '&:hover': {
+                backdropFilter: 'blur(12px)',
+            }
         }}>
             {/* Content */}
             <Box ref={containerRef} sx={{
@@ -523,39 +533,51 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                             width: isCompactLayout(layoutOption) ? 48 : 120,
                                             height: isCompactLayout(layoutOption) ? 48 : 120,
                                             mr: isCompactLayout(layoutOption) ? 1 : 3,
-                                            boxShadow: isCompactLayout(layoutOption) ? 1 : 3,
-                                            borderRadius: 1
+                                            boxShadow: theme.shadows[8],
+                                            borderRadius: 2,
+                                            transform: 'translateZ(0)',
+                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                            '&:hover': {
+                                                transform: 'scale(1.05) translateZ(0)',
+                                                boxShadow: theme.shadows[12],
+                                            }
                                         }}
                                     >
                                         <MusicNoteIcon sx={{ fontSize: 40 }} />
                                     </Avatar>
 
-                                    <Box sx={{ flex: 1 }}>
+                                    <Box sx={{
+                                        flex: 1,
+                                        minWidth: 0, // Ensures text truncation works
+                                    }}>
                                         <Typography
                                             variant={isCompactLayout(layoutOption) ? 'body1' : 'h6'}
                                             sx={{
-                                                fontWeight: 'medium',
+                                                fontWeight: 600,
                                                 mb: 0.5,
-                                                lineHeight: isCompactLayout(layoutOption) ? 1.2 : 1.5,
+                                                lineHeight: 1.3,
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap'
+                                                whiteSpace: 'nowrap',
+                                                color: theme.palette.text.primary,
+                                                transition: 'color 0.2s ease'
                                             }}
                                         >
                                             {currentTrack.name}
                                         </Typography>
 
                                         <Typography
-                                            variant={isCompactLayout(layoutOption) ? 'caption' : 'body1'}
+                                            variant={isCompactLayout(layoutOption) ? 'caption' : 'body2'}
                                             sx={{
-                                                color: 'text.secondary',
-                                                lineHeight: isCompactLayout(layoutOption) ? 1.2 : 1.5,
+                                                color: alpha(theme.palette.text.primary, 0.7),
+                                                lineHeight: 1.4,
                                                 overflow: 'hidden',
                                                 textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap'
+                                                whiteSpace: 'nowrap',
+                                                mb: 1
                                             }}
                                         >
-                                            {currentTrack.artists.map((artist: { name: string }) => artist.name).join(', ')}
+                                            {currentTrack.artists.map((artist: SpotifyArtist) => artist.name).join(', ')}
                                         </Typography>
 
                                         <Typography
@@ -606,14 +628,22 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                             '& .MuiSlider-track': {
                                                 background: `linear-gradient(90deg, 
                                                     ${theme.palette.primary.main} 0%, 
-                                                    ${theme.palette.primary.light} 100%)`
+                                                    ${theme.palette.primary.light} 100%)`,
+                                                border: 'none',
+                                                height: isCompactLayout(layoutOption) ? 3 : 4
                                             },
                                             '& .MuiSlider-thumb': {
-                                                width: isCompactLayout(layoutOption) ? 8 : 12,
-                                                height: isCompactLayout(layoutOption) ? 8 : 12,
+                                                width: isCompactLayout(layoutOption) ? 10 : 14,
+                                                height: isCompactLayout(layoutOption) ? 10 : 14,
+                                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 '&:hover, &.Mui-active': {
-                                                    boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`
+                                                    boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`,
+                                                    width: isCompactLayout(layoutOption) ? 12 : 16,
+                                                    height: isCompactLayout(layoutOption) ? 12 : 16
                                                 }
+                                            },
+                                            '& .MuiSlider-rail': {
+                                                opacity: 0.3
                                             }
                                         }}
                                     />
@@ -624,50 +654,64 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                     spacing={2}
                                     justifyContent="center"
                                     alignItems="center"
-                                    sx={{ mt: 'auto' }}
+                                    sx={{
+                                        mt: isCompactLayout(layoutOption) ? 1 : 2,
+                                        background: alpha(theme.palette.background.paper, 0.5),
+                                        borderRadius: 3,
+                                        padding: 1,
+                                        backdropFilter: 'blur(5px)'
+                                    }}
                                 >
                                     <IconButton
                                         onClick={previousTrack}
+                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                         sx={{
                                             color: alpha(theme.palette.text.primary, 0.7),
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
                                                 color: theme.palette.text.primary,
-                                                transform: 'scale(1.1)'
+                                                transform: 'scale(1.1) translateZ(0)'
                                             }
                                         }}
                                     >
-                                        <SkipPreviousIcon />
+                                        <SkipPreviousIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                     </IconButton>
 
                                     <IconButton
                                         onClick={togglePlay}
-                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                        size={isCompactLayout(layoutOption) ? 'medium' : 'large'}
                                         sx={{
-                                            color: theme.palette.primary.contrastText,
+                                            color: theme.palette.primary.main,
+                                            background: alpha(theme.palette.primary.main, 0.1),
+                                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                             '&:hover': {
-                                                transform: 'scale(1.05)'
+                                                background: alpha(theme.palette.primary.main, 0.2),
+                                                transform: 'scale(1.1) translateZ(0)'
+                                            },
+                                            '&:active': {
+                                                transform: 'scale(0.95) translateZ(0)'
                                             }
                                         }}
                                     >
                                         {isPlaying ?
-                                            <PauseIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} /> :
-                                            <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
+                                            <PauseIcon fontSize={isCompactLayout(layoutOption) ? 'medium' : 'large'} /> :
+                                            <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'medium' : 'large'} />
                                         }
                                     </IconButton>
 
                                     <IconButton
                                         onClick={nextTrack}
+                                        size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
                                         sx={{
                                             color: alpha(theme.palette.text.primary, 0.7),
                                             transition: 'all 0.2s ease',
                                             '&:hover': {
                                                 color: theme.palette.text.primary,
-                                                transform: 'scale(1.1)'
+                                                transform: 'scale(1.1) translateZ(0)'
                                             }
                                         }}
                                     >
-                                        <SkipNextIcon />
+                                        <SkipNextIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                     </IconButton>
                                 </Stack>
 
@@ -777,7 +821,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                             primary={item.track.name}
                                             secondary={
                                                 <>
-                                                    {item.track.artists.map((artist: any) => artist.name).join(', ')}
+                                                    {item.track.artists.map((artist: SpotifyArtist) => artist.name).join(', ')}
                                                     <br />
                                                     {item.track.album.name}
                                                     <br />
@@ -847,7 +891,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 primary={item.track.name}
                                                 secondary={
                                                     <>
-                                                        {item.track.artists.map((artist: any) => artist.name).join(', ')}
+                                                        {item.track.artists.map((artist: SpotifyArtist) => artist.name).join(', ')}
                                                         {layoutOption !== 'compact' && (
                                                             <>
                                                                 <br />
@@ -899,8 +943,14 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     width: isCompactLayout(layoutOption) ? 48 : 120,
                                                     height: isCompactLayout(layoutOption) ? 48 : 120,
                                                     mr: isCompactLayout(layoutOption) ? 1 : 3,
-                                                    boxShadow: isCompactLayout(layoutOption) ? 1 : 3,
-                                                    borderRadius: 1
+                                                    boxShadow: theme.shadows[8],
+                                                    borderRadius: 2,
+                                                    transform: 'translateZ(0)',
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    '&:hover': {
+                                                        transform: 'scale(1.05) translateZ(0)',
+                                                        boxShadow: theme.shadows[12],
+                                                    }
                                                 }}
                                             >
                                                 <MusicNoteIcon sx={{ fontSize: isCompactLayout(layoutOption) ? 24 : 40 }} />
@@ -909,27 +959,30 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                 <Typography
                                                     variant={isCompactLayout(layoutOption) ? 'body1' : 'h6'}
                                                     sx={{
-                                                        fontWeight: 'medium',
+                                                        fontWeight: 600,
                                                         mb: 0.5,
-                                                        lineHeight: isCompactLayout(layoutOption) ? 1.2 : 1.5,
+                                                        lineHeight: 1.3,
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
+                                                        whiteSpace: 'nowrap',
+                                                        color: theme.palette.text.primary,
+                                                        transition: 'color 0.2s ease'
                                                     }}
                                                 >
                                                     {currentTrack.name}
                                                 </Typography>
                                                 <Typography
-                                                    variant={isCompactLayout(layoutOption) ? 'caption' : 'body1'}
+                                                    variant={isCompactLayout(layoutOption) ? 'caption' : 'body2'}
                                                     sx={{
-                                                        color: 'text.secondary',
-                                                        lineHeight: isCompactLayout(layoutOption) ? 1.2 : 1.5,
+                                                        color: alpha(theme.palette.text.primary, 0.7),
+                                                        lineHeight: 1.4,
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
+                                                        whiteSpace: 'nowrap',
+                                                        mb: 1
                                                     }}
                                                 >
-                                                    {currentTrack.artists.map((artist: { name: string }) => artist.name).join(', ')}
+                                                    {currentTrack.artists.map((artist: SpotifyArtist) => artist.name).join(', ')}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -959,14 +1012,22 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                                                     '& .MuiSlider-track': {
                                                         background: `linear-gradient(90deg, 
                                                             ${theme.palette.primary.main} 0%, 
-                                                            ${theme.palette.primary.light} 100%)`
+                                                            ${theme.palette.primary.light} 100%)`,
+                                                        border: 'none',
+                                                        height: isCompactLayout(layoutOption) ? 3 : 4
                                                     },
                                                     '& .MuiSlider-thumb': {
-                                                        width: isCompactLayout(layoutOption) ? 8 : 12,
-                                                        height: isCompactLayout(layoutOption) ? 8 : 12,
+                                                        width: isCompactLayout(layoutOption) ? 10 : 14,
+                                                        height: isCompactLayout(layoutOption) ? 10 : 14,
+                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                                         '&:hover, &.Mui-active': {
-                                                            boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`
+                                                            boxShadow: `0 0 0 8px ${alpha(theme.palette.primary.main, 0.16)}`,
+                                                            width: isCompactLayout(layoutOption) ? 12 : 16,
+                                                            height: isCompactLayout(layoutOption) ? 12 : 16
                                                         }
+                                                    },
+                                                    '& .MuiSlider-rail': {
+                                                        opacity: 0.3
                                                     }
                                                 }}
                                             />
@@ -1012,35 +1073,65 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
                                             <Stack
                                                 direction="row"
-                                                spacing={1}
+                                                spacing={2}
                                                 justifyContent="center"
                                                 alignItems="center"
-                                                sx={{ mt: isCompactLayout(layoutOption) ? 1 : 2 }}
+                                                sx={{
+                                                    mt: isCompactLayout(layoutOption) ? 1 : 2,
+                                                    background: alpha(theme.palette.background.paper, 0.5),
+                                                    borderRadius: 3,
+                                                    padding: 1,
+                                                    backdropFilter: 'blur(5px)'
+                                                }}
                                             >
                                                 <IconButton
                                                     onClick={previousTrack}
                                                     size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                                    sx={{
+                                                        color: alpha(theme.palette.text.primary, 0.7),
+                                                        transition: 'all 0.2s ease',
+                                                        '&:hover': {
+                                                            color: theme.palette.text.primary,
+                                                            transform: 'scale(1.1) translateZ(0)'
+                                                        }
+                                                    }}
                                                 >
                                                     <SkipPreviousIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                                 </IconButton>
+
                                                 <IconButton
                                                     onClick={togglePlay}
-                                                    size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                                    size={isCompactLayout(layoutOption) ? 'medium' : 'large'}
                                                     sx={{
-                                                        color: theme.palette.primary.contrastText,
+                                                        color: theme.palette.primary.main,
+                                                        background: alpha(theme.palette.primary.main, 0.1),
+                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                                         '&:hover': {
-                                                            transform: 'scale(1.05)'
+                                                            background: alpha(theme.palette.primary.main, 0.2),
+                                                            transform: 'scale(1.1) translateZ(0)'
+                                                        },
+                                                        '&:active': {
+                                                            transform: 'scale(0.95) translateZ(0)'
                                                         }
                                                     }}
                                                 >
                                                     {isPlaying ?
-                                                        <PauseIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} /> :
-                                                        <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
+                                                        <PauseIcon fontSize={isCompactLayout(layoutOption) ? 'medium' : 'large'} /> :
+                                                        <PlayArrowIcon fontSize={isCompactLayout(layoutOption) ? 'medium' : 'large'} />
                                                     }
                                                 </IconButton>
+
                                                 <IconButton
                                                     onClick={nextTrack}
                                                     size={isCompactLayout(layoutOption) ? 'small' : 'medium'}
+                                                    sx={{
+                                                        color: alpha(theme.palette.text.primary, 0.7),
+                                                        transition: 'all 0.2s ease',
+                                                        '&:hover': {
+                                                            color: theme.palette.text.primary,
+                                                            transform: 'scale(1.1) translateZ(0)'
+                                                        }
+                                                    }}
                                                 >
                                                     <SkipNextIcon fontSize={isCompactLayout(layoutOption) ? 'small' : 'medium'} />
                                                 </IconButton>

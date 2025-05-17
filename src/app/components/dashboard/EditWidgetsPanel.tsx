@@ -708,13 +708,20 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                     )}
 
                     {widget?.type === 'text' && (
-                        <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                        <Box sx={{
+                            mb: 3,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: '100%',
+                            overflow: 'hidden' // Prevent outer container from scrolling
+                        }}>
                             <Typography variant="subtitle2" gutterBottom>
                                 Text Content
                             </Typography>
-                            <Box sx={{ mb: 2 }}>
+                            <Box sx={{
+                                flexShrink: 0 // Prevent toolbar from shrinking
+                            }}>
                                 <TextFormattingToolbar />
-
                             </Box>
                             <Paper
                                 elevation={1}
@@ -722,11 +729,12 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                     flexGrow: 1,
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    overflow: 'hidden',
                                     border: '1px solid',
                                     borderColor: 'divider',
                                     borderRadius: 1,
                                     bgcolor: 'background.paper',
+                                    overflow: 'hidden', // Hide overflow at Paper level
+                                    mt: 2,
                                     '& .DraftEditor-root': {
                                         height: '100%',
                                         '& .DraftEditor-editorContainer': {
@@ -738,7 +746,7 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                                 <Box
                                     sx={{
                                         flexGrow: 1,
-                                        overflow: 'auto',
+                                        overflowY: 'auto', // Only allow vertical scrolling
                                         p: 2,
                                         '& .public-DraftEditor-content': {
                                             minHeight: '200px',
