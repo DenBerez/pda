@@ -195,14 +195,13 @@ const DashboardGrid: React.FC = () => {
         // Get current breakpoint
         const currentBreakpoint = getCurrentBreakpoint();
 
-        // Update layouts while preserving other breakpoint layouts
+        // Update layouts state
         setLayouts(prevLayouts => ({
             ...prevLayouts,
             [currentBreakpoint]: currentLayout
         }));
 
         // Only update widget positions if user is in edit mode
-        // This prevents saving position changes during regular responsive adjustments
         if (editMode) {
             setWidgets((prevWidgets: Widget[]) => {
                 const layoutMap = new Map(
@@ -214,7 +213,12 @@ const DashboardGrid: React.FC = () => {
                     if (layoutItem) {
                         return {
                             ...widget,
-                            // Store positions for current breakpoint
+                            // Store the base position for the current breakpoint
+                            x: layoutItem.x,
+                            y: layoutItem.y,
+                            w: layoutItem.w,
+                            h: layoutItem.h,
+                            // Store breakpoint-specific layouts
                             layouts: {
                                 ...widget.layouts,
                                 [currentBreakpoint]: {

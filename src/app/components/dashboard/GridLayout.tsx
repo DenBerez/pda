@@ -22,6 +22,25 @@ const GridLayout: React.FC<GridLayoutProps> = ({
 }) => {
     const theme = useTheme();
 
+    const generateLayouts = (widgets: Widget[]) => {
+        const breakpoints = ['lg', 'md', 'sm', 'xs', 'xxs'];
+        const layouts: { [key: string]: any[] } = {};
+
+        breakpoints.forEach(breakpoint => {
+            layouts[breakpoint] = widgets.map(widget => ({
+                i: widget.id,
+                x: widget.layouts?.[breakpoint]?.x ?? widget.x,
+                y: widget.layouts?.[breakpoint]?.y ?? widget.y,
+                w: widget.layouts?.[breakpoint]?.w ?? widget.w,
+                h: widget.layouts?.[breakpoint]?.h ?? widget.h,
+                minW: widget.minW || 2,
+                minH: widget.minH || 2,
+            }));
+        });
+
+        return layouts;
+    };
+
     return (
         // <Box sx={{
         //     bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
@@ -31,17 +50,7 @@ const GridLayout: React.FC<GridLayoutProps> = ({
         // }}>
         <ResponsiveGridLayout
             className="layout"
-            layouts={{
-                lg: widgets.map(widget => ({
-                    i: widget.id,
-                    x: widget.x,
-                    y: widget.y,
-                    w: widget.w,
-                    h: widget.h,
-                    minW: widget.minW || 2,
-                    minH: widget.minH || 2,
-                })),
-            }}
+            layouts={generateLayouts(widgets)}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
             rowHeight={100}

@@ -12,6 +12,9 @@ export interface Widget {
     minH?: number;
     maxW?: number;
     maxH?: number;
+    layouts?: {
+        [key: string]: { x: number; y: number; w: number; h: number } | undefined;
+    };
     config?: {
         city?: string;
         images?: Array<{ url: string, caption?: string }>;
@@ -24,9 +27,6 @@ export interface Widget {
         [key: string]: any;
     };
     content?: string;
-    layouts?: {
-        [breakpoint: string]: WidgetLayout;
-    };
 }
 
 export interface DashboardSettings {

@@ -700,33 +700,64 @@ const WidgetEditPanel: React.FC<WidgetEditPanelProps> = ({
                             <Typography variant="subtitle2" gutterBottom>
                                 Text Content
                             </Typography>
-                            <TextFormattingToolbar />
-                            <Box sx={{
-                                flexGrow: 1,
-                                padding: 1,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                bgcolor: 'background.paper',
-                                overflow: 'auto',
-                                '& .DraftEditor-root': { height: '100%' },
-                                '& .public-DraftEditor-content': {
-                                    minHeight: '100px',
-                                    fontSize: fontSize === "x-small" ? "0.75rem" :
-                                        fontSize === "small" ? "0.875rem" :
-                                            fontSize === "large" ? "1.25rem" :
-                                                fontSize === "x-large" ? "1.5rem" : "1rem",
-                                }
-                            }}>
-                                <Editor
-                                    editorState={editorState}
-                                    onChange={handleEditorChange}
-                                    handleKeyCommand={handleKeyCommand}
-                                    placeholder="Start typing here..."
-                                    customStyleMap={styleMap}
-                                    blockStyleFn={getBlockStyle}
-                                />
+                            <Box sx={{ mb: 2 }}>
+                                <TextFormattingToolbar />
+                                <FormControl fullWidth size="small" sx={{ mt: 1 }}>
+                                    <InputLabel id="font-size-select-label">Font Size</InputLabel>
+                                    <Select
+                                        labelId="font-size-select-label"
+                                        value={fontSize}
+                                        label="Font Size"
+                                        onChange={(e) => handleFontSizeChange(e.target.value)}
+                                    >
+                                        <MenuItem value="x-small">X-Small</MenuItem>
+                                        <MenuItem value="small">Small</MenuItem>
+                                        <MenuItem value="medium">Medium</MenuItem>
+                                        <MenuItem value="large">Large</MenuItem>
+                                        <MenuItem value="x-large">X-Large</MenuItem>
+                                    </Select>
+                                </FormControl>
                             </Box>
+                            <Paper
+                                elevation={1}
+                                sx={{
+                                    flexGrow: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    overflow: 'hidden',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 1,
+                                    bgcolor: 'background.paper',
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        flexGrow: 1,
+                                        overflow: 'auto',
+                                        p: 2,
+                                        '& .DraftEditor-root': {
+                                            height: '100%',
+                                        },
+                                        '& .public-DraftEditor-content': {
+                                            minHeight: '200px',
+                                            fontSize: fontSize === "x-small" ? "0.75rem" :
+                                                fontSize === "small" ? "0.875rem" :
+                                                    fontSize === "large" ? "1.25rem" :
+                                                        fontSize === "x-large" ? "1.5rem" : "1rem",
+                                        }
+                                    }}
+                                >
+                                    <Editor
+                                        editorState={editorState}
+                                        onChange={handleEditorChange}
+                                        handleKeyCommand={handleKeyCommand}
+                                        placeholder="Start typing here..."
+                                        customStyleMap={styleMap}
+                                        blockStyleFn={getBlockStyle}
+                                    />
+                                </Box>
+                            </Paper>
                         </Box>
                     )}
 
