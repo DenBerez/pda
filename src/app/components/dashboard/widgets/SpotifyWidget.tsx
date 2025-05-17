@@ -447,20 +447,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
     // Normal layout
     return (
-        <Paper sx={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            bgcolor: 'transparent',
-            boxShadow: 'none',
-            backdropFilter: 'blur(8px)',
-            borderRadius: 2,
-            transition: 'all 0.3s ease-in-out',
-            '&:hover': {
-                backdropFilter: 'blur(12px)',
-            }
-        }}>
+        <>
             {/* Content */}
             <Box ref={containerRef} sx={{
                 flexGrow: 1,
@@ -1188,7 +1175,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
                     sx={{ mt: 1 }}
                 />
             )}
-        </Paper>
+        </>
     );
 };
 
