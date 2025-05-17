@@ -42,9 +42,9 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
 
     const formatDate = () => {
         const options: Intl.DateTimeFormatOptions = {
-            weekday: layoutOption === 'basic' ? 'short' : 'long',
+            weekday: layoutOption === 'normal' ? 'short' : 'long',
             year: 'numeric',
-            month: layoutOption === 'basic' ? 'short' : 'long',
+            month: layoutOption === 'normal' ? 'short' : 'long',
             day: 'numeric',
             timeZone: timezone === 'auto' ? undefined : timezone
         };
@@ -216,7 +216,7 @@ const DateTimeWidget: React.FC<DateTimeWidgetProps> = ({ widget, editMode }) => 
 
     // Render the appropriate layout
     switch (layoutOption) {
-        case 'basic':
+        case 'compact':
             return renderBasicLayout();
         case 'detailed':
             return renderDetailedLayout();

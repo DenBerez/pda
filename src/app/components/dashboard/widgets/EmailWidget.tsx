@@ -1013,7 +1013,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
     };
 
     // Not connected state
-    if (!refreshToken && !emailAddress) {
+    if (!refreshToken) {
         return (
             <Box sx={{ p: 3, textAlign: 'center' }}>
                 <EmailIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
@@ -1031,7 +1031,7 @@ const EmailWidget: React.FC<EmailWidgetProps> = ({ widget, editMode, onUpdateWid
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            bgcolor: 'background.paper',
+            // bgcolor: 'background.paper',
             borderRadius: 1
         }}>
             {configuring ? renderConfigurationForm() : (
