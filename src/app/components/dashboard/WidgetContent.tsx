@@ -30,7 +30,7 @@ const WeatherWidget = lazy(() => import('./widgets/WeatherWidget'));
 const CalendarWidget = lazy(() => import('./widgets/CalendarWidget'));
 const EmailWidget = lazy(() => import('./widgets/EmailWidget'));
 const SlideShowWidget = lazy(() => import('./widgets/SlideShowWidget'));
-const SpotifyWidget = lazy(() => import('./widgets/SpotifyWidget'));
+const SpotifyWidget = lazy(() => import('./widgets/spotify/SpotifyWidget'));
 const QuoteWidget = lazy(() => import('./widgets/QuoteWidget'));
 
 const WidgetContent: React.FC<WidgetContentProps> = ({
