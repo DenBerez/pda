@@ -86,7 +86,7 @@ const DetailedSpotifyView: React.FC<SpotifyViewProps> = ({
                                         mb: 1
                                     }}
                                 >
-                                    {currentTrack.artists.map(artist => artist.name).join(', ')}
+                                    {currentTrack?.artists?.map(artist => artist.name).join(', ')}
                                 </Typography>
 
                                 <Typography
@@ -94,7 +94,7 @@ const DetailedSpotifyView: React.FC<SpotifyViewProps> = ({
                                     color="text.secondary"
                                     sx={{ mb: 2 }}
                                 >
-                                    {currentTrack.album.name}
+                                    {currentTrack?.album?.name}
                                 </Typography>
 
                                 <Chip
@@ -223,20 +223,20 @@ const DetailedSpotifyView: React.FC<SpotifyViewProps> = ({
                     >
                         <ListItemAvatar>
                             <Avatar
-                                src={track.album.images?.[0]?.url}
-                                alt={track.name}
+                                src={track?.album?.images?.[0]?.url}
+                                alt={track?.name || 'Track'}
                                 variant="rounded"
                             >
                                 <MusicNoteIcon />
                             </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                            primary={track.name}
+                            primary={track?.name || 'Unknown Track'}
                             secondary={
                                 <>
-                                    {track.artists.map(artist => artist.name).join(', ')}
+                                    {track?.artists?.map(artist => artist.name).join(', ')}
                                     <br />
-                                    {track.album.name}
+                                    {track?.album?.name}
                                 </>
                             }
                         />

@@ -74,7 +74,7 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
                             transition: 'color 0.2s ease'
                         }}
                     >
-                        {currentTrack.name}
+                        {currentTrack?.name || 'Unknown Track'}
                     </Typography>
                     <Typography
                         variant="caption"
@@ -86,7 +86,7 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
                             whiteSpace: 'nowrap'
                         }}
                     >
-                        {currentTrack.artists.map(artist => artist.name).join(', ')}
+                        {currentTrack?.artists?.map(artist => artist.name).join(', ')}
                     </Typography>
                 </Box>
             </Box>

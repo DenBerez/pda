@@ -53,7 +53,7 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
                         </ListItemAvatar>
                         <ListItemText
                             primary={track.name}
-                            secondary={track.artists.map(artist => artist.name).join(', ')}
+                            secondary={track?.artists?.map(artist => artist.name).join(', ')}
                             primaryTypographyProps={{
                                 variant: 'body2',
                                 sx: {
