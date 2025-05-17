@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     Box,
     Typography,
@@ -42,6 +42,8 @@ import { SpotifyWidgetProps } from './types';
 import CompactSpotifyView from './CompactSpotifyView'
 import NormalSpotifyView from './NormalSpotifyView'
 import DetailedSpotifyView from './DetailedSpotifyView'
+import { SpotifyClient } from '@/app/utils/spotifyClient';
+import { useSpotifyState } from '@/app/hooks/useSpotifyState';
 
 
 // Add this type at the top of the file
@@ -71,11 +73,22 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const refreshToken = widget.config?.refreshToken;
     const layoutOption = widget.config?.layoutOption || 'normal';
 
+    const client = useMemo(() =>
+        refreshToken ? new SpotifyClient(refreshToken) : null,
+        [refreshToken]
+    );
+
+    const {
+        currentTrack,
+        isPlaying,
+        recentTracks: spotifyRecentTracks,
+        error: spotifyError,
+        isLoading
+    } = useSpotifyState(client!);
+
     // Initialize Spotify Web Playback
     const {
         isConnected: isPlayerConnected,
-        isPlaying,
-        currentTrack,
         position,
         duration,
         error: sdkError,
@@ -96,16 +109,14 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         if (!refreshToken) return;
 
         try {
-            const response = await fetch(`/api/spotify?action=recent&refreshToken=${encodeURIComponent(refreshToken)}`);
-            if (!response.ok) throw new Error('Failed to fetch recent tracks');
-            const data = await response.json();
-            setRecentTracks(data.recentTracks || []);
+            const data = await client!.getRecentTracks(5);
+            setRecentTracks(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'An error occurred');
         } finally {
             setLoading(false);
         }
-    }, [refreshToken]);
+    }, [refreshToken, client]);
 
     useEffect(() => {
         fetchRecentTracks();
@@ -176,10 +187,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     }
 
     // Error state
-    if (error || sdkError) {
+    if (error || spotifyError || sdkError) {
         return (
             <Box sx={{ p: 2, textAlign: 'center' }}>
-                <Typography color="error">{error || sdkError}</Typography>
+                <Typography color="error">{error || spotifyError || sdkError}</Typography>
                 <Button
                     variant="outlined"
                     size="small"
@@ -244,6 +255,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             {layoutOption === 'compact' && <CompactSpotifyView {...commonProps} />}
             {layoutOption === 'normal' && <NormalSpotifyView {...commonProps} />}
             {layoutOption === 'detailed' && <DetailedSpotifyView {...commonProps} />}
+
+            <VolumeControl
+                theme={theme}
+                volume={volume}
+                showVolumeControls={showVolumeControls}
+                handleVolumeChange={handleVolumeChange}
+                getVolumeIcon={getVolumeIcon}
+                toggleMute={toggleMute}
+            />
 
             {statusMessage && (
                 <Typography
