@@ -18,7 +18,7 @@ import WidgetContent from './dashboard/WidgetContent';
 import SettingsDrawer from './dashboard/SettingsDrawer';
 import AddWidgetsPanel from './dashboard/AddWidgetsPanel';
 import EmptyDashboard from './dashboard/EmptyDashboard';
-import DeleteConfirmationDialog from './dashboard/DeleteConfirmationDialog';
+import DeleteConfirmationDialog from './dashboard/components/DeleteConfirmationDialog';
 import DashboardHeader from './dashboard/DashboardHeader';
 import GridLayout from './dashboard/GridLayout';
 import { Widget, WidgetType } from './dashboard/types';

@@ -25,7 +25,7 @@ import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import MarkEmailUnreadIcon from '@mui/icons-material/MarkEmailUnread';
 import { Widget } from '../types';
 import Settings from '@mui/icons-material/Settings';
-import LayoutStyleSelector from '../LayoutStyle';
+import LayoutStyleSelector from '../components/LayoutStyle';
 import { useOAuth2Connection } from '../../../hooks/useOAuth2Connection';
 import CloseIcon from '@mui/icons-material/Close';
 import ReplyIcon from '@mui/icons-material/Reply';
