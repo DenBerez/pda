@@ -163,7 +163,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
             optimisticTogglePlay();
             await togglePlay();
         } catch (error) {
-            setStatusMessage('Failed to control playback. Try transferring playback first.');
+            console.error('Toggle play error:', error);
+            setStatusMessage(`Failed to control playback: ${error instanceof Error ? error.message : 'Unknown error'}. Try transferring playback first.`);
             setTimeout(() => setStatusMessage(null), 3000);
         }
     }, [togglePlay, optimisticTogglePlay]);
@@ -329,7 +330,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         formatDuration,
         toggleView,
         theme,
-        showTransferButton: isPlayerConnected && (!currentTrack || !isPlaying)
+        showTransferButton: !isPlaying || !currentTrack
     };
 
     return (
