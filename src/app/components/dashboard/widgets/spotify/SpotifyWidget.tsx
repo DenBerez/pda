@@ -158,21 +158,36 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
     // Modify the control handlers
     const handleTogglePlay = useCallback(async () => {
-        // Optimistically update UI
-        optimisticTogglePlay();
-        await togglePlay();
+        try {
+            // Optimistically update UI
+            optimisticTogglePlay();
+            await togglePlay();
+        } catch (error) {
+            setStatusMessage('Failed to control playback. Try transferring playback first.');
+            setTimeout(() => setStatusMessage(null), 3000);
+        }
     }, [togglePlay, optimisticTogglePlay]);
 
     const handleNextTrack = useCallback(async () => {
-        // Optimistically update UI
-        optimisticNextTrack();
-        await nextTrack();
+        try {
+            // Optimistically update UI
+            optimisticNextTrack();
+            await nextTrack();
+        } catch (error) {
+            setStatusMessage('Failed to skip track. Try transferring playback first.');
+            setTimeout(() => setStatusMessage(null), 3000);
+        }
     }, [nextTrack, optimisticNextTrack]);
 
     const handlePreviousTrack = useCallback(async () => {
-        // Optimistically update UI
-        optimisticPreviousTrack();
-        await previousTrack();
+        try {
+            // Optimistically update UI
+            optimisticPreviousTrack();
+            await previousTrack();
+        } catch (error) {
+            setStatusMessage('Failed to go to previous track. Try transferring playback first.');
+            setTimeout(() => setStatusMessage(null), 3000);
+        }
     }, [previousTrack, optimisticPreviousTrack]);
 
     // Fetch recent tracks
@@ -314,7 +329,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         formatDuration,
         toggleView,
         theme,
-        showTransferButton: isPlayerConnected && !currentTrack
+        showTransferButton: isPlayerConnected && (!currentTrack || !isPlaying)
     };
 
     return (
