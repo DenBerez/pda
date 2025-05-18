@@ -38,7 +38,19 @@ declare global {
     }
 }
 
+// Add a connection state enum
+export enum ConnectionState {
+    DISCONNECTED = 'disconnected',
+    CONNECTING = 'connecting',
+    CONNECTED = 'connected',
+    TRANSFERRING = 'transferring',
+    READY = 'ready',
+    ERROR = 'error'
+}
+
+// Update the PlaybackState interface
 interface PlaybackState {
+    connectionState: ConnectionState;
     isConnected: boolean;
     isPlaying: boolean;
     currentTrack: any | null;
@@ -88,6 +100,10 @@ const REQUIRED_SPOTIFY_SCOPES = [
     'user-read-recently-played'
 ];
 
+// Add this at the top of the file, outside the hook
+let isInitializing = false;
+let isInitialized = false;
+
 export const useSpotifyWebPlayback = ({
     accessToken: initialAccessToken,
     refreshToken,
@@ -97,6 +113,7 @@ export const useSpotifyWebPlayback = ({
 
     const [accessToken, setAccessToken] = useState<string | null>(initialAccessToken);
     const [state, setState] = useState<PlaybackState>({
+        connectionState: ConnectionState.DISCONNECTED,
         isConnected: false,
         isPlaying: false,
         currentTrack: null,
@@ -117,12 +134,19 @@ export const useSpotifyWebPlayback = ({
             return;
         }
 
+        // Prevent multiple initializations
+        if (isInitializing || isInitialized) {
+            logSpotify('SDK initialization already in progress or completed');
+            return;
+        }
+
         // Only load the script once
         if (document.getElementById('spotify-player')) {
             logSpotify('Spotify player script already loaded');
             return;
         }
 
+        isInitializing = true;
         logSpotify('Loading Spotify Web Playback SDK script');
         const script = document.createElement('script');
         script.id = 'spotify-player';
@@ -135,6 +159,8 @@ export const useSpotifyWebPlayback = ({
             if (document.getElementById('spotify-player')) {
                 logSpotify('Removing Spotify player script');
                 document.getElementById('spotify-player')?.remove();
+                isInitialized = false;
+                isInitializing = false;
             }
         };
     }, [refreshToken]);
@@ -269,6 +295,7 @@ export const useSpotifyWebPlayback = ({
                 console.log('Ready with Device ID', device_id);
                 setState(prev => ({
                     ...prev,
+                    connectionState: ConnectionState.CONNECTED,
                     isConnected: true,
                     deviceId: device_id,
                     error: null
@@ -281,6 +308,7 @@ export const useSpotifyWebPlayback = ({
                 console.log('Device ID has gone offline', device_id);
                 setState(prev => ({
                     ...prev,
+                    connectionState: ConnectionState.DISCONNECTED,
                     isConnected: false,
                     deviceId: null
                 }));
@@ -380,6 +408,7 @@ export const useSpotifyWebPlayback = ({
         try {
             setState(prev => ({
                 ...prev,
+                connectionState: ConnectionState.TRANSFERRING,
                 error: null,
                 isTransferringPlayback: true
             }));
@@ -413,6 +442,7 @@ export const useSpotifyWebPlayback = ({
 
             setState(prev => ({
                 ...prev,
+                connectionState: currentState ? ConnectionState.READY : ConnectionState.CONNECTED,
                 isTransferringPlayback: false,
                 isConnected: true,
                 isPlaying: currentState ? !currentState.paused : true
@@ -425,6 +455,7 @@ export const useSpotifyWebPlayback = ({
             logSpotify('Error transferring playback', error);
             setState(prev => ({
                 ...prev,
+                connectionState: ConnectionState.ERROR,
                 isTransferringPlayback: false,
                 error: `Transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}`
             }));

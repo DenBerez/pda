@@ -44,6 +44,7 @@ import NormalSpotifyView from './NormalSpotifyView'
 import DetailedSpotifyView from './DetailedSpotifyView'
 import { SpotifyClient } from '@/app/utils/spotifyClient';
 import { useSpotifyState } from '@/app/hooks/useSpotifyState';
+import { ConnectionState } from '@/app/hooks/useSpotifyWebPlayback';
 
 
 // Add this type at the top of the file
@@ -121,6 +122,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
     // Initialize Spotify Web Playback
     const {
+        connectionState,
         isConnected: isPlayerConnected,
         position,
         duration,
@@ -365,11 +367,29 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     }, [transferPlayback, client]);
 
     // Loading state
-    if (loading) {
+    if (connectionState === ConnectionState.DISCONNECTED ||
+        connectionState === ConnectionState.CONNECTING) {
         return (
             <Box sx={{ p: 3, textAlign: 'center' }}>
                 <CircularProgress size={40} />
-                <Typography sx={{ mt: 2 }}>Loading Spotify data...</Typography>
+                <Typography sx={{ mt: 2 }}>
+                    Connecting to Spotify...
+                </Typography>
+            </Box>
+        );
+    }
+
+    if (connectionState === ConnectionState.CONNECTED && !currentTrack) {
+        return (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Button
+                    variant="contained"
+                    startIcon={<DevicesIcon />}
+                    onClick={handleTransferPlayback}
+                    sx={{ mt: 1 }}
+                >
+                    Transfer Playback to Browser
+                </Button>
             </Box>
         );
     }
