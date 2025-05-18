@@ -70,6 +70,77 @@ export function useSpotifyState(client: SpotifyClient) {
         };
     }, [client]);
 
+    // Add actual control methods that call the client
+    const togglePlay = useCallback(async () => {
+        if (!client) {
+            logSpotify('Cannot toggle play: client not available');
+            throw new Error('Client not available');
+        }
+
+        logSpotify('Toggling playback state');
+        try {
+            await client.controlPlayback('pause');
+            logSpotify('Playback toggled successfully');
+
+            // Update state after successful toggle
+            const currentState = await client.getCurrentTrack();
+            if (currentState) {
+                setState(prev => ({
+                    ...prev,
+                    isPlaying: !currentState.is_playing
+                }));
+            }
+        } catch (error) {
+            console.error('Error toggling playback:', error);
+            logSpotify('Error toggling playback', error);
+
+            if (error instanceof Error && error.message.includes('no list was loaded')) {
+                logSpotify('No list loaded, attempting to transfer playback');
+                await client.controlPlayback('play');
+            } else {
+                throw error; // Re-throw to allow handling in the component
+            }
+        }
+    }, [client]);
+
+    const nextTrack = useCallback(async () => {
+        logSpotify('Skipping to next track');
+        try {
+            // Optimistic update
+            optimisticNextTrack();
+
+            // Actual API call
+            await client.controlPlayback('next');
+            logSpotify('Next track command sent successfully');
+        } catch (error) {
+            logSpotify('Error skipping to next track', error);
+            // We could revert the optimistic update here, but it's tricky
+            // since we don't know what the actual next track would be
+            setState(prev => ({
+                ...prev,
+                error: error instanceof Error ? error.message : 'Failed to skip to next track'
+            }));
+        }
+    }, [client, state.recentTracks]);
+
+    const previousTrack = useCallback(async () => {
+        logSpotify('Going to previous track');
+        try {
+            // Optimistic update
+            optimisticPreviousTrack();
+
+            // Actual API call
+            await client.controlPlayback('previous');
+            logSpotify('Previous track command sent successfully');
+        } catch (error) {
+            logSpotify('Error going to previous track', error);
+            setState(prev => ({
+                ...prev,
+                error: error instanceof Error ? error.message : 'Failed to go to previous track'
+            }));
+        }
+    }, [client, state.recentTracks]);
+
     // Optimistic updates
     const optimisticTogglePlay = useCallback(() => {
         logSpotify('Optimistically toggling play state');
@@ -115,8 +186,39 @@ export function useSpotifyState(client: SpotifyClient) {
         }
     }, [state.recentTracks]);
 
+    // Add a method to refresh the current state
+    const refreshState = useCallback(async () => {
+        logSpotify('Refreshing Spotify state');
+        try {
+            const [current, recent] = await Promise.all([
+                client.getCurrentTrack(),
+                client.getRecentTracks()
+            ]);
+
+            setState(prev => ({
+                ...prev,
+                currentTrack: current?.item || prev.currentTrack,
+                isPlaying: current?.is_playing || false,
+                recentTracks: recent || prev.recentTracks,
+                error: null
+            }));
+
+            logSpotify('State refreshed successfully');
+        } catch (error) {
+            logSpotify('Error refreshing state', error);
+            setState(prev => ({
+                ...prev,
+                error: error instanceof Error ? error.message : 'Failed to refresh state'
+            }));
+        }
+    }, [client]);
+
     return {
         ...state,
+        togglePlay,
+        nextTrack,
+        previousTrack,
+        refreshState,
         optimisticTogglePlay,
         optimisticNextTrack,
         optimisticPreviousTrack

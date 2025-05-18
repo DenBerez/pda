@@ -157,47 +157,109 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         }
     }, [isPlaying, position]);
 
+    // Add this effect to poll for updates
+    useEffect(() => {
+        if (!client || !isPlayerConnected) return;
+
+        const pollInterval = setInterval(async () => {
+            try {
+                const currentData = await client.getCurrentTrack();
+                if (currentData) {
+                    setLocalPlaybackState({
+                        isPlaying: currentData.is_playing || false,
+                        position: currentData.progress_ms || 0
+                    });
+                }
+            } catch (error) {
+                console.error('Error polling Spotify state:', error);
+            }
+        }, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(pollInterval);
+    }, [client, isPlayerConnected]);
+
     // Modify the control handlers
     const handleTogglePlay = useCallback(async () => {
         try {
-            optimisticTogglePlay();
+            // Update local state immediately for responsive UI
+            setLocalPlaybackState(prev => ({
+                ...prev,
+                isPlaying: !prev.isPlaying
+            }));
+
+            // Call the actual Spotify Web Playback SDK method
             await togglePlay();
-        } catch (error) {
-            console.error('Toggle play error:', error);
-            // Try transferring playback if control fails
-            setStatusMessage('Attempting to transfer playback first...');
-            const success = await transferPlayback();
-            if (success) {
-                // Try again after transfer
-                await togglePlay();
-            } else {
-                setStatusMessage('Failed to control playback. Try transferring manually.');
+
+            // After successful toggle, update the state from Spotify if needed
+            if (client) {
+                setTimeout(async () => {
+                    const currentData = await client.getCurrentTrack();
+                    if (currentData) {
+                        setLocalPlaybackState({
+                            isPlaying: currentData.is_playing || false,
+                            position: currentData.progress_ms || 0
+                        });
+                    }
+                }, 500); // Small delay to allow Spotify to update
             }
+        } catch (error) {
+            console.error('Error toggling playback:', error);
+            setStatusMessage('Failed to toggle playback');
             setTimeout(() => setStatusMessage(null), 3000);
+
+            // Revert local state on error
+            setLocalPlaybackState(prev => ({
+                ...prev,
+                isPlaying: !prev.isPlaying
+            }));
         }
-    }, [togglePlay, optimisticTogglePlay, transferPlayback]);
+    }, [togglePlay, client]);
 
     const handleNextTrack = useCallback(async () => {
         try {
-            // Optimistically update UI
-            optimisticNextTrack();
             await nextTrack();
+
+            // After skipping, refresh the current track data
+            if (client) {
+                setTimeout(async () => {
+                    const currentData = await client.getCurrentTrack();
+                    if (currentData) {
+                        setLocalPlaybackState({
+                            isPlaying: currentData.is_playing || false,
+                            position: 0 // Reset position for new track
+                        });
+                    }
+                }, 500);
+            }
         } catch (error) {
-            setStatusMessage('Failed to skip track. Try transferring playback first.');
+            console.error('Error skipping track:', error);
+            setStatusMessage('Failed to skip to next track');
             setTimeout(() => setStatusMessage(null), 3000);
         }
-    }, [nextTrack, optimisticNextTrack]);
+    }, [nextTrack, client]);
 
     const handlePreviousTrack = useCallback(async () => {
         try {
-            // Optimistically update UI
-            optimisticPreviousTrack();
             await previousTrack();
+
+            // After going to previous track, refresh the current track data
+            if (client) {
+                setTimeout(async () => {
+                    const currentData = await client.getCurrentTrack();
+                    if (currentData) {
+                        setLocalPlaybackState({
+                            isPlaying: currentData.is_playing || false,
+                            position: 0 // Reset position for new track
+                        });
+                    }
+                }, 500);
+            }
         } catch (error) {
-            setStatusMessage('Failed to go to previous track. Try transferring playback first.');
+            console.error('Error going to previous track:', error);
+            setStatusMessage('Failed to go to previous track');
             setTimeout(() => setStatusMessage(null), 3000);
         }
-    }, [previousTrack, optimisticPreviousTrack]);
+    }, [previousTrack, client]);
 
     // Fetch recent tracks
     const fetchRecentTracks = useCallback(async () => {
