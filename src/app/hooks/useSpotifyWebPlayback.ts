@@ -41,6 +41,7 @@ interface PlaybackState {
     error: string | null;
     position: number;
     duration: number;
+    isTransferringPlayback: boolean;
 }
 
 interface UseSpotifyWebPlaybackProps {
@@ -95,7 +96,8 @@ export const useSpotifyWebPlayback = ({
         deviceId: null,
         error: null,
         position: 0,
-        duration: 0
+        duration: 0,
+        isTransferringPlayback: false
     });
     const playerRef = useRef<SpotifyPlayer | null>(null);
     const tokenExpirationRef = useRef<number>(0);
@@ -294,13 +296,19 @@ export const useSpotifyWebPlayback = ({
 
     // Add this before togglePlay
     const transferPlayback = useCallback(async () => {
-        if (!state.deviceId) return;
+        if (!state.deviceId) return false;
 
         const token = await getValidToken();
-        if (!token) return;
+        if (!token) return false;
 
         try {
-            await fetch('https://api.spotify.com/v1/me/player', {
+            setState(prev => ({
+                ...prev,
+                error: null,
+                isTransferringPlayback: true
+            }));
+
+            const response = await fetch('https://api.spotify.com/v1/me/player', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -311,8 +319,33 @@ export const useSpotifyWebPlayback = ({
                     play: true
                 })
             });
+
+            if (!response.ok) {
+                throw new Error(`Transfer failed with status: ${response.status}`);
+            }
+
+            // Wait a moment for Spotify to process the transfer
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Get the current playback state to confirm transfer
+            const currentState = await playerRef.current?.getCurrentState();
+
+            setState(prev => ({
+                ...prev,
+                isTransferringPlayback: false,
+                isConnected: true,
+                isPlaying: currentState ? !currentState.paused : true
+            }));
+
+            return true;
         } catch (error) {
             console.error('Error transferring playback:', error);
+            setState(prev => ({
+                ...prev,
+                isTransferringPlayback: false,
+                error: `Transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+            }));
+            return false;
         }
     }, [state.deviceId, getValidToken]);
 

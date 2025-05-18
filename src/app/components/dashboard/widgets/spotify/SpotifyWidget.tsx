@@ -98,6 +98,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     const [showVolumeControls, setShowVolumeControls] = useState(false);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const [isTransferring, setIsTransferring] = useState(false);
 
     const refreshToken = widget.config?.refreshToken;
     const layoutOption = widget.config?.layoutOption || 'normal';
@@ -159,15 +160,22 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     // Modify the control handlers
     const handleTogglePlay = useCallback(async () => {
         try {
-            // Optimistically update UI
             optimisticTogglePlay();
             await togglePlay();
         } catch (error) {
             console.error('Toggle play error:', error);
-            setStatusMessage(`Failed to control playback: ${error instanceof Error ? error.message : 'Unknown error'}. Try transferring playback first.`);
+            // Try transferring playback if control fails
+            setStatusMessage('Attempting to transfer playback first...');
+            const success = await transferPlayback();
+            if (success) {
+                // Try again after transfer
+                await togglePlay();
+            } else {
+                setStatusMessage('Failed to control playback. Try transferring manually.');
+            }
             setTimeout(() => setStatusMessage(null), 3000);
         }
-    }, [togglePlay, optimisticTogglePlay]);
+    }, [togglePlay, optimisticTogglePlay, transferPlayback]);
 
     const handleNextTrack = useCallback(async () => {
         try {
@@ -263,6 +271,37 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         setShowRecent(prev => !prev);
     }, []);
 
+    // Update handleTransferPlayback
+    const handleTransferPlayback = useCallback(async () => {
+        try {
+            setIsTransferring(true);
+            setStatusMessage('Transferring playback to browser...');
+            const success = await transferPlayback();
+
+            if (success) {
+                setStatusMessage('Playback transferred successfully!');
+                // Force refresh current track data
+                const currentData = await client?.getCurrentTrack();
+                if (currentData) {
+                    setLocalPlaybackState({
+                        isPlaying: currentData.is_playing || false,
+                        position: currentData.progress_ms || 0
+                    });
+                }
+            } else {
+                setStatusMessage('Failed to transfer playback. Try again.');
+            }
+
+            setTimeout(() => setStatusMessage(null), 3000);
+        } catch (error) {
+            console.error('Transfer error:', error);
+            setStatusMessage('Error transferring playback');
+            setTimeout(() => setStatusMessage(null), 3000);
+        } finally {
+            setIsTransferring(false);
+        }
+    }, [transferPlayback, client]);
+
     // Loading state
     if (loading) {
         return (
@@ -314,8 +353,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         recentTracks,
         showRecent,
         isPlayerConnected,
-        isTransferringPlayback: false,
-        handleTransferPlayback: transferPlayback,
+        isTransferringPlayback: isTransferring,
+        handleTransferPlayback,
         togglePlay: handleTogglePlay,
         previousTrack: handlePreviousTrack,
         nextTrack: handleNextTrack,
@@ -330,7 +369,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         formatDuration,
         toggleView,
         theme,
-        showTransferButton: !isPlaying || !currentTrack
+        showTransferButton: !isPlayerConnected || (!isPlaying && !currentTrack)
     };
 
     return (
