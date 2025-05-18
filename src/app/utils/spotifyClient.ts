@@ -28,6 +28,7 @@ export class SpotifyClient {
     ) { }
 
     private async getValidToken() {
+        console.log('Refreshing Spotify token...');
         const response = await fetch('/api/spotify/token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -38,12 +39,17 @@ export class SpotifyClient {
             })
         });
 
-        if (!response.ok) throw new Error('Failed to refresh token');
+        if (!response.ok) {
+            console.error('Failed to refresh token:', response.statusText);
+            throw new Error('Failed to refresh token');
+        }
         const data = await response.json();
+        console.log('Token refreshed successfully');
         return data.access_token;
     }
 
     private async fetchSpotify(endpoint: string, options: RequestInit = {}) {
+        console.log(`Fetching Spotify API: ${endpoint}`);
         const token = await this.getValidToken();
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             ...options,
@@ -53,21 +59,34 @@ export class SpotifyClient {
             }
         });
 
-        if (response.status === 204) return null;
-        if (!response.ok) throw new Error(`Spotify API error: ${response.statusText}`);
+        if (response.status === 204) {
+            console.log('Spotify API returned 204 No Content');
+            return null;
+        }
+        if (!response.ok) {
+            console.error(`Spotify API error (${response.status}): ${response.statusText}`);
+            throw new Error(`Spotify API error: ${response.statusText}`);
+        }
+        console.log(`Spotify API call successful: ${endpoint}`);
         return response.json();
     }
 
     async getCurrentTrack(): Promise<PlayerState | null> {
-        return this.fetchSpotify('/me/player');
+        console.log('Getting current track...');
+        const result = await this.fetchSpotify('/me/player');
+        console.log('Current track result:', result ? 'Data received' : 'No active track');
+        return result;
     }
 
     async getRecentTracks(limit = 5) {
+        console.log(`Getting recent tracks (limit: ${limit})...`);
         const data = await this.fetchSpotify(`/me/player/recently-played?limit=${limit}`);
+        console.log(`Retrieved ${data?.items?.length || 0} recent tracks`);
         return data?.items || [];
     }
 
     async controlPlayback(action: string, options?: any) {
+        console.log(`Controlling playback: ${action}`, options ? 'with options' : '');
         const endpoints: Record<string, { path: string; method: string }> = {
             play: { path: '/me/player/play', method: 'PUT' },
             pause: { path: '/me/player/pause', method: 'PUT' },
@@ -78,11 +97,16 @@ export class SpotifyClient {
         };
 
         const endpoint = endpoints[action];
-        if (!endpoint) throw new Error('Invalid action');
+        if (!endpoint) {
+            console.error(`Invalid playback action: ${action}`);
+            throw new Error('Invalid action');
+        }
 
-        return this.fetchSpotify(endpoint.path, {
+        const result = await this.fetchSpotify(endpoint.path, {
             method: endpoint.method,
             body: options ? JSON.stringify(options) : undefined
         });
+        console.log(`Playback control (${action}) completed`);
+        return result;
     }
 }
