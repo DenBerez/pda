@@ -200,56 +200,19 @@ export const useSpotifyWebPlayback = ({
             });
 
             // Playback status updates
-            player.addListener('player_state_changed', (state) => {
+            const handlePlayerStateChanged = (state: Spotify.PlaybackState) => {
                 if (!state) return;
 
-                const {
-                    position,
-                    duration,
-                    paused,
-                    track_window: { current_track }
-                } = state;
-
-                // Check if this is a DJ X announcement or transition
-                const isDJXContent = current_track.name === 'Up next' ||
-                    current_track.name.includes('DJ') ||
-                    current_track.duration_ms < 10000; // DJ announcements are typically short
-
-                // Only log non-DJ content or log once for DJ content
-                if (!isDJXContent || position === 0) {
-                    console.log('Player state changed:', {
-                        position,
-                        duration,
-                        paused,
-                        track: current_track.name,
-                        isDJContent: isDJXContent
-                    });
-                }
-
-                // Update state as normal
                 setState(prev => ({
                     ...prev,
-                    isPlaying: !paused,
-                    currentTrack: current_track,
-                    position,
-                    duration
+                    isPlaying: !state.paused,
+                    position: state.position,
+                    duration: state.duration,
+                    currentTrack: state.track_window.current_track
                 }));
+            };
 
-                // Update position tracking
-                if (positionIntervalRef.current) {
-                    clearInterval(positionIntervalRef.current);
-                    positionIntervalRef.current = null;
-                }
-
-                if (!paused) {
-                    positionIntervalRef.current = setInterval(() => {
-                        setState(prev => ({
-                            ...prev,
-                            position: prev.position + 1000
-                        }));
-                    }, 1000);
-                }
-            });
+            player.addListener('player_state_changed', handlePlayerStateChanged);
 
             // Ready
             player.addListener('ready', ({ device_id }) => {

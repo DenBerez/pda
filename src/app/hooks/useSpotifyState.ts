@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { SpotifyClient } from '../utils/spotifyClient';
 
 interface SpotifyState {
@@ -18,37 +18,11 @@ export function useSpotifyState(client: SpotifyClient) {
         isLoading: true
     });
 
-    // Add methods for optimistic updates
-    const optimisticTogglePlay = () => {
-        setState(prev => ({
-            ...prev,
-            isPlaying: !prev.isPlaying
-        }));
-    };
-
-    const optimisticNextTrack = () => {
-        if (state.recentTracks.length > 0) {
-            setState(prev => ({
-                ...prev,
-                currentTrack: prev.recentTracks[0],
-                isPlaying: true
-            }));
-        }
-    };
-
-    const optimisticPreviousTrack = () => {
-        if (state.recentTracks.length > 0) {
-            setState(prev => ({
-                ...prev,
-                currentTrack: prev.recentTracks[0],
-                isPlaying: true
-            }));
-        }
-    };
-
+    // Initial fetch only
     useEffect(() => {
         let mounted = true;
-        const pollState = async () => {
+
+        const fetchInitialState = async () => {
             try {
                 const [current, recent] = await Promise.all([
                     client.getCurrentTrack(),
@@ -76,14 +50,40 @@ export function useSpotifyState(client: SpotifyClient) {
             }
         };
 
-        const interval = setInterval(pollState, 1000);
-        pollState(); // Initial call
+        fetchInitialState();
 
         return () => {
             mounted = false;
-            clearInterval(interval);
         };
     }, [client]);
+
+    // Optimistic updates
+    const optimisticTogglePlay = useCallback(() => {
+        setState(prev => ({
+            ...prev,
+            isPlaying: !prev.isPlaying
+        }));
+    }, []);
+
+    const optimisticNextTrack = () => {
+        if (state.recentTracks.length > 0) {
+            setState(prev => ({
+                ...prev,
+                currentTrack: prev.recentTracks[0],
+                isPlaying: true
+            }));
+        }
+    };
+
+    const optimisticPreviousTrack = () => {
+        if (state.recentTracks.length > 0) {
+            setState(prev => ({
+                ...prev,
+                currentTrack: prev.recentTracks[0],
+                isPlaying: true
+            }));
+        }
+    };
 
     return {
         ...state,
