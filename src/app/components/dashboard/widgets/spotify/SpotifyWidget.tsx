@@ -340,18 +340,28 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         try {
             setIsTransferring(true);
             setStatusMessage('Transferring playback to browser...');
+
+            // First ensure we have a valid token
+            if (client) {
+                await client.refreshAccessToken();
+            }
+
             const success = await transferPlayback();
 
             if (success) {
                 setStatusMessage('Playback transferred successfully!');
-                // Force refresh current track data
-                const currentData = await client?.getCurrentTrack();
-                if (currentData) {
-                    setLocalPlaybackState({
-                        isPlaying: currentData.is_playing || false,
-                        position: currentData.progress_ms || 0
-                    });
-                }
+                // Force refresh current track data after a slightly longer delay
+                setTimeout(async () => {
+                    if (client) {
+                        const currentData = await client.getCurrentTrack();
+                        if (currentData) {
+                            setLocalPlaybackState({
+                                isPlaying: currentData.is_playing || false,
+                                position: currentData.progress_ms || 0
+                            });
+                        }
+                    }
+                }, 1500); // Longer delay to ensure Spotify has updated
             } else {
                 setStatusMessage('Failed to transfer playback. Try again.');
             }

@@ -24,7 +24,7 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
     toggleMute,
     handleVolumeChange
 }) => {
-    if (!currentTrack && showTransferButton) {
+    if (showTransferButton) {
         return (
             <Box sx={{
                 display: 'flex',
