@@ -59,6 +59,35 @@ interface VolumeControlProps {
     toggleMute: () => void;
 }
 
+const VolumeButton: React.FC<{
+    volume: number;
+    showVolumeControls: boolean;
+    setShowVolumeControls: (show: boolean) => void;
+    getVolumeIcon: () => React.ReactElement;
+    toggleMute: () => void;
+    compact?: boolean;
+}> = ({
+    volume,
+    showVolumeControls,
+    setShowVolumeControls,
+    getVolumeIcon,
+    toggleMute,
+    compact = false
+}) => (
+        <IconButton
+            size={compact ? "small" : "medium"}
+            onClick={toggleMute}
+            onMouseEnter={() => setShowVolumeControls(true)}
+            onMouseLeave={() => setShowVolumeControls(false)}
+            sx={{
+                position: 'relative',
+                zIndex: 2
+            }}
+        >
+            {getVolumeIcon()}
+        </IconButton>
+    );
+
 const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdateWidget }) => {
     const theme = useTheme();
     const [loading, setLoading] = useState(true);
@@ -83,7 +112,10 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         isPlaying,
         recentTracks: spotifyRecentTracks,
         error: spotifyError,
-        isLoading
+        isLoading,
+        optimisticTogglePlay,
+        optimisticNextTrack,
+        optimisticPreviousTrack
     } = useSpotifyState(client!);
 
     // Initialize Spotify Web Playback
@@ -103,6 +135,39 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         refreshToken: refreshToken || null,
         playerName: 'Dashboard Player'
     });
+
+    // Add local state
+    const [localPlaybackState, setLocalPlaybackState] = useState({
+        isPlaying: false,
+        position: 0
+    });
+
+    // Update local state when Spotify state changes
+    useEffect(() => {
+        setLocalPlaybackState({
+            isPlaying,
+            position
+        });
+    }, [isPlaying, position]);
+
+    // Modify the control handlers
+    const handleTogglePlay = useCallback(async () => {
+        // Optimistically update UI
+        optimisticTogglePlay();
+        await togglePlay();
+    }, [togglePlay, optimisticTogglePlay]);
+
+    const handleNextTrack = useCallback(async () => {
+        // Optimistically update UI
+        optimisticNextTrack();
+        await nextTrack();
+    }, [nextTrack, optimisticNextTrack]);
+
+    const handlePreviousTrack = useCallback(async () => {
+        // Optimistically update UI
+        optimisticPreviousTrack();
+        await previousTrack();
+    }, [previousTrack, optimisticPreviousTrack]);
 
     // Fetch recent tracks
     const fetchRecentTracks = useCallback(async () => {
@@ -220,8 +285,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     // Common props for all views
     const commonProps = {
         currentTrack,
-        isPlaying,
-        position,
+        isPlaying: localPlaybackState.isPlaying,
+        position: localPlaybackState.position,
         duration,
         volume,
         recentTracks,
@@ -229,9 +294,9 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         isPlayerConnected,
         isTransferringPlayback: false,
         handleTransferPlayback: transferPlayback,
-        togglePlay,
-        previousTrack,
-        nextTrack,
+        togglePlay: handleTogglePlay,
+        previousTrack: handlePreviousTrack,
+        nextTrack: handleNextTrack,
         handleSeekChange,
         handleVolumeChange,
         showVolumeControls,
@@ -288,7 +353,13 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
     );
 };
 
-const VolumeControl: React.FC<VolumeControlProps> = ({
+export const HandleVolumeChange = (event: Event, newValue: number | number[], setVolume: (volume: number) => void, setPlayerVolume: (volume: number) => void) => {
+    const newVolume = Array.isArray(newValue) ? newValue[0] : newValue;
+    setVolume(newVolume);
+    setPlayerVolume(newVolume / 100);
+}
+
+export const VolumeControl: React.FC<VolumeControlProps> = ({
     theme,
     volume,
     showVolumeControls,

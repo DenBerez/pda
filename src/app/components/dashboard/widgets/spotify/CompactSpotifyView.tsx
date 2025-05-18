@@ -5,6 +5,7 @@ import LaunchIcon from '@mui/icons-material/Launch';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { alpha } from '@mui/material/styles';
 import DevicesIcon from '@mui/icons-material/Devices';
+import { VolumeControl } from './SpotifyWidget';
 
 const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
     currentTrack,
@@ -15,7 +16,13 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
     handleTransferPlayback,
     showTransferButton,
     playPreview,
-    openInSpotify
+    openInSpotify,
+    volume,
+    showVolumeControls,
+    setShowVolumeControls,
+    getVolumeIcon,
+    toggleMute,
+    handleVolumeChange
 }) => {
     if (!currentTrack && showTransferButton) {
         return (
@@ -73,6 +80,14 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
                                 <PlayArrowIcon fontSize="small" />
                             </IconButton>
                         )}
+                        <VolumeControl
+                            theme={theme}
+                            volume={volume}
+                            showVolumeControls={showVolumeControls}
+                            handleVolumeChange={handleVolumeChange}
+                            getVolumeIcon={getVolumeIcon}
+                            toggleMute={toggleMute}
+                        />
                         <IconButton
                             edge="end"
                             onClick={() => openInSpotify(currentTrack.uri)}

@@ -18,6 +18,34 @@ export function useSpotifyState(client: SpotifyClient) {
         isLoading: true
     });
 
+    // Add methods for optimistic updates
+    const optimisticTogglePlay = () => {
+        setState(prev => ({
+            ...prev,
+            isPlaying: !prev.isPlaying
+        }));
+    };
+
+    const optimisticNextTrack = () => {
+        if (state.recentTracks.length > 0) {
+            setState(prev => ({
+                ...prev,
+                currentTrack: prev.recentTracks[0],
+                isPlaying: true
+            }));
+        }
+    };
+
+    const optimisticPreviousTrack = () => {
+        if (state.recentTracks.length > 0) {
+            setState(prev => ({
+                ...prev,
+                currentTrack: prev.recentTracks[0],
+                isPlaying: true
+            }));
+        }
+    };
+
     useEffect(() => {
         let mounted = true;
         const pollState = async () => {
@@ -57,5 +85,10 @@ export function useSpotifyState(client: SpotifyClient) {
         };
     }, [client]);
 
-    return state;
+    return {
+        ...state,
+        optimisticTogglePlay,
+        optimisticNextTrack,
+        optimisticPreviousTrack
+    };
 }

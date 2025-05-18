@@ -73,7 +73,8 @@ export class SpotifyClient {
             pause: { path: '/me/player/pause', method: 'PUT' },
             next: { path: '/me/player/next', method: 'POST' },
             previous: { path: '/me/player/previous', method: 'POST' },
-            shuffle: { path: '/me/player/shuffle', method: 'PUT' }
+            shuffle: { path: '/me/player/shuffle', method: 'PUT' },
+            repeat: { path: '/me/player/repeat', method: 'PUT' }
         };
 
         const endpoint = endpoints[action];

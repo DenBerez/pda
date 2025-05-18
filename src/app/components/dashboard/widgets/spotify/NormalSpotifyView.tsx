@@ -7,6 +7,7 @@ import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { alpha } from '@mui/material/styles';
 import DevicesIcon from '@mui/icons-material/Devices';
+import { VolumeControl } from './SpotifyWidget';
 
 const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
     currentTrack,
@@ -21,7 +22,13 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
     theme,
     isPlayerConnected,
     handleTransferPlayback,
-    showTransferButton
+    showTransferButton,
+    volume,
+    showVolumeControls,
+    setShowVolumeControls,
+    getVolumeIcon,
+    toggleMute,
+    handleVolumeChange
 }) => {
     if (!currentTrack && showTransferButton) {
         return (
@@ -206,6 +213,15 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
                     >
                         <SkipNextIcon fontSize="small" />
                     </IconButton>
+
+                    <VolumeControl
+                        theme={theme}
+                        volume={volume}
+                        showVolumeControls={showVolumeControls}
+                        handleVolumeChange={handleVolumeChange}
+                        getVolumeIcon={getVolumeIcon}
+                        toggleMute={toggleMute}
+                    />
                 </Stack>
             </Box>
         </Box>
