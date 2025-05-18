@@ -292,14 +292,41 @@ export const useSpotifyWebPlayback = ({
         }
     }, []);
 
+    // Add this before togglePlay
+    const transferPlayback = useCallback(async () => {
+        if (!state.deviceId) return;
+
+        const token = await getValidToken();
+        if (!token) return;
+
+        try {
+            await fetch('https://api.spotify.com/v1/me/player', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    device_ids: [state.deviceId],
+                    play: true
+                })
+            });
+        } catch (error) {
+            console.error('Error transferring playback:', error);
+        }
+    }, [state.deviceId, getValidToken]);
+
     const togglePlay = useCallback(async () => {
         if (!playerRef.current) return;
         try {
             await playerRef.current.togglePlay();
         } catch (error) {
             console.error('Error toggling playback:', error);
+            if (error instanceof Error && error.message.includes('no list was loaded')) {
+                await transferPlayback();
+            }
         }
-    }, []);
+    }, [transferPlayback]);
 
     const nextTrack = useCallback(async () => {
         if (!playerRef.current) return;
@@ -307,6 +334,12 @@ export const useSpotifyWebPlayback = ({
             await playerRef.current.nextTrack();
         } catch (error) {
             console.error('Error skipping to next track:', error);
+            if (error instanceof Error && error.message.includes('no list was loaded')) {
+                setState(prev => ({
+                    ...prev,
+                    error: 'No playlist loaded. Try transferring playback first.'
+                }));
+            }
         }
     }, []);
 
@@ -316,6 +349,12 @@ export const useSpotifyWebPlayback = ({
             await playerRef.current.previousTrack();
         } catch (error) {
             console.error('Error going to previous track:', error);
+            if (error instanceof Error && error.message.includes('no list was loaded')) {
+                setState(prev => ({
+                    ...prev,
+                    error: 'No playlist loaded. Try transferring playback first.'
+                }));
+            }
         }
     }, []);
 
@@ -362,30 +401,6 @@ export const useSpotifyWebPlayback = ({
             });
         } catch (error) {
             console.error('Error setting repeat mode:', error);
-        }
-    }, [state.deviceId, getValidToken]);
-
-    // Transfer playback to this device
-    const transferPlayback = useCallback(async () => {
-        if (!state.deviceId) return;
-
-        const token = await getValidToken();
-        if (!token) return;
-
-        try {
-            await fetch('https://api.spotify.com/v1/me/player', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    device_ids: [state.deviceId],
-                    play: true
-                })
-            });
-        } catch (error) {
-            console.error('Error transferring playback:', error);
         }
     }, [state.deviceId, getValidToken]);
 

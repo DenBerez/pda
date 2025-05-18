@@ -144,10 +144,16 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
     // Update local state when Spotify state changes
     useEffect(() => {
-        setLocalPlaybackState({
-            isPlaying,
-            position
-        });
+        // Only update if there's a significant change to avoid flickering
+        const positionDiff = Math.abs(localPlaybackState.position - position);
+        const isPlayingChanged = localPlaybackState.isPlaying !== isPlaying;
+
+        if (isPlayingChanged || positionDiff > 1000) {
+            setLocalPlaybackState({
+                isPlaying,
+                position
+            });
+        }
     }, [isPlaying, position]);
 
     // Modify the control handlers

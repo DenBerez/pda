@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { SpotifyClient } from '../utils/spotifyClient';
+import { SpotifyClient } from '@/app/utils/spotifyClient';
 
 interface SpotifyState {
     currentTrack: any | null;
@@ -65,7 +65,7 @@ export function useSpotifyState(client: SpotifyClient) {
         }));
     }, []);
 
-    const optimisticNextTrack = () => {
+    const optimisticNextTrack = useCallback(() => {
         if (state.recentTracks.length > 0) {
             setState(prev => ({
                 ...prev,
@@ -73,9 +73,9 @@ export function useSpotifyState(client: SpotifyClient) {
                 isPlaying: true
             }));
         }
-    };
+    }, [state.recentTracks]);
 
-    const optimisticPreviousTrack = () => {
+    const optimisticPreviousTrack = useCallback(() => {
         if (state.recentTracks.length > 0) {
             setState(prev => ({
                 ...prev,
@@ -83,7 +83,7 @@ export function useSpotifyState(client: SpotifyClient) {
                 isPlaying: true
             }));
         }
-    };
+    }, [state.recentTracks]);
 
     return {
         ...state,
