@@ -51,17 +51,26 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
 
     if (!currentTrack) {
         return (
-            <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                p: 1
-            }}>
-                <Typography variant="caption" color="text.secondary">
-                    No track playing
-                </Typography>
-            </Box>
+            <ListItem>
+                <ListItemAvatar>
+                    <Avatar sx={{ bgcolor: 'background.paper' }}>
+                        <MusicNoteIcon color="primary" />
+                    </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                    primary="No Active Playback"
+                    secondary={
+                        <Button
+                            variant="text"
+                            size="small"
+                            startIcon={<DevicesIcon />}
+                            onClick={handleTransferPlayback}
+                        >
+                            Transfer
+                        </Button>
+                    }
+                />
+            </ListItem>
         );
     }
 

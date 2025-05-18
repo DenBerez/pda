@@ -57,10 +57,19 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
     if (!currentTrack) {
         return (
             <Box sx={{ p: 2, textAlign: 'center' }}>
-                <MusicNoteIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="subtitle1" gutterBottom>
-                    No track playing
+                <MusicNoteIcon sx={{ fontSize: 40, color: 'text.secondary', mb: 1 }} />
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                    No Active Playback
                 </Typography>
+                <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<DevicesIcon />}
+                    onClick={handleTransferPlayback}
+                    sx={{ mt: 1 }}
+                >
+                    Transfer Playback
+                </Button>
             </Box>
         );
     }
