@@ -184,22 +184,15 @@ export function useSpotifyPlayer(refreshToken?: string) {
       });
 
       player.addListener("player_state_changed", (playerState: PlayerState) => {
-        if (!playerState) return;
-        const track = playerState.track_window.current_track;
-        setState({
-          isPaused: playerState.paused,
-          track: {
-            name: track.name,
-            artists: track.artists,
-            album: track.album,
-            uri: track.uri,
-            preview_url: track.preview_url,
-            duration_ms: track.duration_ms
-          },
-          position: playerState.position,
-          duration: playerState.duration,
-        });
-        setIsPlayerConnected(true);
+        if (playerState) {
+          setState({
+            track: playerState.track_window.current_track,
+            isPaused: playerState.paused,
+            position: playerState.position,
+            duration: playerState.duration,
+          });
+          setIsPlayerConnected(true);
+        }
       });
 
       player.addListener("not_ready", ({ device_id }: ReadyEvent) => {
