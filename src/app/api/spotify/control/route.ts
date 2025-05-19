@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getSpotifyCredentials, callSpotifyApi } from "../utils";
 
 export async function POST(request: NextRequest) {
     let action: string = 'unknown';  // Initialize with default value
@@ -6,9 +7,8 @@ export async function POST(request: NextRequest) {
         // Get the action and tokens from the request body
         const data = await request.json();
         action = data.action;
-        const refreshToken = data.refreshToken;
-        const clientId = data.clientId || process.env.SPOTIFY_CLIENT_ID;
-        const clientSecret = data.clientSecret || process.env.SPOTIFY_CLIENT_SECRET;
+        const { refreshToken } = data;
+        const { clientId, clientSecret } = getSpotifyCredentials(data);
 
         if (!action) {
             return NextResponse.json({ error: 'Missing action parameter' }, { status: 400 });
@@ -22,24 +22,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Spotify API credentials not configured' }, { status: 500 });
         }
 
-        // Exchange refresh token for access token
-        const tokenResponse = await fetch('https://accounts.spotify.com/api/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
-            },
-            body: new URLSearchParams({
-                grant_type: 'refresh_token',
-                refresh_token: refreshToken
-            })
-        });
-
-        if (!tokenResponse.ok) {
-            throw new Error('Failed to refresh Spotify access token');
-        }
-
-        const tokenData = await tokenResponse.json();
+        // Get a fresh access token
+        const tokenData = await refreshSpotifyToken(refreshToken, clientId, clientSecret);
         const accessToken = tokenData.access_token;
 
         // Determine which Spotify API endpoint to call based on the action
@@ -64,11 +48,12 @@ export async function POST(request: NextRequest) {
                 break;
             case 'shuffle':
                 // First get the current player state to check shuffle status
-                const playerStateResponse = await fetch('https://api.spotify.com/v1/me/player', {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`
-                    }
-                });
+                const { response: playerStateResponse } = await callSpotifyApi(
+                    'https://api.spotify.com/v1/me/player',
+                    refreshToken,
+                    clientId,
+                    clientSecret
+                );
 
                 if (playerStateResponse.ok) {
                     const playerState = await playerStateResponse.json();
@@ -82,11 +67,12 @@ export async function POST(request: NextRequest) {
                 break;
             case 'repeat':
                 // First get the current player state to check repeat status
-                const repeatStateResponse = await fetch('https://api.spotify.com/v1/me/player', {
-                    headers: {
-                        'Authorization': `Bearer ${accessToken}`
-                    }
-                });
+                const { response: repeatStateResponse } = await callSpotifyApi(
+                    'https://api.spotify.com/v1/me/player',
+                    refreshToken,
+                    clientId,
+                    clientSecret
+                );
 
                 if (repeatStateResponse.ok) {
                     const playerState = await repeatStateResponse.json();
@@ -112,15 +98,16 @@ export async function POST(request: NextRequest) {
         }
 
         // Call the Spotify API
-        const response = await fetch(endpoint, {
-            method: method,
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            // Only include body if it's not null
-            ...(body ? { body: JSON.stringify(body) } : {})
-        });
+        const { response } = await callSpotifyApi(
+            endpoint,
+            refreshToken,
+            clientId,
+            clientSecret,
+            {
+                method,
+                ...(body ? { body: JSON.stringify(body) } : {})
+            }
+        );
 
         if (!response.ok) {
             // Special handling for common errors

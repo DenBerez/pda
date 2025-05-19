@@ -7,7 +7,7 @@ import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { alpha } from '@mui/material/styles';
 import DevicesIcon from '@mui/icons-material/Devices';
-import { VolumeControl } from './SpotifyWidget';
+import { VolumeControl } from './VolumeControl';
 
 const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
     currentTrack,
@@ -227,6 +227,7 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
                         theme={theme}
                         volume={volume}
                         showVolumeControls={showVolumeControls}
+                        setShowVolumeControls={setShowVolumeControls}
                         handleVolumeChange={handleVolumeChange}
                         getVolumeIcon={getVolumeIcon}
                         toggleMute={toggleMute}

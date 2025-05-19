@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Helper to get base URL from request or environment
+function getBaseUrl(request: NextRequest): string {
+    return process.env.NEXT_PUBLIC_BASE_URL ||
+        (request.headers.get('host') ?
+            `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}` :
+            'http://localhost:3000');
+}
+
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
@@ -13,13 +21,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Missing client ID or secret' }, { status: 400 });
         }
 
-        // Get the base URL from the request or environment variable
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ||
-            (request.headers.get('host') ?
-                `${request.headers.get('x-forwarded-proto') || 'http'}://${request.headers.get('host')}` :
-                'http://localhost:3000');
-
         // Define the redirect URI
+        const baseUrl = getBaseUrl(request);
         const redirectUri = `${baseUrl}/api/spotify/auth`;
 
         // If no code is present, initiate the OAuth flow

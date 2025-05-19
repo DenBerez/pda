@@ -5,7 +5,7 @@ import LaunchIcon from '@mui/icons-material/Launch';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { alpha } from '@mui/material/styles';
 import DevicesIcon from '@mui/icons-material/Devices';
-import { VolumeControl } from './SpotifyWidget';
+import { VolumeControl } from './VolumeControl';
 
 const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
     currentTrack,
@@ -93,6 +93,7 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
                             theme={theme}
                             volume={volume}
                             showVolumeControls={showVolumeControls}
+                            setShowVolumeControls={setShowVolumeControls}
                             handleVolumeChange={handleVolumeChange}
                             getVolumeIcon={getVolumeIcon}
                             toggleMute={toggleMute}
