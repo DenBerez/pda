@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSpotifyCredentials, callSpotifyApi } from "../utils";
+import { getSpotifyCredentials, callSpotifyApi, refreshSpotifyToken } from "../utils";
 
 export async function POST(request: NextRequest) {
     let action: string = 'unknown';  // Initialize with default value
