@@ -66,6 +66,7 @@ interface ErrorEvent {
 }
 
 export function useSpotifyPlayer(refreshToken?: string) {
+  console.log('🎵 useSpotifyPlayer hook initialized', { refreshToken: !!refreshToken });
   const playerRef = useRef<Spotify.Player | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [state, setState] = useState<SpotifyPlayerState | null>(null);
@@ -78,53 +79,73 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
   // Get access token from localStorage or refresh if needed
   const getAccessToken = async (): Promise<string | null> => {
+    console.log('🔑 Getting access token...');
     if (refreshToken) {
       try {
+        console.log('🔄 Using refresh token to get access token');
         const res = await fetch("/api/spotify/token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refreshToken }),
         });
 
-        if (!res.ok) return null;
+        if (!res.ok) {
+          console.error('❌ Failed to get token from API', { status: res.status });
+          return null;
+        }
         const json = await res.json();
+        console.log('✅ Successfully retrieved access token');
         return json.access_token;
       } catch (err) {
-        console.error("Failed to get access token:", err);
+        console.error("❌ Failed to get access token:", err);
         return null;
       }
     } else {
+      console.log('🔍 Checking localStorage for tokens');
       const accessToken = localStorage.getItem("access_token");
       const storedRefreshToken = localStorage.getItem("refresh_token");
       const expiresAt = Number(localStorage.getItem("expires_at"));
 
-      if (!accessToken || !storedRefreshToken) return null;
+      if (!accessToken || !storedRefreshToken) {
+        console.log('❌ No tokens found in localStorage');
+        return null;
+      }
 
       const now = Math.floor(Date.now() / 1000);
       if (now >= expiresAt - 60) {
+        console.log('🔄 Token expired, refreshing...');
         const res = await fetch("/api/refresh", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refresh_token: storedRefreshToken }),
         });
 
-        if (!res.ok) return null;
+        if (!res.ok) {
+          console.error('❌ Failed to refresh token', { status: res.status });
+          return null;
+        }
         const json = await res.json();
 
         localStorage.setItem("access_token", json.access_token);
         localStorage.setItem("expires_at", String(now + json.expires_in));
+        console.log('✅ Token refreshed successfully');
         return json.access_token;
       }
 
+      console.log('✅ Using existing valid token');
       return accessToken;
     }
   };
 
   // Fetch recent tracks
   const fetchRecentTracks = useCallback(async () => {
+    console.log('🎧 Fetching recent tracks...');
     try {
       const token = await getAccessToken();
-      if (!token) return;
+      if (!token) {
+        console.log('❌ No token available for fetching recent tracks');
+        return;
+      }
 
       const response = await fetch("/api/spotify/recent-tracks", {
         method: "POST",
@@ -133,10 +154,12 @@ export function useSpotifyPlayer(refreshToken?: string) {
       });
 
       if (!response.ok) {
+        console.error('❌ Failed to fetch recent tracks', { status: response.status });
         throw new Error("Failed to fetch recent tracks");
       }
 
       const data = await response.json();
+      console.log(`✅ Retrieved ${data.items.length} recent tracks`);
       setRecentTracks(data.items.map((item: any) => ({
         name: item.track.name,
         artist: item.track.artists.map((a: any) => a.name).join(", "),
@@ -148,26 +171,38 @@ export function useSpotifyPlayer(refreshToken?: string) {
         duration_ms: item.track.duration_ms
       })));
     } catch (err) {
-      console.error("Error fetching recent tracks:", err);
+      console.error("❌ Error fetching recent tracks:", err);
       setError("Failed to fetch recent tracks");
     }
   }, [refreshToken]);
 
   // Load SDK
   useEffect(() => {
-    if (!refreshToken) return;
+    console.log('🔄 SDK loading effect triggered', { hasRefreshToken: !!refreshToken });
+    if (!refreshToken) {
+      console.log('⚠️ No refresh token provided, skipping SDK initialization');
+      return;
+    }
 
     if (!window.Spotify) {
+      console.log('📥 Loading Spotify SDK script...');
       const script = document.createElement("script");
       script.src = "https://sdk.scdn.co/spotify-player.js";
       script.async = true;
       document.body.appendChild(script);
+    } else {
+      console.log('ℹ️ Spotify SDK already loaded');
     }
 
     window.onSpotifyWebPlaybackSDKReady = async () => {
+      console.log('🎉 Spotify Web Playback SDK is ready');
       const token = await getAccessToken();
-      if (!token) return;
+      if (!token) {
+        console.error('❌ No token available for SDK initialization');
+        return;
+      }
 
+      console.log('🔧 Creating Spotify player instance');
       const player = new window.Spotify.Player({
         name: "My Dashboard Player",
         getOAuthToken: async (cb: (token: string | null) => void) => cb(await getAccessToken()),
@@ -177,7 +212,7 @@ export function useSpotifyPlayer(refreshToken?: string) {
       playerRef.current = player;
 
       player.addListener("ready", ({ device_id }: ReadyEvent) => {
-        console.log("Spotify Web Playback SDK Ready");
+        console.log("✅ Spotify Web Playback SDK Ready", { device_id });
         setDeviceId(device_id);
         setIsReady(true);
         fetchRecentTracks();
@@ -185,6 +220,11 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
       player.addListener("player_state_changed", (playerState: PlayerState) => {
         if (playerState) {
+          console.log("🔄 Player state changed", {
+            track: playerState.track_window.current_track.name,
+            isPaused: playerState.paused,
+            position: playerState.position,
+          });
           setState({
             track: playerState.track_window.current_track,
             isPaused: playerState.paused,
@@ -196,35 +236,39 @@ export function useSpotifyPlayer(refreshToken?: string) {
       });
 
       player.addListener("not_ready", ({ device_id }: ReadyEvent) => {
-        console.log("Device ID has gone offline", device_id);
+        console.warn("⚠️ Device ID has gone offline", device_id);
         setIsPlayerConnected(false);
       });
 
       player.addListener("initialization_error", (e: ErrorEvent) => {
-        console.error(e.message);
+        console.error("❌ Initialization error:", e.message);
         setError("Failed to initialize Spotify player");
       });
       player.addListener("authentication_error", (e: ErrorEvent) => {
-        console.error(e.message);
+        console.error("❌ Authentication error:", e.message);
         setError("Authentication error with Spotify");
       });
       player.addListener("account_error", (e: ErrorEvent) => {
-        console.error(e.message);
+        console.error("❌ Account error:", e.message);
         setError("Account error with Spotify");
       });
       player.addListener("playback_error", (e: ErrorEvent) => {
-        console.error(e.message);
+        console.error("❌ Playback error:", e.message);
         setError("Playback error with Spotify");
       });
 
+      console.log('🔌 Connecting to Spotify player...');
       player.connect().then((success: boolean) => {
         if (success) {
-          console.log("Spotify player connected successfully");
+          console.log("✅ Spotify player connected successfully");
+        } else {
+          console.error("❌ Failed to connect Spotify player");
         }
       });
     };
 
     return () => {
+      console.log('🧹 Cleaning up Spotify player');
       if (playerRef.current) {
         playerRef.current.disconnect();
       }
@@ -233,13 +277,18 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
   // Transfer playback to this device
   const transferPlayback = useCallback(async () => {
-    if (!deviceId) return;
+    console.log('🔄 Attempting to transfer playback', { deviceId });
+    if (!deviceId) {
+      console.warn('⚠️ No device ID available for transfer');
+      return;
+    }
 
     try {
       setIsTransferring(true);
       const token = await getAccessToken();
       if (!token) throw new Error("No access token available");
 
+      console.log('📡 Sending transfer request to Spotify API');
       await fetch("https://api.spotify.com/v1/me/player", {
         method: "PUT",
         headers: {
@@ -252,9 +301,10 @@ export function useSpotifyPlayer(refreshToken?: string) {
         }),
       });
 
+      console.log('✅ Playback transferred successfully');
       setIsPlayerConnected(true);
     } catch (err) {
-      console.error("Failed to transfer playback:", err);
+      console.error("❌ Failed to transfer playback:", err);
       setError("Failed to transfer playback");
     } finally {
       setIsTransferring(false);
@@ -263,14 +313,17 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
   // Control handlers
   const play = useCallback(() => {
+    console.log('▶️ Play requested');
     playerRef.current?.resume();
   }, []);
 
   const pause = useCallback(() => {
+    console.log('⏸️ Pause requested');
     playerRef.current?.pause();
   }, []);
 
   const togglePlay = useCallback(() => {
+    console.log('⏯️ Toggle play/pause', { currentlyPaused: state?.isPaused });
     if (state?.isPaused) {
       play();
     } else {
@@ -279,33 +332,40 @@ export function useSpotifyPlayer(refreshToken?: string) {
   }, [state?.isPaused, play, pause]);
 
   const next = useCallback(() => {
+    console.log('⏭️ Next track requested');
     playerRef.current?.nextTrack();
   }, []);
 
   const previous = useCallback(() => {
+    console.log('⏮️ Previous track requested');
     playerRef.current?.previousTrack();
   }, []);
 
   const seek = useCallback((ms: number) => {
+    console.log('🔍 Seek requested', { position: ms });
     playerRef.current?.seek(ms);
   }, []);
 
   const handleSeekChange = useCallback((event: Event, newValue: number | number[]) => {
     const newPosition = Array.isArray(newValue) ? newValue[0] : newValue;
+    console.log('🎯 Seek change', { newPosition });
     seek(newPosition);
   }, [seek]);
 
   const setPlayerVolume = useCallback((newVolume: number) => {
+    console.log('🔊 Setting player volume', { volume: newVolume });
     playerRef.current?.setVolume(newVolume);
   }, []);
 
   const handleVolumeChange = useCallback((event: Event, newValue: number | number[]) => {
     const newVolume = Array.isArray(newValue) ? newValue[0] : newValue;
+    console.log('🔊 Volume change', { newVolume });
     setVolume(newVolume);
     setPlayerVolume(newVolume / 100);
   }, [setPlayerVolume]);
 
   const toggleMute = useCallback(() => {
+    console.log('🔇 Toggle mute', { currentVolume: volume });
     if (volume === 0) {
       setVolume(50);
       setPlayerVolume(0.5);
@@ -324,14 +384,27 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
   // Play preview
   const playPreview = useCallback((url: string) => {
+    console.log('🎵 Playing preview', { url });
     const audio = new Audio(url);
     audio.play();
   }, []);
 
   // Open in Spotify
   const openInSpotify = useCallback((uri: string) => {
+    console.log('🔗 Opening in Spotify', { uri });
     window.open(uri, '_blank');
   }, []);
+
+  console.log('🎵 useSpotifyPlayer hook state', {
+    isReady,
+    isPlayerConnected,
+    isTransferring,
+    hasState: !!state,
+    currentTrack: state?.track?.name,
+    volume,
+    recentTracksCount: recentTracks.length,
+    error
+  });
 
   return {
     isReady,
