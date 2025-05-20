@@ -66,7 +66,6 @@ interface ErrorEvent {
 }
 
 export function useSpotifyPlayer(refreshToken?: string) {
-  console.log('🎵 useSpotifyPlayer hook initialized', { refreshToken: !!refreshToken });
   const playerRef = useRef<Spotify.Player | null>(null);
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [state, setState] = useState<SpotifyPlayerState | null>(null);
@@ -76,6 +75,7 @@ export function useSpotifyPlayer(refreshToken?: string) {
   const [volume, setVolume] = useState(50);
   const [recentTracks, setRecentTracks] = useState<SpotifyTrack[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [lastVolume, setLastVolume] = useState(50);
 
   // Get access token from localStorage or refresh if needed
   const getAccessToken = async (): Promise<string | null> => {
@@ -352,26 +352,55 @@ export function useSpotifyPlayer(refreshToken?: string) {
     seek(newPosition);
   }, [seek]);
 
-  const setPlayerVolume = useCallback((newVolume: number) => {
+  const setPlayerVolume = useCallback(async (newVolume: number) => {
     console.log('🔊 Setting player volume', { volume: newVolume });
-    playerRef.current?.setVolume(newVolume);
+    try {
+      // Ensure volume is between 0 and 1
+      const normalizedVolume = Math.max(0, Math.min(1, newVolume));
+
+      // Check if player is still connected before setting volume
+      if (playerRef.current) {
+        await playerRef.current.setVolume(normalizedVolume);
+        console.log('✅ Volume set successfully');
+      } else {
+        console.warn('⚠️ Player not available for volume change');
+      }
+    } catch (err) {
+      console.error('❌ Error setting volume:', err);
+      // If we get a device not registered error, try to reconnect
+      if (String(err).includes('device is not registered')) {
+        console.log('🔄 Attempting to reconnect player after volume error');
+        playerRef.current?.connect();
+      }
+    }
   }, []);
 
   const handleVolumeChange = useCallback((event: Event, newValue: number | number[]) => {
     const newVolume = Array.isArray(newValue) ? newValue[0] : newValue;
     console.log('🔊 Volume change', { newVolume });
+
+    // Update the UI state
     setVolume(newVolume);
-    setPlayerVolume(newVolume / 100);
+
+    // Convert to 0-1 range for Spotify SDK
+    const spotifyVolume = newVolume / 100;
+    setPlayerVolume(spotifyVolume);
   }, [setPlayerVolume]);
 
   const toggleMute = useCallback(() => {
     console.log('🔇 Toggle mute', { currentVolume: volume });
-    if (volume === 0) {
-      setVolume(50);
-      setPlayerVolume(0.5);
-    } else {
-      setVolume(0);
-      setPlayerVolume(0);
+    try {
+      if (volume === 0) {
+        setVolume(50);
+        setPlayerVolume(0.5);
+      } else {
+        // Store the current volume before muting
+        setLastVolume(volume);
+        setVolume(0);
+        setPlayerVolume(0);
+      }
+    } catch (err) {
+      console.error('❌ Error toggling mute:', err);
     }
   }, [volume, setPlayerVolume]);
 
@@ -395,16 +424,22 @@ export function useSpotifyPlayer(refreshToken?: string) {
     window.open(uri, '_blank');
   }, []);
 
-  console.log('🎵 useSpotifyPlayer hook state', {
-    isReady,
-    isPlayerConnected,
-    isTransferring,
-    hasState: !!state,
-    currentTrack: state?.track?.name,
-    volume,
-    recentTracksCount: recentTracks.length,
-    error
-  });
+  const reconnectPlayer = useCallback(async () => {
+    console.log('🔄 Attempting to reconnect Spotify player');
+    if (playerRef.current) {
+      try {
+        const success = await playerRef.current.connect();
+        if (success) {
+          console.log('✅ Spotify player reconnected successfully');
+          setIsPlayerConnected(true);
+        } else {
+          console.error('❌ Failed to reconnect Spotify player');
+        }
+      } catch (err) {
+        console.error('❌ Error reconnecting player:', err);
+      }
+    }
+  }, []);
 
   return {
     isReady,
