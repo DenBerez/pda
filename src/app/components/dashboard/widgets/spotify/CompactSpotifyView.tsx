@@ -97,6 +97,7 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
                             handleVolumeChange={handleVolumeChange}
                             getVolumeIcon={getVolumeIcon}
                             toggleMute={toggleMute}
+                            compact={true}
                         />
                         <IconButton
                             edge="end"
