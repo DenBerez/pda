@@ -46,6 +46,11 @@ export async function POST(request: NextRequest) {
                 endpoint = 'https://api.spotify.com/v1/me/player/previous';
                 method = 'POST';
                 break;
+            case 'volume':
+                endpoint = 'https://api.spotify.com/v1/me/player/volume';
+                method = 'PUT';
+                body = { volume_percent: data.volume };
+                break;
             case 'shuffle':
                 // First get the current player state to check shuffle status
                 const { response: playerStateResponse } = await callSpotifyApi(
