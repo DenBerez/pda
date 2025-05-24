@@ -360,6 +360,8 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
       // Check if player is still connected before setting volume
       if (playerRef.current) {
+        console.log('🔊 Setting volume to', normalizedVolume);
+        console.log('🔊 Player volume before setting', await playerRef.current.getVolume());
         await playerRef.current.setVolume(normalizedVolume);
         console.log('✅ Volume set successfully');
       } else {
