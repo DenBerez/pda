@@ -221,6 +221,7 @@ export function useSpotifyPlayer(refreshToken?: string) {
       player.addListener("player_state_changed", (playerState: PlayerState) => {
         if (playerState) {
           console.log("🔄 Player state changed", {
+            playerState: playerState,
             track: playerState.track_window.current_track.name,
             isPaused: playerState.paused,
             position: playerState.position,
