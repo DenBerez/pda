@@ -163,9 +163,24 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
             </Tabs>
 
             {filteredWidgets.length > 0 ? (
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flexWrap: 'wrap' }}>
+                <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={2}
+                    sx={{
+                        flexWrap: 'wrap',
+                        gap: 2,
+                        display: 'grid',
+                        gridTemplateColumns: {
+                            xs: '1fr',
+                            sm: 'repeat(auto-fill, minmax(200px, 1fr))'
+                        }
+                    }}
+                >
                     {filteredWidgets.map((widget) => (
-                        <WidgetButton key={widget.type} widget={widget} />
+                        <WidgetButton
+                            key={widget.type}
+                            widget={widget}
+                        />
                     ))}
                 </Stack>
             ) : (
