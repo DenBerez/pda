@@ -390,7 +390,7 @@ export function useSpotifyPlayer(refreshToken?: string) {
     }
   }, [volume]);
 
-  const handleVolumeChange = useCallback((event: Event, newValue: number | number[]) => {
+  const handleVolumeChange = useCallback(async (event: Event, newValue: number | number[]) => {
     const newVolume = Array.isArray(newValue) ? newValue[0] : newValue;
     console.log('🔊 Volume change', { newVolume });
 
@@ -399,6 +399,9 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
     // Convert to 0-1 range for Spotify SDK
     const spotifyVolume = newVolume / 100;
+    console.log('🔊 Spotify volume before setting', spotifyVolume);
+    console.log('🔊 Player volume before setting', await playerRef.current?.getVolume());
+
     setPlayerVolume(spotifyVolume);
   }, [setPlayerVolume]);
 
