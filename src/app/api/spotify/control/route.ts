@@ -126,6 +126,8 @@ export async function POST(request: NextRequest) {
             throw new Error(`Spotify API request failed with status: ${response.status}`);
         }
 
+        console.log('🔊 Spotify control API response', response);
+
         return NextResponse.json({ success: true, action });
 
     } catch (error) {
