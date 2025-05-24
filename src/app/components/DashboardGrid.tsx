@@ -8,7 +8,11 @@ import {
     Fab,
     Tooltip,
     Typography,
-    Button
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import 'react-grid-layout/css/styles.css';
@@ -126,6 +130,7 @@ const DashboardGrid: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = useState(false);
     // Use a separate loading check
     const isLocalStorageLoading = false; // Remove or handle loading differently
+    const [showMobileDialog, setShowMobileDialog] = useState(false);
 
     // Initialize layouts based on widgets
     useEffect(() => {
@@ -450,6 +455,13 @@ const DashboardGrid: React.FC = () => {
         };
     }, []);
 
+    useEffect(() => {
+        if (isMobile) {
+            setShowMobileDialog(true);
+        } else {
+            setShowMobileDialog(false);
+        }
+    }, [isMobile]);
 
     const getCurrentBreakpoint = () => {
         const width = window.innerWidth;
@@ -699,6 +711,45 @@ const DashboardGrid: React.FC = () => {
                     </Fab>
                 </Box>
             </Tooltip>
+
+            {/* Mobile Warning Dialog */}
+            <Dialog
+                open={showMobileDialog}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        p: 2,
+                        textAlign: 'center'
+                    }
+                }}
+            >
+                <DialogTitle sx={{ pb: 1 }}>
+                    <Typography variant="h6" component="span" fontWeight="medium">
+                        Desktop App Experience
+                    </Typography>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                        This dashboard is optimized for desktop use. While you can view content on mobile,
+                        the full interactive experience including widget dragging and resizing is only
+                        available on desktop devices.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        For the best experience, please visit this site on a desktop or laptop computer.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ justifyContent: 'center', pt: 2 }}>
+                    <Button
+                        variant="contained"
+                        onClick={() => setShowMobileDialog(false)}
+                        sx={{ minWidth: 120 }}
+                    >
+                        Got it
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </ThemeProvider>
     );
 };
