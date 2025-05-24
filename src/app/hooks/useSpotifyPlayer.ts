@@ -364,16 +364,28 @@ export function useSpotifyPlayer(refreshToken?: string) {
         console.log('✅ Volume set successfully');
       } else {
         console.warn('⚠️ Player not available for volume change');
+        throw new Error('Player not available');
       }
     } catch (err) {
       console.error('❌ Error setting volume:', err);
       // If we get a device not registered error, try to reconnect
       if (String(err).includes('device is not registered')) {
         console.log('🔄 Attempting to reconnect player after volume error');
-        playerRef.current?.connect();
+        try {
+          const success = await playerRef.current?.connect();
+          if (success) {
+            console.log('✅ Reconnected successfully, retrying volume change');
+            const normalizedVolume = volume / 100;
+            await playerRef.current?.setVolume(normalizedVolume);
+          } else {
+            console.error('❌ Failed to reconnect player');
+          }
+        } catch (reconnectErr) {
+          console.error('❌ Error during reconnection:', reconnectErr);
+        }
       }
     }
-  }, []);
+  }, [volume]);
 
   const handleVolumeChange = useCallback((event: Event, newValue: number | number[]) => {
     const newVolume = Array.isArray(newValue) ? newValue[0] : newValue;

@@ -24,19 +24,36 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
     toggleMute,
     compact = false
 }) => {
+    // Prevent event bubbling
+    const handleVolumeClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        toggleMute();
+    };
+
+    const handleSliderChange = (event: Event, newValue: number | number[]) => {
+        event.stopPropagation();
+        handleVolumeChange(event, newValue);
+    };
+
     return (
         <Box
             sx={{
                 position: 'relative',
                 zIndex: 2
             }}
-            onMouseEnter={() => setShowVolumeControls(true)}
-            onMouseLeave={() => setShowVolumeControls(false)}
+            onMouseEnter={(e) => {
+                e.stopPropagation();
+                setShowVolumeControls(true);
+            }}
+            onMouseLeave={(e) => {
+                e.stopPropagation();
+                setShowVolumeControls(false);
+            }}
         >
             {/* Volume Button */}
             <IconButton
                 size={compact ? "small" : "medium"}
-                onClick={toggleMute}
+                onClick={handleVolumeClick}
                 sx={{
                     position: 'relative',
                     zIndex: 2
@@ -67,10 +84,11 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
                         visibility: 'visible'
                     }
                 }}
+                onClick={(e) => e.stopPropagation()}
             >
                 <Slider
                     value={volume}
-                    onChange={handleVolumeChange}
+                    onChange={handleSliderChange}
                     orientation="vertical"
                     size="small"
                     sx={{
@@ -92,7 +110,7 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
                             backgroundColor: alpha(theme.palette.primary.main, 0.08)
                         }
                     }}
-                    onClick={toggleMute}
+                    onClick={handleVolumeClick}
                 >
                     {getVolumeIcon()}
                 </IconButton>
