@@ -353,74 +353,34 @@ export function useSpotifyPlayer(refreshToken?: string) {
     seek(newPosition);
   }, [seek]);
 
-  const setPlayerVolume = useCallback(async (newVolume: number) => {
-    console.log('🔊 Setting player volume', { volume: newVolume });
+  const handleVolumeChange = useCallback(async (volume: number) => {
     try {
-      // Ensure volume is between 0 and 1
-      const normalizedVolume = Math.max(0, Math.min(1, newVolume));
+      const response = await fetch('/api/spotify/control', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'volume',
+          volume,
+          refreshToken
+        }),
+      });
 
-      // Check if player is still connected before setting volume
-      if (playerRef.current) {
-        console.log('🔊 Setting volume to', normalizedVolume);
-        console.log('🔊 Player volume before setting', await playerRef.current.getVolume());
-        await playerRef.current.setVolume(normalizedVolume);
-        console.log('✅ Volume set successfully');
-      } else {
-        console.warn('⚠️ Player not available for volume change');
-        throw new Error('Player not available');
+      if (!response.ok) {
+        console.error('Failed to update volume:', await response.json());
+        return;
       }
-    } catch (err) {
-      console.error('❌ Error setting volume:', err);
-      // If we get a device not registered error, try to reconnect
-      if (String(err).includes('device is not registered')) {
-        console.log('🔄 Attempting to reconnect player after volume error');
-        try {
-          const success = await playerRef.current?.connect();
-          if (success) {
-            console.log('✅ Reconnected successfully, retrying volume change');
-            const normalizedVolume = volume / 100;
-            await playerRef.current?.setVolume(normalizedVolume);
-          } else {
-            console.error('❌ Failed to reconnect player');
-          }
-        } catch (reconnectErr) {
-          console.error('❌ Error during reconnection:', reconnectErr);
-        }
-      }
+
+      setVolume(volume);
+    } catch (error) {
+      console.error('Error updating volume:', error);
     }
-  }, [volume]);
-
-  const handleVolumeChange = useCallback(async (event: Event, newValue: number | number[]) => {
-    const newVolume = Array.isArray(newValue) ? newValue[0] : newValue;
-    console.log('🔊 Volume change', { newVolume });
-
-    // Update the UI state
-    setVolume(newVolume);
-
-    // Convert to 0-1 range for Spotify SDK
-    const spotifyVolume = newVolume / 100;
-    console.log('🔊 Spotify volume before setting', spotifyVolume);
-    console.log('🔊 Player volume before setting', await playerRef.current?.getVolume());
-
-    setPlayerVolume(spotifyVolume);
-  }, [setPlayerVolume]);
+  }, [refreshToken]);
 
   const toggleMute = useCallback(() => {
-    console.log('🔇 Toggle mute', { currentVolume: volume });
-    try {
-      if (volume === 0) {
-        setVolume(50);
-        setPlayerVolume(0.5);
-      } else {
-        // Store the current volume before muting
-        setLastVolume(volume);
-        setVolume(0);
-        setPlayerVolume(0);
-      }
-    } catch (err) {
-      console.error('❌ Error toggling mute:', err);
-    }
-  }, [volume, setPlayerVolume]);
+    handleVolumeChange(volume === 0 ? 50 : 0);
+  }, [volume, handleVolumeChange]);
 
   // Format duration helper
   const formatDuration = useCallback((ms: number) => {
@@ -468,6 +428,7 @@ export function useSpotifyPlayer(refreshToken?: string) {
     recentTracks,
     error,
     controls: {
+      transferPlayback,
       play,
       pause,
       togglePlay,
@@ -475,9 +436,8 @@ export function useSpotifyPlayer(refreshToken?: string) {
       previous,
       seek,
       handleSeekChange,
-      handleVolumeChange,
-      toggleMute,
-      transferPlayback,
+      onVolumeChange: handleVolumeChange,
+      onMute: toggleMute,
       playPreview,
       openInSpotify
     },
