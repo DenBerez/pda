@@ -18,11 +18,9 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
     playPreview,
     openInSpotify,
     volume,
-    showVolumeControls,
-    setShowVolumeControls,
-    getVolumeIcon,
-    toggleMute,
-    handleVolumeChange
+    onVolumeChange,
+    onMute,
+    getVolumeIcon
 }) => {
     if (showTransferButton) {
         return (
@@ -92,11 +90,9 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
                         <VolumeControl
                             theme={theme}
                             volume={volume}
-                            showVolumeControls={showVolumeControls}
-                            setShowVolumeControls={setShowVolumeControls}
-                            handleVolumeChange={handleVolumeChange}
+                            onVolumeChange={onVolumeChange}
+                            onMute={onMute}
                             getVolumeIcon={getVolumeIcon}
-                            toggleMute={toggleMute}
                             compact={true}
                         />
                         <IconButton

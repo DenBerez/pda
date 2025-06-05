@@ -12,7 +12,7 @@ import VolumeUpIcon from '@mui/icons-material/VolumeUp';
 import VolumeDownIcon from '@mui/icons-material/VolumeDown';
 import VolumeMuteIcon from '@mui/icons-material/VolumeMute';
 import { useTheme } from '@mui/material/styles';
-import { SpotifyWidgetProps } from './types';
+import { SpotifyWidgetProps, SpotifyTrack } from './types';
 import CompactSpotifyView from './CompactSpotifyView';
 import NormalSpotifyView from './NormalSpotifyView';
 import DetailedSpotifyView from './DetailedSpotifyView';
@@ -21,22 +21,28 @@ import { useSpotifyPlayer } from '@/app/hooks/useSpotifyPlayer';
 // Add this type at the top of the file
 type LayoutOption = 'compact' | 'normal' | 'detailed';
 
+interface SpotifyPlayerState {
+    isPaused: boolean;
+    position: number;
+    duration: number;
+    track: SpotifyTrack | null;
+}
+
 const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdateWidget }) => {
     const theme = useTheme();
+    const [state, setState] = useState<SpotifyPlayerState | null>(null);
+    const [isTransferring, setIsTransferring] = useState(false);
+    const [isPlayerConnected, setIsPlayerConnected] = useState(false);
     const [showRecent, setShowRecent] = useState(false);
-    const [showVolumeControls, setShowVolumeControls] = useState(false);
+    const [recentTracks, setRecentTracks] = useState<SpotifyTrack[]>([]);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
+    const [volume, setVolume] = useState(50);
 
     const refreshToken = widget.config?.refreshToken;
     const layoutOption = widget.config?.layoutOption || 'normal';
 
     const {
         isReady,
-        isPlayerConnected,
-        isTransferring,
-        state,
-        volume,
-        recentTracks,
         error,
         controls,
         utils
@@ -59,6 +65,35 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         setStatusMessage(message);
         setTimeout(() => setStatusMessage(null), 3000);
     }, []);
+
+    const handleVolumeChange = useCallback(async (newVolume: number) => {
+        try {
+            const response = await fetch('/api/spotify/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'volume',
+                    volume: newVolume,
+                    refreshToken
+                }),
+            });
+
+            if (!response.ok) {
+                console.error('Failed to update volume:', await response.json());
+                return;
+            }
+
+            setVolume(newVolume);
+        } catch (error) {
+            console.error('Error updating volume:', error);
+        }
+    }, [refreshToken]);
+
+    const handleMute = useCallback(() => {
+        handleVolumeChange(volume === 0 ? 50 : 0);
+    }, [volume, handleVolumeChange]);
 
     // Not connected state
     if (!refreshToken) {
@@ -103,17 +138,8 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         );
     }
 
-    const currentTrack = state?.track ? {
-        name: state.track.name,
-        artists: state.track.artists,
-        album: state.track.album,
-        duration_ms: state.track.duration_ms || state.duration,
-        uri: state.track.uri || '',
-        preview_url: state.track.preview_url
-    } : null;
-
     const commonProps = {
-        currentTrack,
+        currentTrack: state?.track || null,
         isPlaying: state ? !state.isPaused : false,
         position: state?.position || 0,
         duration: state?.duration || 0,
@@ -127,17 +153,15 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         previousTrack: controls.previous,
         nextTrack: controls.next,
         handleSeekChange: controls.handleSeekChange,
-        handleVolumeChange: controls.handleVolumeChange,
-        showVolumeControls,
-        setShowVolumeControls,
+        onVolumeChange: handleVolumeChange,
+        onMute: handleMute,
         getVolumeIcon,
-        toggleMute: controls.toggleMute,
         playPreview: controls.playPreview,
         openInSpotify: controls.openInSpotify,
         formatDuration: utils.formatDuration,
         toggleView,
         theme,
-        showTransferButton: !isPlayerConnected || (!state || (state.isPaused && !currentTrack))
+        showTransferButton: !isPlayerConnected || (!state || (state.isPaused && !state.track))
     };
 
     return (

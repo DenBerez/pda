@@ -6,33 +6,30 @@ import { alpha } from '@mui/material/styles';
 interface VolumeControlProps {
     theme: Theme;
     volume: number;
-    showVolumeControls: boolean;
-    setShowVolumeControls: (show: boolean) => void;
-    handleVolumeChange: (event: Event, newValue: number | number[]) => void;
+    onVolumeChange: (volume: number) => void;
+    onMute: () => void;
     getVolumeIcon: () => React.ReactElement;
-    toggleMute: () => void;
     compact?: boolean;
 }
 
 export const VolumeControl: React.FC<VolumeControlProps> = ({
     theme,
     volume,
-    showVolumeControls,
-    setShowVolumeControls,
-    handleVolumeChange,
+    onVolumeChange,
+    onMute,
     getVolumeIcon,
-    toggleMute,
     compact = false
 }) => {
-    // Prevent event bubbling
+    const [showControls, setShowControls] = React.useState(false);
+
     const handleVolumeClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        toggleMute();
+        onMute();
     };
 
     const handleSliderChange = (event: Event, newValue: number | number[]) => {
         event.stopPropagation();
-        handleVolumeChange(event, newValue);
+        onVolumeChange(Array.isArray(newValue) ? newValue[0] : newValue);
     };
 
     return (
@@ -41,16 +38,9 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
                 position: 'relative',
                 zIndex: 2
             }}
-            onMouseEnter={(e) => {
-                e.stopPropagation();
-                setShowVolumeControls(true);
-            }}
-            onMouseLeave={(e) => {
-                e.stopPropagation();
-                setShowVolumeControls(false);
-            }}
+            onMouseEnter={() => setShowControls(true)}
+            onMouseLeave={() => setShowControls(false)}
         >
-            {/* Volume Button */}
             <IconButton
                 size={compact ? "small" : "medium"}
                 onClick={handleVolumeClick}
@@ -62,7 +52,6 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
                 {getVolumeIcon()}
             </IconButton>
 
-            {/* Volume Slider Popup */}
             <Box
                 sx={{
                     position: 'absolute',
@@ -75,8 +64,8 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
                     borderRadius: 2,
                     padding: 1,
                     boxShadow: theme.shadows[4],
-                    opacity: showVolumeControls ? 1 : 0,
-                    visibility: showVolumeControls ? 'visible' : 'hidden',
+                    opacity: showControls ? 1 : 0,
+                    visibility: showControls ? 'visible' : 'hidden',
                     transition: 'all 0.2s ease-in-out',
                     zIndex: 10,
                     '&:hover': {
@@ -102,18 +91,6 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
                         }
                     }}
                 />
-                <IconButton
-                    size="small"
-                    sx={{
-                        mt: 1,
-                        '&:hover': {
-                            backgroundColor: alpha(theme.palette.primary.main, 0.08)
-                        }
-                    }}
-                    onClick={handleVolumeClick}
-                >
-                    {getVolumeIcon()}
-                </IconButton>
             </Box>
         </Box>
     );

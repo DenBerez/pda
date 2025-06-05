@@ -33,11 +33,9 @@ export interface SpotifyViewProps {
     previousTrack: () => void;
     nextTrack: () => void;
     handleSeekChange: (event: Event, newValue: number | number[]) => void;
-    handleVolumeChange: (event: Event, newValue: number | number[]) => void;
-    showVolumeControls: boolean;
-    setShowVolumeControls: (show: boolean) => void;
+    onVolumeChange: (volume: number) => void;
+    onMute: () => void;
     getVolumeIcon: () => React.ReactElement;
-    toggleMute: () => void;
     playPreview: (url: string) => void;
     openInSpotify: (uri: string) => void;
     formatDuration: (ms: number) => string;
