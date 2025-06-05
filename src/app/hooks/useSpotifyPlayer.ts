@@ -353,6 +353,57 @@ export function useSpotifyPlayer(refreshToken?: string) {
     seek(newPosition);
   }, [seek]);
 
+  // Fetch player state
+  const fetchPlayerState = useCallback(async () => {
+    if (!refreshToken) return;
+
+    try {
+      const response = await fetch('/api/spotify/player-state', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Failed to fetch player state:', error);
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.current_track) {
+        setState({
+          track: data.current_track,
+          isPaused: !data.is_playing,
+          position: data.position_ms,
+          duration: data.current_track.duration_ms,
+        });
+        setIsPlayerConnected(true);
+      } else {
+        setState(null);
+        setIsPlayerConnected(false);
+      }
+    } catch (error) {
+      console.error('Error fetching player state:', error);
+    }
+  }, [refreshToken]);
+
+  // Poll for player state
+  useEffect(() => {
+    if (!refreshToken) return;
+
+    // Initial fetch
+    fetchPlayerState();
+
+    // Set up polling interval
+    const interval = setInterval(fetchPlayerState, 3000);
+
+    return () => clearInterval(interval);
+  }, [refreshToken, fetchPlayerState]);
+
   const handleVolumeChange = useCallback(async (volume: number) => {
     try {
       const response = await fetch('/api/spotify/control', {
@@ -378,7 +429,7 @@ export function useSpotifyPlayer(refreshToken?: string) {
     }
   }, [refreshToken]);
 
-  const toggleMute = useCallback(() => {
+  const handleMute = useCallback(() => {
     handleVolumeChange(volume === 0 ? 50 : 0);
   }, [volume, handleVolumeChange]);
 
@@ -437,7 +488,7 @@ export function useSpotifyPlayer(refreshToken?: string) {
       seek,
       handleSeekChange,
       onVolumeChange: handleVolumeChange,
-      onMute: toggleMute,
+      onMute: handleMute,
       playPreview,
       openInSpotify
     },
