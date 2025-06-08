@@ -8,6 +8,8 @@ import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { alpha } from '@mui/material/styles';
 import DevicesIcon from '@mui/icons-material/Devices';
 import { VolumeControl } from './VolumeControl';
+import { PlaybackControls } from './PlaybackControls';
+import { useEffect, useRef, useState } from 'react';
 
 const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
     currentTrack,
@@ -28,6 +30,46 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
     onMute,
     getVolumeIcon
 }) => {
+    // Add state and refs for smooth progress
+    const [smoothPosition, setSmoothPosition] = useState(position);
+    const lastUpdateRef = useRef(Date.now());
+    const animationFrameRef = useRef<number | undefined>(undefined);
+
+    // Update progress smoothly
+    useEffect(() => {
+        const updateProgress = () => {
+            if (isPlaying && duration > 0) {
+                const now = Date.now();
+                const elapsed = now - lastUpdateRef.current;
+                lastUpdateRef.current = now;
+
+                setSmoothPosition(prev => {
+                    const newPosition = Math.min(duration, prev + elapsed);
+                    if (newPosition < duration) {
+                        animationFrameRef.current = window.requestAnimationFrame(updateProgress);
+                    }
+                    return newPosition;
+                });
+            }
+        };
+
+        // Reset position when track changes or position is updated from parent
+        setSmoothPosition(position);
+        lastUpdateRef.current = Date.now();
+
+        // Start animation if playing
+        if (isPlaying && duration > 0) {
+            animationFrameRef.current = window.requestAnimationFrame(updateProgress);
+        }
+
+        // Cleanup
+        return () => {
+            if (animationFrameRef.current) {
+                window.cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, [isPlaying, position, duration]);
+
     if (showTransferButton) {
         return (
             <Box sx={{
@@ -135,12 +177,12 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
 
             <Box sx={{ mt: 'auto' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="caption">{formatDuration(position)}</Typography>
+                    <Typography variant="caption">{formatDuration(smoothPosition)}</Typography>
                     <Typography variant="caption">{formatDuration(duration)}</Typography>
                 </Box>
 
                 <Slider
-                    value={position}
+                    value={smoothPosition}
                     min={0}
                     max={duration}
                     onChange={handleSeekChange}
@@ -184,42 +226,13 @@ const NormalSpotifyView: React.FC<SpotifyViewProps> = ({
                         minHeight: 40
                     }}
                 >
-                    <IconButton
-                        onClick={previousTrack}
-                        size="small"
-                        sx={{
-                            color: alpha(theme.palette.text.primary, 0.7),
-                            padding: 0.5
-                        }}
-                    >
-                        <SkipPreviousIcon fontSize="small" />
-                    </IconButton>
-
-                    <IconButton
-                        onClick={togglePlay}
-                        size="small"
-                        sx={{
-                            color: theme.palette.primary.main,
-                            background: alpha(theme.palette.primary.main, 0.1),
-                            padding: 1,
-                            '&:hover': {
-                                background: alpha(theme.palette.primary.main, 0.2)
-                            }
-                        }}
-                    >
-                        {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-                    </IconButton>
-
-                    <IconButton
-                        onClick={nextTrack}
-                        size="small"
-                        sx={{
-                            color: alpha(theme.palette.text.primary, 0.7),
-                            padding: 0.5
-                        }}
-                    >
-                        <SkipNextIcon fontSize="small" />
-                    </IconButton>
+                    <PlaybackControls
+                        isPlaying={isPlaying}
+                        onPlayPause={togglePlay}
+                        onNext={nextTrack}
+                        onPrevious={previousTrack}
+                        disabled={!isPlayerConnected}
+                    />
 
                     <VolumeControl
                         theme={theme}

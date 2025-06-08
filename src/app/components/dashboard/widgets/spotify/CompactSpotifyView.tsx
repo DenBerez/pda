@@ -1,11 +1,11 @@
 import { Box, Avatar, Typography, IconButton, List, ListItem, ListItemAvatar, ListItemText, Theme, Button } from '@mui/material';
 import { SpotifyTrack, SpotifyViewProps } from './types';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import LaunchIcon from '@mui/icons-material/Launch';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import { alpha } from '@mui/material/styles';
 import DevicesIcon from '@mui/icons-material/Devices';
 import { VolumeControl } from './VolumeControl';
+import { PlaybackControls } from './PlaybackControls';
 
 const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
     currentTrack,
@@ -76,29 +76,35 @@ const CompactSpotifyView: React.FC<SpotifyViewProps> = ({
         <List sx={{ mt: 0, '& .MuiListItem-root': { py: 0.5 } }}>
             <ListItem
                 secondaryAction={
-                    <Box>
-                        {currentTrack.preview_url && (
-                            <IconButton
-                                edge="end"
-                                onClick={() => currentTrack.preview_url && playPreview(currentTrack.preview_url)}
-                                sx={{ mr: 1 }}
-                                size="small"
-                            >
-                                <PlayArrowIcon fontSize="small" />
-                            </IconButton>
-                        )}
-                        <VolumeControl
-                            theme={theme}
-                            volume={volume}
-                            onVolumeChange={onVolumeChange}
-                            onMute={onMute}
-                            getVolumeIcon={getVolumeIcon}
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
+                    }}>
+                        <PlaybackControls
+                            isPlaying={isPlaying}
+                            onPlayPause={togglePlay}
+                            onNext={() => {/* TODO: Add skip next handler */ }}
+                            onPrevious={() => {/* TODO: Add skip previous handler */ }}
                             compact={true}
+                            disabled={!isPlayerConnected}
                         />
+                        <Box sx={{
+                            width: 100,
+                            mx: 1
+                        }}>
+                            <VolumeControl
+                                theme={theme}
+                                volume={volume}
+                                onVolumeChange={onVolumeChange}
+                                onMute={onMute}
+                                getVolumeIcon={getVolumeIcon}
+                                compact={true}
+                            />
+                        </Box>
                         <IconButton
-                            edge="end"
-                            onClick={() => openInSpotify(currentTrack.uri)}
                             size="small"
+                            onClick={() => openInSpotify(currentTrack.uri)}
                         >
                             <LaunchIcon fontSize="small" />
                         </IconButton>
