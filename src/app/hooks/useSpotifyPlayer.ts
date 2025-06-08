@@ -77,6 +77,62 @@ export function useSpotifyPlayer(refreshToken?: string) {
   const [error, setError] = useState<string | null>(null);
   const [lastVolume, setLastVolume] = useState(50);
 
+  // Add refs for tracking local position
+  const positionRef = useRef<number>(0);
+  const lastUpdateRef = useRef<number>(Date.now());
+  const animationFrameRef = useRef<number | undefined>(undefined);
+
+  // Update local position smoothly
+  const updatePosition = useCallback((timestamp?: number) => {
+    if (state && !state.isPaused) {
+      const now = Date.now();
+      const elapsed = now - lastUpdateRef.current;
+      positionRef.current = Math.min(state.duration, positionRef.current + elapsed);
+      lastUpdateRef.current = now;
+
+      setState(prev => prev ? {
+        ...prev,
+        position: positionRef.current
+      } : null);
+
+      // Stop if we've reached the end of the track
+      if (positionRef.current < state.duration) {
+        animationFrameRef.current = window.requestAnimationFrame(updatePosition);
+      }
+    }
+  }, [state]);
+
+  // Start/stop position updates based on play state
+  useEffect(() => {
+    if (state) {
+      if (!state.isPaused) {
+        // Start updating position
+        positionRef.current = state.position;
+        lastUpdateRef.current = Date.now();
+        animationFrameRef.current = window.requestAnimationFrame(updatePosition);
+      } else {
+        // Stop updating position
+        if (animationFrameRef.current) {
+          window.cancelAnimationFrame(animationFrameRef.current);
+        }
+      }
+    }
+
+    return () => {
+      if (animationFrameRef.current) {
+        window.cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [state?.isPaused, updatePosition]);
+
+  // Reset position when track changes
+  useEffect(() => {
+    if (state?.track?.uri) {
+      positionRef.current = state.position;
+      lastUpdateRef.current = Date.now();
+    }
+  }, [state?.track?.uri]);
+
   // Get access token from localStorage or refresh if needed
   const getAccessToken = async (): Promise<string | null> => {
     console.log('🔑 Getting access token...');
@@ -176,7 +232,7 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
   // Load SDK
   useEffect(() => {
-    console.log('🔄 SDK loading effect triggered', { hasRefreshToken: !!refreshToken });
+    console.log('🎉 SDK loading effect triggered', { hasRefreshToken: !!refreshToken });
     if (!refreshToken) {
       console.log('⚠️ No refresh token provided, skipping SDK initialization');
       return;
@@ -348,19 +404,35 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
       const data = await response.json();
 
-      if (data.current_track) {
+      // Check if there's active playback (either track or DJ segment)
+      const isActivePlayback = data.is_playing || (data.context?.type === 'dj');
+
+      if (data.current_track || isActivePlayback) {
+        // If it's a DJ segment without a track, create a placeholder track
+        const track = data.current_track || {
+          name: "Spotify DJ",
+          artists: [{ name: "AI DJ" }],
+          album: { name: "DJ Mix", images: [] },
+          uri: "",
+          duration_ms: 0
+        };
+
+        // Update position ref when we get a server update
+        positionRef.current = data.position_ms;
+        lastUpdateRef.current = Date.now();
+
         setState({
           track: {
-            name: data.current_track.name,
-            artists: data.current_track.artists,
-            album: data.current_track.album,
-            uri: data.current_track.uri,
-            preview_url: data.current_track.preview_url,
-            duration_ms: data.current_track.duration_ms
+            name: track.name,
+            artists: track.artists,
+            album: track.album,
+            uri: track.uri,
+            preview_url: track.preview_url,
+            duration_ms: track.duration_ms
           },
           isPaused: !data.is_playing,
           position: data.position_ms,
-          duration: data.current_track.duration_ms,
+          duration: track.duration_ms,
         });
         setIsPlayerConnected(true);
       } else {
@@ -374,17 +446,57 @@ export function useSpotifyPlayer(refreshToken?: string) {
     }
   }, [refreshToken]);
 
-  // Poll for player state
+  // Poll for player state with debounce
   useEffect(() => {
     if (!refreshToken) return;
+
+    let timeoutId: NodeJS.Timeout;
+    let lastState: string | null = null;
+
+    const debouncedFetch = async () => {
+      try {
+        const response = await fetch('/api/spotify/player-state', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+        // Create a string representation of the current state
+        const currentState = JSON.stringify({
+          track: data.current_track?.name,
+          is_playing: data.is_playing,
+          position: data.position_ms,
+          context: data.context
+        });
+
+        // Only update if the state has changed
+        if (currentState !== lastState) {
+          lastState = currentState;
+          fetchPlayerState();
+        }
+      } catch (error) {
+        console.error('Error in debounced fetch:', error);
+      }
+    };
 
     // Initial fetch
     fetchPlayerState();
 
-    // Set up polling interval
-    const interval = setInterval(fetchPlayerState, 3000);
+    // Set up polling with debounce
+    const interval = setInterval(() => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(debouncedFetch, 500);
+    }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [refreshToken, fetchPlayerState]);
 
   const handleVolumeChange = useCallback(async (volume: number) => {
