@@ -8,7 +8,8 @@ import {
     Tab,
     TextField,
     InputAdornment,
-    IconButton
+    IconButton,
+    Box
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
@@ -163,26 +164,14 @@ const AddWidgetsPanel: React.FC<AddWidgetsPanelProps> = ({ addWidget }) => {
             </Tabs>
 
             {filteredWidgets.length > 0 ? (
-                <Stack
-                    direction={{ xs: 'column', sm: 'row' }}
-                    spacing={2}
-                    sx={{
-                        flexWrap: 'wrap',
-                        gap: 2,
-                        display: 'grid',
-                        gridTemplateColumns: {
-                            xs: '1fr',
-                            sm: 'repeat(auto-fill, minmax(200px, 1fr))'
-                        }
-                    }}
-                >
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2 }}>
                     {filteredWidgets.map((widget) => (
                         <WidgetButton
                             key={widget.type}
                             widget={widget}
                         />
                     ))}
-                </Stack>
+                </Box>
             ) : (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2, fontFamily: fontFamily }}>
                     No widgets found matching "{searchQuery}"

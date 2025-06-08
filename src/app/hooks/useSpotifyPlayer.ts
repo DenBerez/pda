@@ -276,42 +276,6 @@ export function useSpotifyPlayer(refreshToken?: string) {
     };
   }, [refreshToken, volume, fetchRecentTracks]);
 
-  // Transfer playback to this device
-  const transferPlayback = useCallback(async () => {
-    console.log('🔄 Attempting to transfer playback', { deviceId });
-    if (!deviceId) {
-      console.warn('⚠️ No device ID available for transfer');
-      return;
-    }
-
-    try {
-      setIsTransferring(true);
-      const token = await getAccessToken();
-      if (!token) throw new Error("No access token available");
-
-      console.log('📡 Sending transfer request to Spotify API');
-      await fetch("https://api.spotify.com/v1/me/player", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          device_ids: [deviceId],
-          play: false,
-        }),
-      });
-
-      console.log('✅ Playback transferred successfully');
-      setIsPlayerConnected(true);
-    } catch (err) {
-      console.error("❌ Failed to transfer playback:", err);
-      setError("Failed to transfer playback");
-    } finally {
-      setIsTransferring(false);
-    }
-  }, [deviceId]);
-
   // Control handlers
   const play = useCallback(() => {
     console.log('▶️ Play requested');
@@ -469,6 +433,48 @@ export function useSpotifyPlayer(refreshToken?: string) {
       }
     }
   }, []);
+
+  // Transfer playback to this device
+  const transferPlayback = useCallback(async () => {
+    console.log('🔄 Attempting to transfer playback', { deviceId });
+    if (!deviceId) {
+      console.warn('⚠️ No device ID available for transfer');
+      return;
+    }
+
+    try {
+      setIsTransferring(true);
+      const token = await getAccessToken();
+      if (!token) throw new Error("No access token available");
+
+      console.log('📡 Sending transfer request to Spotify API');
+      await fetch("https://api.spotify.com/v1/me/player", {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          device_ids: [deviceId],
+          play: false,
+        }),
+      });
+
+      console.log('✅ Playback transferred successfully');
+      setIsPlayerConnected(true);
+
+      // Add a small delay to allow Spotify API to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Fetch the player state after transfer
+      await fetchPlayerState();
+    } catch (err) {
+      console.error("❌ Failed to transfer playback:", err);
+      setError("Failed to transfer playback");
+    } finally {
+      setIsTransferring(false);
+    }
+  }, [deviceId, getAccessToken, fetchPlayerState]);
 
   return {
     isReady,
