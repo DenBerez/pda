@@ -162,12 +162,10 @@ export function useSpotifyPlayer(refreshToken?: string) {
       console.log(`✅ Retrieved ${data.items.length} recent tracks`);
       setRecentTracks(data.items.map((item: any) => ({
         name: item.track.name,
-        artist: item.track.artists.map((a: any) => a.name).join(", "),
-        albumArt: item.track.album.images[0]?.url,
+        artists: item.track.artists,
+        album: item.track.album,
         uri: item.track.uri,
         preview_url: item.track.preview_url,
-        album: item.track.album,
-        artists: item.track.artists,
         duration_ms: item.track.duration_ms
       })));
     } catch (err) {
@@ -227,18 +225,30 @@ export function useSpotifyPlayer(refreshToken?: string) {
             position: playerState.position,
           });
           setState({
-            track: playerState.track_window.current_track,
+            track: {
+              name: playerState.track_window.current_track.name,
+              artists: playerState.track_window.current_track.artists,
+              album: playerState.track_window.current_track.album,
+              uri: playerState.track_window.current_track.uri,
+              preview_url: playerState.track_window.current_track.preview_url,
+              duration_ms: playerState.track_window.current_track.duration_ms
+            },
             isPaused: playerState.paused,
             position: playerState.position,
             duration: playerState.duration,
           });
           setIsPlayerConnected(true);
+        } else {
+          console.log("⚠️ Player state changed but no state received");
+          setState(null);
+          setIsPlayerConnected(false);
         }
       });
 
       player.addListener("not_ready", ({ device_id }: ReadyEvent) => {
         console.warn("⚠️ Device ID has gone offline", device_id);
         setIsPlayerConnected(false);
+        setState(null);
       });
 
       player.addListener("initialization_error", (e: ErrorEvent) => {
@@ -340,7 +350,14 @@ export function useSpotifyPlayer(refreshToken?: string) {
 
       if (data.current_track) {
         setState({
-          track: data.current_track,
+          track: {
+            name: data.current_track.name,
+            artists: data.current_track.artists,
+            album: data.current_track.album,
+            uri: data.current_track.uri,
+            preview_url: data.current_track.preview_url,
+            duration_ms: data.current_track.duration_ms
+          },
           isPaused: !data.is_playing,
           position: data.position_ms,
           duration: data.current_track.duration_ms,
@@ -352,6 +369,8 @@ export function useSpotifyPlayer(refreshToken?: string) {
       }
     } catch (error) {
       console.error('Error fetching player state:', error);
+      setState(null);
+      setIsPlayerConnected(false);
     }
   }, [refreshToken]);
 

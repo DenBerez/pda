@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -30,9 +30,6 @@ interface SpotifyPlayerState {
 
 const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdateWidget }) => {
     const theme = useTheme();
-    const [state, setState] = useState<SpotifyPlayerState | null>(null);
-    const [isTransferring, setIsTransferring] = useState(false);
-    const [isPlayerConnected, setIsPlayerConnected] = useState(false);
     const [showRecent, setShowRecent] = useState(false);
     const [recentTracks, setRecentTracks] = useState<SpotifyTrack[]>([]);
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -43,10 +40,28 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
 
     const {
         isReady,
+        isPlayerConnected,
+        isTransferring,
+        state,
+        volume: playerVolume,
+        recentTracks: playerRecentTracks,
         error,
         controls,
         utils
     } = useSpotifyPlayer(refreshToken);
+
+    // Sync state from the hook
+    useEffect(() => {
+        if (playerVolume !== undefined) {
+            setVolume(playerVolume);
+        }
+    }, [playerVolume]);
+
+    useEffect(() => {
+        if (playerRecentTracks?.length > 0) {
+            setRecentTracks(playerRecentTracks);
+        }
+    }, [playerRecentTracks]);
 
     // Get volume icon based on level
     const getVolumeIcon = useCallback(() => {
@@ -161,7 +176,7 @@ const SpotifyWidget: React.FC<SpotifyWidgetProps> = ({ widget, editMode, onUpdat
         formatDuration: utils.formatDuration,
         toggleView,
         theme,
-        showTransferButton: !isPlayerConnected || (!state || (state.isPaused && !state.track))
+        showTransferButton: !isPlayerConnected && isReady && !isTransferring
     };
 
     return (
