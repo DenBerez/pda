@@ -447,22 +447,9 @@ export function useSpotifyPlayer(refreshToken?: string) {
       const token = await getAccessToken();
       if (!token) throw new Error("No access token available");
 
-      // First, pause any current playback
-      try {
-        await fetch("https://api.spotify.com/v1/me/player/pause", {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-      } catch (err) {
-        // Ignore pause errors as there might not be active playback
-        console.log('ℹ️ No active playback to pause');
-      }
-
+      // Skip trying to pause current playback since it may not exist
       console.log('📡 Sending transfer request to Spotify API');
-      await fetch("https://api.spotify.com/v1/me/player", {
+      const response = await fetch("https://api.spotify.com/v1/me/player", {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -474,15 +461,19 @@ export function useSpotifyPlayer(refreshToken?: string) {
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`Transfer failed with status ${response.status}`);
+      }
+
       console.log('✅ Playback transferred successfully');
       setIsPlayerConnected(true);
 
       // Add a longer delay to allow Spotify API to fully process the transfer
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-      // Retry fetching player state up to 3 times
+      // Retry fetching player state up to 5 times with exponential backoff
       let attempts = 0;
-      const maxAttempts = 3;
+      const maxAttempts = 5;
       let success = false;
 
       while (attempts < maxAttempts && !success) {
@@ -492,14 +483,17 @@ export function useSpotifyPlayer(refreshToken?: string) {
         } catch (err) {
           attempts++;
           if (attempts < maxAttempts) {
-            // Wait between retries with increasing delay
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+            // Exponential backoff with jitter
+            const delay = Math.min(1000 * Math.pow(2, attempts) + Math.random() * 1000, 10000);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
         }
       }
 
       if (!success) {
         console.warn('⚠️ Failed to fetch player state after multiple attempts');
+        // Even if we can't fetch the state, the transfer might have worked
+        setIsPlayerConnected(true);
       }
     } catch (err) {
       console.error("❌ Failed to transfer playback:", err);
