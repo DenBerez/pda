@@ -447,6 +447,20 @@ export function useSpotifyPlayer(refreshToken?: string) {
       const token = await getAccessToken();
       if (!token) throw new Error("No access token available");
 
+      // First, pause any current playback
+      try {
+        await fetch("https://api.spotify.com/v1/me/player/pause", {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (err) {
+        // Ignore pause errors as there might not be active playback
+        console.log('ℹ️ No active playback to pause');
+      }
+
       console.log('📡 Sending transfer request to Spotify API');
       await fetch("https://api.spotify.com/v1/me/player", {
         method: "PUT",
@@ -463,14 +477,34 @@ export function useSpotifyPlayer(refreshToken?: string) {
       console.log('✅ Playback transferred successfully');
       setIsPlayerConnected(true);
 
-      // Add a small delay to allow Spotify API to update
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Add a longer delay to allow Spotify API to fully process the transfer
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Fetch the player state after transfer
-      await fetchPlayerState();
+      // Retry fetching player state up to 3 times
+      let attempts = 0;
+      const maxAttempts = 3;
+      let success = false;
+
+      while (attempts < maxAttempts && !success) {
+        try {
+          await fetchPlayerState();
+          success = true;
+        } catch (err) {
+          attempts++;
+          if (attempts < maxAttempts) {
+            // Wait between retries with increasing delay
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          }
+        }
+      }
+
+      if (!success) {
+        console.warn('⚠️ Failed to fetch player state after multiple attempts');
+      }
     } catch (err) {
       console.error("❌ Failed to transfer playback:", err);
       setError("Failed to transfer playback");
+      setIsPlayerConnected(false);
     } finally {
       setIsTransferring(false);
     }
